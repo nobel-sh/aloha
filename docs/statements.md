@@ -1,4 +1,4 @@
-## Basic Statements and expressions
+## Basic Statements and expressions examples
 
 - Single-line Comment:
     // This is a single-line comment
@@ -11,11 +11,18 @@
 
 - Arithmetic Expression:
     x = 10 + (5 * y);
+    y++;
+    x--;
+    z = 10.4 + 4.6;
+
 
 - Function Definition:
-    fun add(a: int, b: int) do
+    fun add(a: int, b: int) -> int do
         // Function body here
     end
+
+- Return Statement:
+    return x * 2;
 
 - Variable Assignment:
     var x = 10;
@@ -30,7 +37,12 @@
         // Do something else
     end
 
-- Return Statement:
-    return x * 2;
+- While loops 
+    while x > 5 then
+        // Do thing
+    end
 
-
+- For Loops
+    for var i=0; i< 5; i++ then
+        // Do thing
+    end
