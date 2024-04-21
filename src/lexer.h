@@ -13,6 +13,9 @@ public:
   void lex();
   std::vector<Token> tokens;
 
+  bool has_error;
+  void dump_error();
+
 private:
   std::vector<char> source;
   int pos;
@@ -27,5 +30,7 @@ private:
   unsigned char peek_token(int nth) const;
   void consume_token();
   void consume_token(int n);
+
+  std::vector<std::string> errors;
 };
 #endif

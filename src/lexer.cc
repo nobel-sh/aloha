@@ -6,6 +6,12 @@ void Lexer::dump() {
   }
 }
 
+void Lexer::dump_error() {
+  for (auto err : errors) {
+    std::cerr << err << std::endl;
+  }
+}
+
 // peek current token
 unsigned char Lexer::peek_token() const { return peek_token(0); }
 
@@ -28,6 +34,9 @@ void Lexer::consume_token(int n) {
 }
 
 bool Lexer::is_eof() const { return pos >= source.size(); }
+
+// TODO: Remove the lexemes in unecessary cases
+// TODO: Can definitely refactor this code as code is repeated
 
 void Lexer::lex() {
   while (!is_eof()) {
@@ -134,7 +143,9 @@ void Lexer::handle_string() {
   while (curr_char != '"') {
     curr_char = peek_token();
     if (is_eof()) {
-      std::cerr << "Non terminated String at: " << start_pos << std::endl;
+      std::string err = "Non terminated String at: " + start_pos;
+      has_error = true;
+      errors.push_back(err);
       return;
     }
     consume_token();

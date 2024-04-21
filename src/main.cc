@@ -7,5 +7,9 @@ int main() {
   std::vector<char> source(test.begin(), test.end());
   Lexer lexer(source);
   lexer.lex();
+  if (lexer.has_error) {
+    lexer.dump_error();
+    exit(1);
+  }
   lexer.dump();
 }
