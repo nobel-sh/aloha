@@ -30,15 +30,15 @@ const std::map<TokenKind, const std::string> Token::token_to_string = {
     {TokenKind::EOF_TOKEN, "EOF"},
 };
 
-void Token::dump() {
+void Token::dump() const {
   std::cout << "Token {" << std::endl;
-  std::cout << "\tkind: " << this->to_string() << std::endl;
   std::cout << "\tpos: " << pos << std::endl;
   std::cout << "\tlexeme: " << lexeme << std::endl;
+  std::cout << "\tkind: " << this->to_string() << std::endl;
   std::cout << "}" << std::endl;
 }
 
-const std::string Token::to_string() {
+const std::string Token::to_string() const {
   auto it = token_to_string.find(kind);
   assert(it != token_to_string.end());
   return it->second;

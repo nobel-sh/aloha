@@ -43,8 +43,8 @@ public:
   Token(unsigned int pos, TokenKind kind, const std::string lexeme)
       : pos(pos), kind(kind), lexeme(std::move(lexeme)) {}
 
-  void dump();
-  const std::string to_string();
+  void dump() const ;
+  const std::string to_string() const;
   TokenKind kind;
   unsigned int pos;
   const std::string lexeme;

@@ -40,15 +40,17 @@ void ReturnStatement::write(std::ostream& os, int indent) const {
 // IfStatement
 void IfStatement::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "If Statement:" << std::endl;
-    os << std::string(indent, ' ') << "Condition:" << std::endl;
-    condition->write(os, indent + 2);
-    os << std::string(indent, ' ') << "Then Branch:" << std::endl;
+    os << std::string(indent + 2, ' ') << "Condition:" << std::endl;
+    condition->write(os, indent + 4);
+    os << std::string(indent + 2, ' ') << "Then Branch:" << std::endl;
     for (const auto& stmt : thenBranch) {
-        stmt->write(os, indent + 2);
+        stmt->write(os, indent + 4);
     }
-    os << std::string(indent, ' ') << "Else Branch:" << std::endl;
+    if (elseBranch.empty())
+        return;
+    os << std::string(indent + 2, ' ') << "Else Branch:" << std::endl;
     for (const auto& stmt : elseBranch) {
-        stmt->write(os, indent + 2);
+        stmt->write(os, indent + 4);
     }
 }
 
