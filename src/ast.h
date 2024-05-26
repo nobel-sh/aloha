@@ -1,0 +1,128 @@
+#ifndef AST_H_
+#define AST_H_
+
+#include <string>
+#include <vector>
+#include <memory>
+#include <iostream>
+#include <ostream>
+
+// Base Node
+class Node {
+public:
+    virtual ~Node() = default;
+    virtual void write(std::ostream& os, int indent = 0) const = 0;
+};
+
+// Expressions
+class Expression : public Node {};
+class Statement : public Node {};
+
+using ExprPtr = std::shared_ptr<Expression>;
+using StmtPtr = std::shared_ptr<Statement>;
+
+class Number : public Expression {
+public:
+    std::string value;
+    explicit Number(const std::string& val) : value(val) {}
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+class BinaryExpression : public Expression {
+public:
+    ExprPtr left;
+    std::string op;
+    ExprPtr right;
+
+    BinaryExpression(ExprPtr lhs, const std::string& oper, ExprPtr rhs)
+        : left(std::move(lhs)), op(oper), right(std::move(rhs)) {}
+
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+class Identifier : public Expression {
+public:
+    std::string name;
+    explicit Identifier(const std::string& name) : name(name) {}
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+// Statements
+class Assignment : public Statement {
+public:
+    std::string variableName;
+    ExprPtr expression;
+    Assignment(const std::string& varName, ExprPtr expr)
+        : variableName(varName), expression(std::move(expr)) {}
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+class FunctionCall : public Expression{
+public:
+    std::string functionName;
+    std::vector<ExprPtr> arguments;
+    FunctionCall(const std::string& funcName, std::vector<ExprPtr> args)
+        : functionName(funcName), arguments(std::move(args)) {}
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+class ReturnStatement : public Statement {
+public:
+    ExprPtr expression;
+    explicit ReturnStatement(ExprPtr expr)
+        : expression(std::move(expr)) {}
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+class IfStatement : public Statement {
+public:
+    ExprPtr condition;
+    std::vector<StmtPtr> thenBranch;
+    std::vector<StmtPtr> elseBranch;
+    IfStatement(ExprPtr cond, std::vector<StmtPtr> thenBr, std::vector<StmtPtr> elseBr)
+        : condition(std::move(cond)), thenBranch(std::move(thenBr)), elseBranch(std::move(elseBr)) {}
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+class WhileLoop : public Statement {
+public:
+    ExprPtr condition;
+    std::vector<StmtPtr> body;
+    WhileLoop(ExprPtr cond, std::vector<StmtPtr> b)
+        : condition(std::move(cond)), body(std::move(b)) {}
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+class ForLoop : public Statement {
+public:
+    std::shared_ptr<Assignment> initializer;
+    ExprPtr condition;
+    std::shared_ptr<Assignment> increment;
+    std::vector<StmtPtr> body;
+    ForLoop(std::shared_ptr<Assignment> init, ExprPtr cond, std::shared_ptr<Assignment> inc, std::vector<StmtPtr> b)
+        : initializer(std::move(init)), condition(std::move(cond)), increment(std::move(inc)), body(std::move(b)) {}
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+// Function
+class Function : public Statement {
+public:
+    std::string name;
+    using ParamType = std::pair<std::string, std::string>; // (name, type)
+    std::vector<ParamType> parameters;
+    std::string returnType;
+    std::vector<StmtPtr> body;
+
+    Function(const std::string& funcName, std::vector<ParamType> params, const std::string& retType, std::vector<StmtPtr> b)
+        : name(funcName), parameters(std::move(params)), returnType(retType), body(std::move(b)) {}
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+// Program
+class Program : public Node {
+public:
+    std::vector<std::shared_ptr<Node>> nodes;
+    void write(std::ostream& os, int indent = 0) const override;
+};
+
+#endif // AST_H_
