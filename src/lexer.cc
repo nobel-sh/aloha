@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include <string>
 
 void Lexer::dump() {
   for (auto tok : tokens) {
@@ -143,7 +144,8 @@ void Lexer::handle_string() {
   while (curr_char != '"') {
     curr_char = peek_token();
     if (is_eof()) {
-      std::string err = "Non terminated String at: " + start_pos;
+      std::string pos = std::to_string(start_pos);
+      std::string err = "Non terminated String at: " + pos;
       has_error = true;
       errors.push_back(err);
       return;

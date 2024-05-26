@@ -1,12 +1,12 @@
 #ifndef TOKEN_H_
 #define TOKEN_H_
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 #include <memory>
-#include <unordered_map>
+#include <map>
 
-enum TokenKind {
+enum class TokenKind {
   BANG,
   COLON,
   COMMA,
@@ -36,48 +36,18 @@ enum TokenKind {
   STRING,
 };
 
-static const std::unordered_map<TokenKind, std::string> token_to_string = {
-    {BANG, "BANG"},
-    {COLON, "COLON"},
-    {COMMA, "COMMA"},
-    {EQUALEQUAL, "EQUALEQUAL"},
-    {EQUALS, "EQUALS"},
-    {GREATERTHAN, "GREATERTHAN"},
-    {GREATERTHANEQUAL, "GREATERTHANEQUAL"},
-    {LESSTHAN, "LESSTHAN"},
-    {LESSTHANEQUAL, "LESSTHANEQUAL"},
-    {LPAREN, "LPAREN"},
-    {LBRACE, "LBRACE"},
-    {MINUS, "MINUS"},
-    {NOTEQUAL, "NOTEQUAL"},
-    {PERCENT, "PERCENT"},
-    {PLUS, "PLUS"},
-    {RBRACE, "RBRACE"},
-    {RPAREN, "RPAREN"},
-    {SEMICOLON, "SEMICOLON"},
-    {SLASH, "SLASH"},
-    {STAR, "STAR"},
-    {IDENT, "IDENT"},
-    {INT, "INT"},
-    {FLOAT, "FLOAT"},
-    {STRING, "STRING"},
-    {UNDERSCORE, "UNDERSCORE"},
-    {EOF_TOKEN, "EOF"},
-
-};
-
 class Token {
+private:
+ static const std::map<TokenKind, const std::string> token_to_string;
 public:
-  Token(unsigned int pos, TokenKind kind, std::string &&lexeme)
+  Token(unsigned int pos, TokenKind kind, const std::string lexeme)
       : pos(pos), kind(kind), lexeme(std::move(lexeme)) {}
 
   void dump();
-  std::string to_string();
-
-private:
+  const std::string to_string();
   TokenKind kind;
   unsigned int pos;
-  std::string lexeme;
+  const std::string lexeme;
 };
 
 #endif // TOKEN

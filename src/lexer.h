@@ -7,7 +7,8 @@
 
 class Lexer {
 public:
-  Lexer(std::vector<char> source) : source(std::move(source)), pos(0) {}
+  Lexer(std::vector<char> source)
+      : source(std::move(source)), pos(0), has_error(false) {}
 
   void dump();
   void lex();
