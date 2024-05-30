@@ -1,29 +1,30 @@
 #include "ast.h"
+#include <ostream>
 
-// Number
 void Number::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "Number: " << value << std::endl;
 }
 
-// BinaryExpression
+void UnaryExpression::write(std::ostream& os, int indent) const {
+    os << std::string(indent, ' ') << "Unary Expression: " << op << std::endl;
+    expr->write(os, indent + 2);
+}
+
 void BinaryExpression::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "Binary Expression: " << op << std::endl;
     left->write(os, indent + 2);
     right->write(os, indent + 2);
 }
 
-// Identifier
 void Identifier::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "Identifier: " << name << std::endl;
 }
 
-// Assignment
 void Assignment::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "Assignment: " << variableName << std::endl;
     expression->write(os, indent + 2);
 }
 
-// FunctionCall
 void FunctionCall::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "Function Call: " << functionName << std::endl;
     for (const auto& arg : arguments) {
@@ -31,13 +32,11 @@ void FunctionCall::write(std::ostream& os, int indent) const {
     }
 }
 
-// ReturnStatement
 void ReturnStatement::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "Return Statement:" << std::endl;
     expression->write(os, indent + 2);
 }
 
-// IfStatement
 void IfStatement::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "If Statement:" << std::endl;
     os << std::string(indent + 2, ' ') << "Condition:" << std::endl;
@@ -54,7 +53,6 @@ void IfStatement::write(std::ostream& os, int indent) const {
     }
 }
 
-// WhileLoop
 void WhileLoop::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "While Loop:" << std::endl;
     os << std::string(indent, ' ') << "Condition:" << std::endl;
@@ -65,7 +63,6 @@ void WhileLoop::write(std::ostream& os, int indent) const {
     }
 }
 
-// ForLoop
 void ForLoop::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "For Loop:" << std::endl;
     os << std::string(indent, ' ') << "Initializer:" << std::endl;
@@ -80,12 +77,11 @@ void ForLoop::write(std::ostream& os, int indent) const {
     }
 }
 
-// Function
 void Function::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "Function: " << name << std::endl;
     os << std::string(indent, ' ') << "Parameters:" << std::endl;
-    for (const auto& param : parameters) {
-        os << std::string(indent + 2, ' ') << param.first << ": " << param.second << std::endl;
+    for (const auto& p: parameters) {
+        os << std::string(indent + 2, ' ') << p.param.first << ": " << p.param.second << std::endl;
     }
     os << std::string(indent, ' ') << "Return Type: " << returnType << std::endl;
     os << std::string(indent, ' ') << "Body:" << std::endl;
@@ -94,7 +90,13 @@ void Function::write(std::ostream& os, int indent) const {
     }
 }
 
-// Program
+void StatementList::write(std::ostream& os, int indent) const{
+    for (const auto& statement: statements) {
+        statement->write(os, indent + 2);
+    }
+
+}
+
 void Program::write(std::ostream& os, int indent) const {
     os << std::string(indent, ' ') << "Program:" << std::endl;
     for (const auto& node : nodes) {
