@@ -7,6 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 project(aloha)
 
-set(SOURCE_FILES src/main.cc src/token.cc src/lexer.cc)
+set(SOURCE_FILES src/main.cc src/token.cc src/lexer.cc
+                 src/ast.cc src/parser.cc)
 
 add_executable(aloha ${SOURCE_FILES})
