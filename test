@@ -1,0 +1,6 @@
+fun foo() -> Bar
+do
+    var x = 10
+    var y = 30 + 40 * 60
+    return y + x
+end
