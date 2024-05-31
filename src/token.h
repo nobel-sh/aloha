@@ -31,6 +31,9 @@ enum class TokenKind {
   STAR,
   UNDERSCORE,
 
+  THIN_ARROW, // ->
+  FAT_ARROW,  // =>
+
   INT,
   FLOAT,
   STRING,

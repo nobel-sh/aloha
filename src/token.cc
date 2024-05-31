@@ -27,6 +27,8 @@ const std::map<TokenKind, const std::string> Token::token_to_string = {
     {TokenKind::FLOAT, "FLOAT"},
     {TokenKind::STRING, "STRING"},
     {TokenKind::UNDERSCORE, "UNDERSCORE"},
+    {TokenKind::THIN_ARROW, "THIN ARROW"},
+    {TokenKind::FAT_ARROW, "FAT ARROW"},
     {TokenKind::EOF_TOKEN, "EOF"},
 };
 

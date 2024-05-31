@@ -76,7 +76,11 @@ void Lexer::lex() {
       tokens.push_back(Token(pos, TokenKind::PLUS, "+"));
       break;
     case '-':
-      tokens.push_back(Token(pos, TokenKind::MINUS, "-"));
+      if (peek_token(1) == '>') {
+        tokens.push_back(Token(pos, TokenKind::THIN_ARROW, "->"));
+        consume_token();
+      } else
+        tokens.push_back(Token(pos, TokenKind::MINUS, "-"));
       break;
     case '*':
       tokens.push_back(Token(pos, TokenKind::STAR, "*"));
