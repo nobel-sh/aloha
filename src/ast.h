@@ -28,6 +28,7 @@ public:
   void write(std::ostream &os, int indent = 0) const override;
   explicit StatementList(const std::vector<StmtPtr> stmts)
       : statements(std::move(stmts)) {}
+  bool empty() const { return statements.size() == 0; }
 };
 
 class Number : public Expression {
@@ -47,7 +48,6 @@ public:
 
   void write(std::ostream &os, int indent = 0) const override;
 };
-
 
 class BinaryExpression : public Expression {
 public:
@@ -97,10 +97,10 @@ public:
 class IfStatement : public Statement {
 public:
   ExprPtr condition;
-  std::vector<StmtPtr> thenBranch;
-  std::vector<StmtPtr> elseBranch;
-  IfStatement(ExprPtr cond, std::vector<StmtPtr> thenBr,
-              std::vector<StmtPtr> elseBr)
+  std::shared_ptr<StatementList> thenBranch;
+  std::shared_ptr<StatementList> elseBranch;
+  IfStatement(ExprPtr cond, std::shared_ptr<StatementList> thenBr,
+              std::shared_ptr<StatementList> elseBr)
       : condition(std::move(cond)), thenBranch(std::move(thenBr)),
         elseBranch(std::move(elseBr)) {}
   void write(std::ostream &os, int indent = 0) const override;
@@ -129,25 +129,22 @@ public:
 };
 
 // Function
-using ParamType = std::string;
-
 class Parameter {
 public:
-  Parameter(std::pair<std::string, std::string> p) {
-    param.first = p.first;
-    param.second = p.second;
-  }
   std::pair<std::string, std::string> param;
+  Parameter(std::pair<std::string, std::string> &p) : param(std::move(p)) {}
 };
+
 class Function : public Statement {
 public:
-  std::string name;
+  std::shared_ptr<Identifier> name;
   std::vector<Parameter> parameters;
   std::string returnType;
-  std::vector<StmtPtr> body;
+  std::shared_ptr<StatementList> body;
+  Function(const std::shared_ptr<Identifier> &funcName,
+           std::vector<Parameter> params, const std::string &retType,
+           std::shared_ptr<StatementList> b)
 
-  Function(const std::string &funcName, std::vector<Parameter> params,
-           const std::string &retType, std::vector<StmtPtr> b)
       : name(funcName), returnType(retType), parameters(std::move(params)),
         body(std::move(b)) {}
   void write(std::ostream &os, int indent = 0) const override;
