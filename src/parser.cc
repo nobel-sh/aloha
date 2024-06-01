@@ -117,6 +117,7 @@ std::shared_ptr<StatementList> Parser::parse_statements() {
   std::cerr << "DEBUG: Parsing statements" << std::endl;
   std::vector<StmtPtr> stmts;
   while (peek() && peek()->lexeme != "end") {
+
     stmts.push_back(parse_statement());
   }
   return std::make_shared<StatementList>(stmts);
@@ -133,8 +134,11 @@ std::shared_ptr<Statement> Parser::parse_statement() {
   } else if (match("while")) {
     return parse_while_loop();
   } else {
-    report_error("Unknown or unimplemented statement kind");
-    return nullptr;
+    //TODO: better handle this error
+    // report_error("Unknown or unimplemented statement kind");
+    std::cout << "Unknown or unimplemented statement kind" << std::endl;
+    exit(1);
+    // return nullptr;
   }
 }
 
@@ -159,11 +163,12 @@ std::shared_ptr<Statement> Parser::parse_if_statement() {
   consume("then", "Expected 'then' keyword after condition");
   auto thenBranch = parse_statements();
   std::shared_ptr<StatementList> elseBranch = nullptr;
+  consume("end", "Expected 'end' keyword after if statement");
   if (match("else")) {
     advance();
     elseBranch = parse_statements();
+    consume("end", "Expected 'end' keyword after else statement");
   }
-  consume("end", "Expected 'end' keyword after if statement");
   return std::make_shared<IfStatement>(condition, thenBranch, elseBranch);
 }
 

@@ -4,6 +4,8 @@ do
     var y = 30 + 40 * 60
     if x then
        var z = 60
+    end else
+        var p = 70
     end
     return y + x
 end
