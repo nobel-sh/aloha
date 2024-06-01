@@ -56,11 +56,11 @@ void IfStatement::write(std::ostream &os, int indent) const {
 
 void WhileLoop::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "While Loop:" << std::endl;
-  os << std::string(indent, ' ') << "Condition:" << std::endl;
-  condition->write(os, indent + 2);
-  os << std::string(indent, ' ') << "Body:" << std::endl;
+  os << std::string(indent+2, ' ') << "Condition:" << std::endl;
+  condition->write(os, indent + 4);
+  os << std::string(indent+2, ' ') << "Body:" << std::endl;
   for (const auto &stmt : body) {
-    stmt->write(os, indent + 2);
+    stmt->write(os, indent + 4);
   }
 }
 
