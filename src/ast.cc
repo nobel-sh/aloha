@@ -46,7 +46,7 @@ void IfStatement::write(std::ostream &os, int indent) const {
   for (const auto &stmt : thenBranch->statements) {
     stmt->write(os, indent + 4);
   }
-  if (elseBranch->empty())
+  if (!has_else_branch())
     return;
   os << std::string(indent + 2, ' ') << "Else Branch:" << std::endl;
   for (const auto &stmt : elseBranch->statements) {

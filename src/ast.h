@@ -104,6 +104,7 @@ public:
       : condition(std::move(cond)), thenBranch(std::move(thenBr)),
         elseBranch(std::move(elseBr)) {}
   void write(std::ostream &os, int indent = 0) const override;
+  bool has_else_branch() const { return elseBranch != nullptr; }
 };
 
 class WhileLoop : public Statement {
