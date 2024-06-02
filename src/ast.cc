@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "type.h"
 #include <ostream>
 
 void Number::write(std::ostream &os, int indent) const {
@@ -56,9 +57,9 @@ void IfStatement::write(std::ostream &os, int indent) const {
 
 void WhileLoop::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "While Loop:" << std::endl;
-  os << std::string(indent+2, ' ') << "Condition:" << std::endl;
+  os << std::string(indent + 2, ' ') << "Condition:" << std::endl;
   condition->write(os, indent + 4);
-  os << std::string(indent+2, ' ') << "Body:" << std::endl;
+  os << std::string(indent + 2, ' ') << "Body:" << std::endl;
   for (const auto &stmt : body) {
     stmt->write(os, indent + 4);
   }
@@ -82,10 +83,11 @@ void Function::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Function: " << name->name << std::endl;
   os << std::string(indent, ' ') << "Parameters:" << std::endl;
   for (const auto &p : parameters) {
-    os << std::string(indent + 2, ' ') << p.param.first << ": "
-       << p.param.second << std::endl;
+    os << std::string(indent + 2, ' ') << p.name << ": "
+       << AlohaType::to_string(p.type) << std::endl;
   }
-  os << std::string(indent, ' ') << "Return Type: " << returnType << std::endl;
+  os << std::string(indent, ' ')
+     << "Return Type: " << AlohaType::to_string(returnType) << std::endl;
   os << std::string(indent, ' ') << "Body:" << std::endl;
   for (const auto &stmt : body.get()->statements) {
     stmt->write(os, indent + 2);

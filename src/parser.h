@@ -4,6 +4,7 @@
 #include "ast.h"
 #include "error/parser_error.h"
 #include "token.h"
+#include "type.h"
 #include <functional>
 #include <map>
 #include <memory>
@@ -40,7 +41,7 @@ private:
   [[nodiscard]] std::optional<Token> get_token(bool use_next) const;
 
   std::shared_ptr<Identifier> expect_identifier();
-  std::string parse_type();
+  AlohaType::Type parse_type();
 
   std::shared_ptr<Function> parse_function();
   std::vector<Parameter> parse_parameters();

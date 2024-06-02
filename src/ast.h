@@ -1,6 +1,8 @@
 #ifndef AST_H_
 #define AST_H_
 
+#include "ASTVisitor.h"
+#include "type.h"
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -13,10 +15,15 @@ class Node {
 public:
   virtual ~Node() = default;
   virtual void write(std::ostream &os, int indent = 0) const = 0;
+  virtual void accept(ASTVisitor &visitor) = 0;
 };
 
 // Expressions
-class Expression : public Node {};
+class Expression : public Node {
+public:
+  virtual AlohaType::Type getType() const = 0;
+};
+
 class Statement : public Node {};
 
 using ExprPtr = std::shared_ptr<Expression>;
@@ -26,6 +33,7 @@ class StatementList : public Node {
 public:
   std::vector<std::shared_ptr<Statement>> statements;
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
   explicit StatementList(const std::vector<StmtPtr> stmts)
       : statements(std::move(stmts)) {}
   bool empty() const { return statements.size() == 0; }
@@ -34,8 +42,12 @@ public:
 class Number : public Expression {
 public:
   std::string value;
-  explicit Number(const std::string &val) : value(val) {}
+  AlohaType::Type type;
+  explicit Number(const std::string &val, AlohaType::Type t)
+      : value(val), type(t) {}
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type getType() const override { return type; }
 };
 
 class UnaryExpression : public Expression {
@@ -47,6 +59,8 @@ public:
       : op(oper), expr(std::move(expr)) {}
 
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type getType() const override { return expr->getType(); }
 };
 
 class BinaryExpression : public Expression {
@@ -59,13 +73,21 @@ public:
       : left(std::move(lhs)), op(oper), right(std::move(rhs)) {}
 
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type getType() const override { return left->getType(); }
 };
 
 class Identifier : public Expression {
 public:
   std::string name;
-  explicit Identifier(const std::string &name) : name(name) {}
+  AlohaType::Type type;
+  explicit Identifier(const std::string &name, AlohaType::Type t)
+      : name(name), type(t) {}
+  explicit Identifier(const std::string &name)
+      : name(name), type(AlohaType::Type::UNKNOWN) {}
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type getType() const override { return type; }
 };
 
 // Statements
@@ -76,6 +98,7 @@ public:
   Assignment(const std::string &varName, ExprPtr expr)
       : variableName(varName), expression(std::move(expr)) {}
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
 class FunctionCall : public Expression {
@@ -85,6 +108,8 @@ public:
   FunctionCall(const std::string &funcName, std::vector<ExprPtr> args)
       : functionName(funcName), arguments(std::move(args)) {}
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type getType() const override { return AlohaType::Type::VOID; }
 };
 
 class ReturnStatement : public Statement {
@@ -92,6 +117,7 @@ public:
   ExprPtr expression;
   explicit ReturnStatement(ExprPtr expr) : expression(std::move(expr)) {}
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
 class IfStatement : public Statement {
@@ -104,6 +130,7 @@ public:
       : condition(std::move(cond)), thenBranch(std::move(thenBr)),
         elseBranch(std::move(elseBr)) {}
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
   bool has_else_branch() const { return elseBranch != nullptr; }
 };
 
@@ -114,6 +141,7 @@ public:
   WhileLoop(ExprPtr cond, std::vector<StmtPtr> b)
       : condition(std::move(cond)), body(std::move(b)) {}
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
 class ForLoop : public Statement {
@@ -127,28 +155,32 @@ public:
       : initializer(std::move(init)), condition(std::move(cond)),
         increment(std::move(inc)), body(std::move(b)) {}
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
 // Function
 class Parameter {
 public:
-  std::pair<std::string, std::string> param;
-  Parameter(std::pair<std::string, std::string> &p) : param(std::move(p)) {}
+  std::string name;
+  AlohaType::Type type;
+
+  Parameter(std::string ident, AlohaType::Type type)
+      : name(ident), type(type) {}
 };
 
 class Function : public Statement {
 public:
   std::shared_ptr<Identifier> name;
   std::vector<Parameter> parameters;
-  std::string returnType;
+  AlohaType::Type returnType;
   std::shared_ptr<StatementList> body;
   Function(const std::shared_ptr<Identifier> &funcName,
-           std::vector<Parameter> params, const std::string &retType,
+           std::vector<Parameter> params, AlohaType::Type retType,
            std::shared_ptr<StatementList> b)
-
-      : name(funcName), returnType(retType), parameters(std::move(params)),
+      : name(funcName), parameters(std::move(params)), returnType(retType),
         body(std::move(b)) {}
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
 // Program
@@ -156,6 +188,7 @@ class Program : public Node {
 public:
   std::vector<std::shared_ptr<Node>> nodes;
   void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
 #endif // AST_H_

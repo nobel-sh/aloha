@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "ast.h"
 #include "token.h"
+#include "type.h"
 #include <iostream>
 #include <map>
 #include <memory>
@@ -104,8 +105,8 @@ std::vector<Parameter> Parser::parse_parameters() {
     auto identifier = expect_identifier();
     consume(":", "Expected ':' after parameter name");
     auto type = parse_type();
-    auto pair = std::make_pair(identifier->name, type);
-    parameters.emplace_back(Parameter(pair));
+    Parameter param(identifier->name, type);
+    parameters.push_back(param);
     if (!match(")"))
       consume(",", "Expected ',' or ')' after parameter declaration");
     break;
@@ -137,6 +138,7 @@ std::shared_ptr<Statement> Parser::parse_statement() {
     //TODO: better handle this error
     // report_error("Unknown or unimplemented statement kind");
     std::cout << "Unknown or unimplemented statement kind" << std::endl;
+    peek()->dump();
     exit(1);
     // return nullptr;
   }
@@ -276,13 +278,16 @@ std::shared_ptr<Expression> Parser::parse_primary() {
       return expression;
     } else if (token->kind == TokenKind::IDENT && token->lexeme == "null") {
       advance();
-      return std::make_shared<Number>("null");
+      return std::make_shared<Number>("null", AlohaType::Type::UNKNOWN);
     } else if (token->kind == TokenKind::IDENT) {
       advance();
       return std::make_shared<Identifier>(token->lexeme);
     } else if (token->kind == TokenKind::INT) {
       advance();
-      return std::make_shared<Number>(token->lexeme);
+      return std::make_shared<Number>(token->lexeme, AlohaType::Type::INT);
+    } else if (token->kind == TokenKind::FLOAT) {
+      advance();
+      return std::make_shared<Number>(token->lexeme, AlohaType::Type::FLOAT);
     }
   }
 
@@ -301,13 +306,13 @@ std::shared_ptr<Identifier> Parser::expect_identifier() {
   }
 }
 
-std::string Parser::parse_type() {
+AlohaType::Type Parser::parse_type() {
   auto token = peek();
   if (token && token->kind == TokenKind::IDENT) {
     advance();
-    return token->lexeme;
+    return AlohaType::from_string(token->lexeme);
   } else {
-    report_error("Expected Identifier");
-    return "Unknown";
+    report_error("Expected type");
+    return AlohaType::from_string("UNKNOWN");
   }
 }
