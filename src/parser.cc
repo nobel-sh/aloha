@@ -150,7 +150,7 @@ std::shared_ptr<Statement> Parser::parse_variable_declaration() {
   auto identifier = expect_identifier();
   consume("=", "Expected '=' after variable declaration");
   auto expression = parse_expression(0);
-  return std::make_shared<Assignment>(identifier->name, expression);
+  return std::make_shared<Declaration>(identifier->name, expression);
 }
 
 std::shared_ptr<Statement> Parser::parse_return_statement() {

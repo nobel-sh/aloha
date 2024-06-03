@@ -91,11 +91,11 @@ public:
 };
 
 // Statements
-class Assignment : public Statement {
+class Declaration: public Statement {
 public:
   std::string variableName;
   ExprPtr expression;
-  Assignment(const std::string &varName, ExprPtr expr)
+  Declaration(const std::string &varName, ExprPtr expr)
       : variableName(varName), expression(std::move(expr)) {}
   void write(std::ostream &os, int indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
@@ -146,12 +146,12 @@ public:
 
 class ForLoop : public Statement {
 public:
-  std::shared_ptr<Assignment> initializer;
+  std::shared_ptr<Declaration> initializer;
   ExprPtr condition;
-  std::shared_ptr<Assignment> increment;
+  std::shared_ptr<Declaration> increment;
   std::vector<StmtPtr> body;
-  ForLoop(std::shared_ptr<Assignment> init, ExprPtr cond,
-          std::shared_ptr<Assignment> inc, std::vector<StmtPtr> b)
+  ForLoop(std::shared_ptr<Declaration> init, ExprPtr cond,
+          std::shared_ptr<Declaration> inc, std::vector<StmtPtr> b)
       : initializer(std::move(init)), condition(std::move(cond)),
         increment(std::move(inc)), body(std::move(b)) {}
   void write(std::ostream &os, int indent = 0) const override;

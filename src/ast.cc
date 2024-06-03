@@ -21,8 +21,8 @@ void Identifier::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Identifier: " << name << std::endl;
 }
 
-void Assignment::write(std::ostream &os, int indent) const {
-  os << std::string(indent, ' ') << "Assignment: " << variableName << std::endl;
+void Declaration::write(std::ostream &os, int indent) const {
+  os << std::string(indent, ' ') << "Declaration: " << variableName << std::endl;
   expression->write(os, indent + 2);
 }
 

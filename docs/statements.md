@@ -33,7 +33,7 @@
     return x * 2;
 ```
 
-- Variable Assignment:
+- Variable Declaration:
 ```
     var x = 10;
 ```
