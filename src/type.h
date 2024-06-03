@@ -5,6 +5,13 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <stdexcept>
+
+class TypeError : public std::runtime_error {
+public:
+    explicit TypeError(const std::string& message) : std::runtime_error(message) {}
+};
+
 
 class AlohaType {
 public:

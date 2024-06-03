@@ -1,8 +1,10 @@
+#include "file.h"
 #include "lexer.h"
+#include "parser.h"
+#include "semantic_analyzer.h"
+#include "type.h"
 #include <iostream>
 #include <vector>
-#include "parser.h"
-#include "file.h"
 
 int main() {
   auto source = AlohaReader("test").as_bytes();
@@ -16,4 +18,12 @@ int main() {
   Parser parser(lexer.tokens);
   auto p = parser.parse();
   p->write(std::cout, 2);
+
+  try {
+    SemanticAnalyzer analyzer;
+    analyzer.analyze(p.get());
+    std::cout << "No semantic errors" << std::endl;
+  }catch(TypeError e){
+    std::cerr << e.what() << std::endl;
+  }
 }

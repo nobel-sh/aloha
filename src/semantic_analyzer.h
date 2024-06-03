@@ -1,0 +1,31 @@
+#ifndef SEMATIC_ANALYZER_H_
+#define SEMATIC_ANALYZER_H_
+
+#include "ASTVisitor.h"
+#include "symbolTable.h"
+#include "ast.h"
+
+class SemanticAnalyzer : public ASTVisitor {
+public:
+    void analyze(Program* program);
+
+    void visit(Number* node) override;
+    void visit(UnaryExpression* node) override;
+    void visit(BinaryExpression* node) override;
+    void visit(Identifier* node) override;
+    void visit(Declaration* node) override;
+    void visit(FunctionCall* node) override;
+    void visit(ReturnStatement* node) override;
+    void visit(IfStatement* node) override;
+    void visit(WhileLoop* node) override;
+    void visit(ForLoop* node) override;
+    void visit(Function* node) override;
+    void visit(StatementList* node) override;
+    void visit(Program* node) override;
+
+private:
+    SymbolTable symbolTable;
+};
+
+
+#endif // SEMATIC_ANALYZER_H_
