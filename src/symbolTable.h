@@ -2,6 +2,7 @@
 #define SYMBOLTABLE_H_
 
 #include "type.h"
+#include <stack>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -19,14 +20,19 @@ struct FunctionInfo {
 
 class SymbolTable {
 public:
+
+  SymbolTable();
   bool addVariable(const std::string &name, AlohaType::Type type);
   bool addFunction(const std::string &name, AlohaType::Type returnType,
                    const std::vector<AlohaType::Type> &parameterTypes);
   VariableInfo *getVariable(const std::string &name);
   FunctionInfo *getFunction(const std::string &name);
 
+  void enterScope();
+  void leaveScope();
+
 private:
-  std::unordered_map<std::string, VariableInfo> variableTable;
+  std::vector<std::unordered_map<std::string, VariableInfo>> variableTableStack;
   std::unordered_map<std::string, FunctionInfo> functionTable;
 };
 

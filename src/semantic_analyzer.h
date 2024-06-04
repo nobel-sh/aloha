@@ -1,5 +1,5 @@
-#ifndef SEMATIC_ANALYZER_H_
-#define SEMATIC_ANALYZER_H_
+#ifndef SEMANTIC_ANALYZER_H
+#define SEMANTIC_ANALYZER_H
 
 #include "ASTVisitor.h"
 #include "symbolTable.h"
@@ -25,7 +25,7 @@ public:
 
 private:
     SymbolTable symbolTable;
+    Function* currentFunction = nullptr;
 };
 
-
-#endif // SEMATIC_ANALYZER_H_
+#endif // SEMANTIC_ANALYZER_H

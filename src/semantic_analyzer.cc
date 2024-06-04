@@ -1,4 +1,5 @@
 #include "semantic_analyzer.h"
+#include "type.h"
 
 void SemanticAnalyzer::analyze(Program *program) { program->accept(*this); }
 
@@ -47,37 +48,61 @@ void SemanticAnalyzer::visit(FunctionCall *node) {
 
 void SemanticAnalyzer::visit(ReturnStatement *node) {
   node->expression->accept(*this);
+
+  if (currentFunction &&
+      node->expression->getType() != currentFunction->returnType) {
+    throw TypeError("Return type mismatch in function: " +
+                    currentFunction->name->name);
+  }
 }
 
 void SemanticAnalyzer::visit(IfStatement *node) {
   node->condition->accept(*this);
+  symbolTable.enterScope();
   node->thenBranch->accept(*this);
+  symbolTable.leaveScope();
   if (node->has_else_branch()) {
+    symbolTable.enterScope();
     node->elseBranch->accept(*this);
+    symbolTable.leaveScope();
   }
 }
 
 void SemanticAnalyzer::visit(WhileLoop *node) {
   node->condition->accept(*this);
+  symbolTable.enterScope();
   for (auto &stmt : node->body) {
     stmt->accept(*this);
   }
+  symbolTable.leaveScope();
 }
 
 void SemanticAnalyzer::visit(ForLoop *node) {
+  symbolTable.enterScope();
   node->initializer->accept(*this);
   node->condition->accept(*this);
   node->increment->accept(*this);
   for (auto &stmt : node->body) {
     stmt->accept(*this);
   }
+  symbolTable.leaveScope();
 }
 
 void SemanticAnalyzer::visit(Function *node) {
   if (!symbolTable.addFunction(node->name->name, node->returnType, {})) {
     throw TypeError("Function redeclaration: " + node->name->name);
   }
+
+  symbolTable.enterScope();
+  currentFunction = node;
+  for (const auto &param : node->parameters) {
+    if (!symbolTable.addVariable(param.name, param.type)) {
+      throw TypeError("Parameter redeclaration: " + param.name);
+    }
+  }
   node->body->accept(*this);
+  currentFunction = nullptr;
+  symbolTable.leaveScope();
 }
 
 void SemanticAnalyzer::visit(StatementList *node) {

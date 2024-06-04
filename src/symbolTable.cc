@@ -1,17 +1,21 @@
 #include "symbolTable.h"
 #include "type.h"
+#include <utility>
+
+SymbolTable::SymbolTable() {
+  variableTableStack.push_back({});
+}
 
 bool SymbolTable::addVariable(const std::string &name, AlohaType::Type type) {
-  if (variableTable.find(name) != variableTable.end()) {
+  if (variableTableStack.back().find(name) != variableTableStack.back().end()) {
     return false;
   }
-  variableTable[name] = {type, true};
+  variableTableStack.back()[name] = {type, true};
   return true;
 }
 
-bool SymbolTable::addFunction(
-    const std::string &name, AlohaType::Type returnType,
-    const std::vector<AlohaType::Type> &parameterTypes) {
+bool SymbolTable::addFunction(const std::string &name, AlohaType::Type returnType,
+                              const std::vector<AlohaType::Type> &parameterTypes) {
   if (functionTable.find(name) != functionTable.end()) {
     return false;
   }
@@ -20,9 +24,11 @@ bool SymbolTable::addFunction(
 }
 
 VariableInfo *SymbolTable::getVariable(const std::string &name) {
-  auto it = variableTable.find(name);
-  if (it != variableTable.end()) {
-    return &it->second;
+  for (auto it = variableTableStack.rbegin(); it != variableTableStack.rend(); ++it) {
+    auto found = it->find(name);
+    if (found != it->end()) {
+      return &found->second;
+    }
   }
   return nullptr;
 }
@@ -33,4 +39,14 @@ FunctionInfo *SymbolTable::getFunction(const std::string &name) {
     return &it->second;
   }
   return nullptr;
+}
+
+void SymbolTable::enterScope() {
+  variableTableStack.push_back({});
+}
+
+void SymbolTable::leaveScope() {
+  if (!variableTableStack.empty()) {
+    variableTableStack.pop_back();
+  }
 }
