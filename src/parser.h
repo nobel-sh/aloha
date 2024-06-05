@@ -39,6 +39,7 @@ private:
   [[nodiscard]] bool match(TokenKind value, bool use_next = false);
   template <typename T> void consume(const T &value, std::string message);
   [[nodiscard]] std::optional<Token> get_token(bool use_next) const;
+  [[nodiscard]] std::optional<AlohaType::Type> optional_type();
 
   std::shared_ptr<Identifier> expect_identifier();
   AlohaType::Type parse_type();

@@ -23,7 +23,11 @@ int main() {
     SemanticAnalyzer analyzer;
     analyzer.analyze(p.get());
     std::cout << "No semantic errors" << std::endl;
-  }catch(TypeError e){
+    std::cout << "------------------" << std::endl;
+    std::cout << "Typed AST" << std::endl;
+    p->write(std::cout, 2);
+    std::cout << "------------------" << std::endl;
+  } catch (TypeError e) {
     std::cerr << e.what() << std::endl;
   }
 }

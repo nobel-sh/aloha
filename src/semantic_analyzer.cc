@@ -7,25 +7,39 @@ void SemanticAnalyzer::visit(Number *node) {}
 
 void SemanticAnalyzer::visit(UnaryExpression *node) {
   node->expr->accept(*this);
+  node->type = node->expr->getType();
 }
 
 void SemanticAnalyzer::visit(BinaryExpression *node) {
   node->left->accept(*this);
   node->right->accept(*this);
+
+  if (node->left->getType() == node->right->getType()) {
+    node->type = node->left->getType();
+  } else {
+    node->type = AlohaType::Type::UNKNOWN;
+    throw TypeError("Type mismatch in binary expression");
+  }
 }
 
 void SemanticAnalyzer::visit(Identifier *node) {
-  if (!symbolTable.getVariable(node->name)) {
+  VariableInfo *varInfo = symbolTable.getVariable(node->name);
+  if (!varInfo) {
     throw TypeError("Undeclared variable: " + node->name);
   }
+  node->type = varInfo->type;
 }
 
 void SemanticAnalyzer::visit(Declaration *node) {
-  if (!symbolTable.addVariable(node->variableName,
-                               node->expression->getType())) {
+  node->expression->accept(*this);
+
+  if (!node->type) {
+    node->type = node->expression->getType();
+  }
+
+  if (!symbolTable.addVariable(node->variableName, node->type.value())) {
     throw TypeError("Variable redeclaration: " + node->variableName);
   }
-  node->expression->accept(*this);
 }
 
 void SemanticAnalyzer::visit(FunctionCall *node) {
@@ -51,6 +65,10 @@ void SemanticAnalyzer::visit(ReturnStatement *node) {
 
   if (currentFunction &&
       node->expression->getType() != currentFunction->returnType) {
+    std::cout << AlohaType::to_string(node->expression->getType()) << std::endl;
+    std::cout << AlohaType::to_string(currentFunction->returnType) << std::endl;
+
+    symbolTable.dump();
     throw TypeError("Return type mismatch in function: " +
                     currentFunction->name->name);
   }
@@ -95,6 +113,7 @@ void SemanticAnalyzer::visit(Function *node) {
 
   symbolTable.enterScope();
   currentFunction = node;
+
   for (const auto &param : node->parameters) {
     if (!symbolTable.addVariable(param.name, param.type)) {
       throw TypeError("Parameter redeclaration: " + param.name);

@@ -1,6 +1,7 @@
 #include "ast.h"
 #include "type.h"
 #include <ostream>
+#include <string>
 
 void Number::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Number: " << value << std::endl;
@@ -19,10 +20,17 @@ void BinaryExpression::write(std::ostream &os, int indent) const {
 
 void Identifier::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Identifier: " << name << std::endl;
+  auto str_type = AlohaType::to_string(type);
+  os << std::string(indent, ' ') << "Type: " << str_type << std::endl;
 }
 
 void Declaration::write(std::ostream &os, int indent) const {
-  os << std::string(indent, ' ') << "Declaration: " << variableName << std::endl;
+  os << std::string(indent, ' ') << "Declaration: " << variableName
+     << std::endl;
+  if (type) {
+    os << std::string(indent + 2, ' ')
+       << "Type: " << AlohaType::to_string(type.value()) << std::endl;
+  }
   expression->write(os, indent + 2);
 }
 

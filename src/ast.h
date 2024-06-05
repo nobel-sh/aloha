@@ -5,6 +5,7 @@
 #include "type.h"
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <utility>
@@ -54,9 +55,10 @@ class UnaryExpression : public Expression {
 public:
   std::string op;
   ExprPtr expr;
+  AlohaType::Type type;
 
   UnaryExpression(const std::string &oper, ExprPtr expr)
-      : op(oper), expr(std::move(expr)) {}
+      : op(oper), expr(std::move(expr)), type(AlohaType::Type::UNKNOWN) {}
 
   void write(std::ostream &os, int indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
@@ -68,9 +70,11 @@ public:
   ExprPtr left;
   std::string op;
   ExprPtr right;
+  AlohaType::Type type;
 
   BinaryExpression(ExprPtr lhs, const std::string &oper, ExprPtr rhs)
-      : left(std::move(lhs)), op(oper), right(std::move(rhs)) {}
+      : left(std::move(lhs)), op(oper), right(std::move(rhs)),
+        type(AlohaType::Type::UNKNOWN) {}
 
   void write(std::ostream &os, int indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
@@ -91,12 +95,14 @@ public:
 };
 
 // Statements
-class Declaration: public Statement {
+class Declaration : public Statement {
 public:
   std::string variableName;
+  std::optional<AlohaType::Type> type;
   ExprPtr expression;
-  Declaration(const std::string &varName, ExprPtr expr)
-      : variableName(varName), expression(std::move(expr)) {}
+  explicit Declaration(const std::string &varName,
+                       std::optional<AlohaType::Type> type, ExprPtr expr)
+      : variableName(varName), type(type), expression(std::move(expr)) {}
   void write(std::ostream &os, int indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };

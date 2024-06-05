@@ -135,8 +135,8 @@ std::shared_ptr<Statement> Parser::parse_statement() {
   } else if (match("while")) {
     return parse_while_loop();
   } else {
-    //TODO: better handle this error
-    // report_error("Unknown or unimplemented statement kind");
+    // TODO: better handle this error
+    //  report_error("Unknown or unimplemented statement kind");
     std::cout << "Unknown or unimplemented statement kind" << std::endl;
     peek()->dump();
     exit(1);
@@ -148,9 +148,10 @@ std::shared_ptr<Statement> Parser::parse_variable_declaration() {
   std::cerr << "DEBUG: Parsing variable declaration" << std::endl;
   consume("var", "Expected 'var' keyword");
   auto identifier = expect_identifier();
+  auto type = optional_type();
   consume("=", "Expected '=' after variable declaration");
   auto expression = parse_expression(0);
-  return std::make_shared<Declaration>(identifier->name, expression);
+  return std::make_shared<Declaration>(identifier->name, type, expression);
 }
 
 std::shared_ptr<Statement> Parser::parse_return_statement() {
@@ -284,10 +285,10 @@ std::shared_ptr<Expression> Parser::parse_primary() {
       return std::make_shared<Identifier>(token->lexeme);
     } else if (token->kind == TokenKind::INT) {
       advance();
-      return std::make_shared<Number>(token->lexeme, AlohaType::Type::INT);
+      return std::make_shared<Number>(token->lexeme, AlohaType::Type::NUMBER);
     } else if (token->kind == TokenKind::FLOAT) {
       advance();
-      return std::make_shared<Number>(token->lexeme, AlohaType::Type::FLOAT);
+      return std::make_shared<Number>(token->lexeme, AlohaType::Type::NUMBER);
     }
   }
 
@@ -315,4 +316,13 @@ AlohaType::Type Parser::parse_type() {
     report_error("Expected type");
     return AlohaType::from_string("UNKNOWN");
   }
+}
+
+std::optional<AlohaType::Type> Parser::optional_type() {
+  auto token = peek();
+  if (token && token->kind == TokenKind::COLON) {
+    advance();
+    return parse_type();
+  }
+  return std::nullopt;
 }
