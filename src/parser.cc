@@ -101,7 +101,6 @@ std::vector<Parameter> Parser::parse_parameters() {
   std::cerr << "DEBUG: Parsing parameters" << std::endl;
   std::vector<Parameter> parameters;
   while (peek() && peek()->lexeme != ")") {
-    std::cout << peek()->lexeme << std::endl;
     auto identifier = expect_identifier();
     consume(":", "Expected ':' after parameter name");
     auto type = parse_type();
@@ -109,8 +108,8 @@ std::vector<Parameter> Parser::parse_parameters() {
     parameters.push_back(param);
     if (!match(")"))
       consume(",", "Expected ',' or ')' after parameter declaration");
-    break;
   }
+
   return parameters;
 }
 

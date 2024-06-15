@@ -1,5 +1,5 @@
-fun foo(bar: number) -> number
+fun add(bar: number, baz: number) -> number
 do
-    var k = 100 + bar
+    var k = baz + bar + 14
     return k
 end
