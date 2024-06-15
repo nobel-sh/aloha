@@ -1,11 +1,5 @@
-fun foo(x: number) -> number
+fun foo(bar: number) -> number
 do
-    var y = 12
-    var z: number = 2
-    if x then
-       var z = 60
-    end else
-        var p = 70
-    end
-    return x
+    var k = 100 + bar
+    return k
 end

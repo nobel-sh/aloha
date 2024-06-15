@@ -1,5 +1,7 @@
+#include "codegen.h"
 #include "file.h"
 #include "lexer.h"
+#include "objgen.h"
 #include "parser.h"
 #include "semantic_analyzer.h"
 #include "type.h"
@@ -27,6 +29,9 @@ int main() {
     std::cout << "Typed AST" << std::endl;
     p->write(std::cout, 2);
     std::cout << "------------------" << std::endl;
+    CodeGen codegen;
+    codegen.generateCode(p.get());
+    objgen(codegen, "output.o");
   } catch (TypeError e) {
     std::cerr << e.what() << std::endl;
   }
