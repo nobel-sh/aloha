@@ -25,10 +25,12 @@ public:
 private:
   const std::vector<Token> tokens;
   size_t current;
-
   ErrorCollector error_collector;
   void report_error(const std::string &message);
+  static std::map<std::string, PrefixParserFunc> prefixParsers;
+  static std::map<std::string, InfixParserFunc> infixParsers;
 
+private:
   [[nodiscard]] bool is_eof() const;
   void advance();
   [[nodiscard]] std::optional<Token> peek() const;
@@ -43,6 +45,8 @@ private:
 
   std::shared_ptr<Identifier> expect_identifier();
   AlohaType::Type parse_type();
+  bool is_reserved_ident() const;
+  bool is_reserved_ident(Token t) const;
 
   std::shared_ptr<Function> parse_function();
   std::vector<Parameter> parse_parameters();
@@ -57,9 +61,6 @@ private:
   std::shared_ptr<Expression>
   parse_infix_expressions(std::shared_ptr<Expression> left, int min_precedence);
   std::shared_ptr<Expression> parse_primary();
-
-  static std::map<std::string, PrefixParserFunc> prefixParsers;
-  static std::map<std::string, InfixParserFunc> infixParsers;
 };
 
 #endif // PARSER_H_

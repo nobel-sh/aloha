@@ -16,6 +16,7 @@ namespace AlohaType {
 enum class Type {
   NUMBER,
   STRING,
+  BOOL,
   VOID,
   UNKNOWN, // for types that might be known later on
 };
@@ -25,6 +26,8 @@ static std::string to_string(Type type) {
     return "number";
   case Type::STRING:
     return "string";
+  case Type::BOOL:
+    return "bool";
   case Type::VOID:
     return "void";
   case Type::UNKNOWN:
@@ -38,6 +41,8 @@ static Type from_string(const std::string &type) {
     return Type::NUMBER;
   else if (type == "string")
     return Type::STRING;
+  else if (type == "bool")
+    return Type::BOOL;
   else if (type == "void")
     return Type::VOID;
   else if (type == "unknown")

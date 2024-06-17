@@ -16,7 +16,7 @@ int main() {
     lexer.dump_error();
     exit(1);
   }
-  // lexer.dump();
+  lexer.dump();
   Parser parser(lexer.tokens);
   auto p = parser.parse();
   p->write(std::cout, 2);
@@ -30,8 +30,9 @@ int main() {
     p->write(std::cout, 2);
     std::cout << "------------------" << std::endl;
     CodeGen codegen;
-    codegen.generateCode(p.get());
-    objgen(codegen, "output.o");
+    auto status = codegen.generateCode(p.get());
+    if (!status)
+      objgen(codegen, "output.o");
   } catch (TypeError e) {
     std::cerr << e.what() << std::endl;
   }

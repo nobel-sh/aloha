@@ -1,5 +1,9 @@
-fun add(bar: number, baz: number) -> number
+fun isTrue(a:bool,b:bool)->bool
 do
-    var k = baz + bar + 14
-    return k
+    if a then
+       return true
+    end else if b then
+        return true
+    end
+    return false
 end

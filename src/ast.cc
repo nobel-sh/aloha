@@ -7,6 +7,11 @@ void Number::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Number: " << value << std::endl;
 }
 
+void Boolean::write(std::ostream &os, int indent) const {
+  auto value_str = value == true ? "True" : "False";
+  os << std::string(indent, ' ') << "Boolean: " << value_str << std::endl;
+}
+
 void UnaryExpression::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Unary Expression: " << op << std::endl;
   expr->write(os, indent + 2);

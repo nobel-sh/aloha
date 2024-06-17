@@ -117,7 +117,6 @@ std::shared_ptr<StatementList> Parser::parse_statements() {
   std::cerr << "DEBUG: Parsing statements" << std::endl;
   std::vector<StmtPtr> stmts;
   while (peek() && peek()->lexeme != "end") {
-
     stmts.push_back(parse_statement());
   }
   return std::make_shared<StatementList>(stmts);
@@ -135,7 +134,7 @@ std::shared_ptr<Statement> Parser::parse_statement() {
     return parse_while_loop();
   } else {
     // TODO: better handle this error
-    //  report_error("Unknown or unimplemented statement kind");
+    //  report_error();
     std::cout << "Unknown or unimplemented statement kind" << std::endl;
     peek()->dump();
     exit(1);
@@ -160,6 +159,7 @@ std::shared_ptr<Statement> Parser::parse_return_statement() {
 }
 
 std::shared_ptr<Statement> Parser::parse_if_statement() {
+  std::cout << "Parsing if else" << std::endl;
   advance();
   auto condition = parse_expression(0);
   consume("then", "Expected 'then' keyword after condition");
@@ -168,8 +168,13 @@ std::shared_ptr<Statement> Parser::parse_if_statement() {
   consume("end", "Expected 'end' keyword after if statement");
   if (match("else")) {
     advance();
-    elseBranch = parse_statements();
-    consume("end", "Expected 'end' keyword after else statement");
+    if (match("if")) {
+      elseBranch = parse_statements();
+    } else {
+      consume("then", "Expected 'then' keyword after condition");
+      elseBranch = parse_statements();
+      consume("end", "Expected 'end' keyword after else statement");
+    }
   }
   return std::make_shared<IfStatement>(condition, thenBranch, elseBranch);
 }
@@ -276,18 +281,23 @@ std::shared_ptr<Expression> Parser::parse_primary() {
       auto expression = parse_expression(PREC_ASSIGNMENT);
       consume(")", "Expected ')' after expression");
       return expression;
-    } else if (token->kind == TokenKind::IDENT && token->lexeme == "null") {
-      advance();
-      return std::make_shared<Number>("null", AlohaType::Type::UNKNOWN);
     } else if (token->kind == TokenKind::IDENT) {
       advance();
+      if (is_reserved_ident(*token)) {
+        if (token->lexeme == "null")
+          return std::make_shared<Number>("null");
+        else {
+          auto value = token->lexeme == "true" ? true : false;
+          return std::make_shared<Boolean>(value);
+        }
+      }
       return std::make_shared<Identifier>(token->lexeme);
     } else if (token->kind == TokenKind::INT) {
       advance();
-      return std::make_shared<Number>(token->lexeme, AlohaType::Type::NUMBER);
+      return std::make_shared<Number>(token->lexeme);
     } else if (token->kind == TokenKind::FLOAT) {
       advance();
-      return std::make_shared<Number>(token->lexeme, AlohaType::Type::NUMBER);
+      return std::make_shared<Number>(token->lexeme);
     }
   }
 
@@ -324,4 +334,18 @@ std::optional<AlohaType::Type> Parser::optional_type() {
     return parse_type();
   }
   return std::nullopt;
+}
+
+bool Parser::is_reserved_ident(Token t) const {
+  auto lexeme = t.lexeme;
+  if (lexeme == "true" || lexeme == "false" || lexeme == "null")
+    return true;
+  return false;
+}
+
+bool Parser::is_reserved_ident() const {
+  auto lexeme = peek()->lexeme;
+  if (lexeme == "true" || lexeme == "false" || lexeme == "null")
+    return true;
+  return false;
 }

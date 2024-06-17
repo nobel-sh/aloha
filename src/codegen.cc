@@ -16,15 +16,21 @@ CodeGen::CodeGen()
   module = std::make_unique<llvm::Module>("my_module", context);
 }
 
-void CodeGen::generateCode(Program *program) {
+bool CodeGen::generateCode(Program *program) {
   program->accept(*this);
-  llvm::verifyModule(*module, &llvm::errs());
+  auto status = llvm::verifyModule(*module, &llvm::errs());
   dumpIR();
+  return status;
 }
 
 void CodeGen::visit(Number *node) {
   auto num = std::stod(node->value);
   currentValue = llvm::ConstantFP::get(context, llvm::APFloat(num));
+}
+
+void CodeGen::visit(Boolean *node) {
+  auto value = node->value;
+  currentValue = llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
 }
 
 void CodeGen::visit(UnaryExpression *node) {
@@ -95,32 +101,41 @@ void CodeGen::visit(FunctionCall *node) {
 void CodeGen::visit(ReturnStatement *node) {
   node->expression->accept(*this);
   builder.CreateRet(currentValue);
+
+  // Ensure no more code is added to the function after a return statement.
+  llvm::BasicBlock *unreachableBlock =
+      llvm::BasicBlock::Create(context, "unreachable", currentFunction);
+  builder.SetInsertPoint(unreachableBlock);
 }
 
 void CodeGen::visit(IfStatement *node) {
-  node->condition->accept(*this);
-  llvm::Value *condValue = currentValue;
-
   llvm::Function *function = builder.GetInsertBlock()->getParent();
+
   llvm::BasicBlock *thenBB =
       llvm::BasicBlock::Create(context, "then", function);
   llvm::BasicBlock *elseBB = llvm::BasicBlock::Create(context, "else");
   llvm::BasicBlock *mergeBB = llvm::BasicBlock::Create(context, "ifcont");
 
+  node->condition->accept(*this);
+  llvm::Value *condValue = currentValue;
   builder.CreateCondBr(condValue, thenBB, elseBB);
 
   builder.SetInsertPoint(thenBB);
   node->thenBranch->accept(*this);
-  builder.CreateBr(mergeBB);
+  if (!builder.GetInsertBlock()->getTerminator()) {
+    builder.CreateBr(mergeBB);
+  }
 
-  elseBB->insertInto(function);
+  function->insert(function->end(), elseBB);
   builder.SetInsertPoint(elseBB);
-  if (node->has_else_branch()) {
+  if (node->elseBranch) {
     node->elseBranch->accept(*this);
   }
-  builder.CreateBr(mergeBB);
+  if (!builder.GetInsertBlock()->getTerminator()) {
+    builder.CreateBr(mergeBB);
+  }
 
-  mergeBB->insertInto(function);
+  function->insert(function->end(), mergeBB);
   builder.SetInsertPoint(mergeBB);
 }
 
@@ -234,8 +249,11 @@ llvm::Type *CodeGen::getLLVMType(AlohaType::Type type) {
     return llvm::Type::getDoubleTy(context);
   case AlohaType::Type::VOID:
     return llvm::Type::getVoidTy(context);
+  case AlohaType::Type::BOOL:
+    return llvm::Type::getInt1Ty(context);
   default:
-    throw std::runtime_error("Unknown type");
+    throw std::runtime_error(
+        "Unknown type while converting from Aloha Type to LLVM Type");
   }
 }
 

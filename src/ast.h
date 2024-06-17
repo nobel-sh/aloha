@@ -43,14 +43,20 @@ public:
 class Number : public Expression {
 public:
   std::string value;
-  AlohaType::Type type;
-  explicit Number(const std::string &val, AlohaType::Type t)
-      : value(val), type(t) {}
+  explicit Number(const std::string &val) : value(val) {}
   void write(std::ostream &os, int indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type getType() const override { return type; }
+  AlohaType::Type getType() const override { return AlohaType::Type::NUMBER; }
 };
 
+class Boolean : public Expression {
+public:
+  bool value;
+  explicit Boolean(const bool &val) : value(val) {}
+  void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type getType() const override { return AlohaType::Type::BOOL; }
+};
 class UnaryExpression : public Expression {
 public:
   std::string op;

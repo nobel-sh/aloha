@@ -5,6 +5,8 @@ void SemanticAnalyzer::analyze(Program *program) { program->accept(*this); }
 
 void SemanticAnalyzer::visit(Number *node) {}
 
+void SemanticAnalyzer::visit(Boolean *node) {}
+
 void SemanticAnalyzer::visit(UnaryExpression *node) {
   node->expr->accept(*this);
   node->type = node->expr->getType();

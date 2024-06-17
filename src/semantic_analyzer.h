@@ -10,6 +10,7 @@ public:
   void analyze(Program *program);
 
   void visit(Number *node) override;
+  void visit(Boolean *node) override;
   void visit(UnaryExpression *node) override;
   void visit(BinaryExpression *node) override;
   void visit(Identifier *node) override;
