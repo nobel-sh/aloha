@@ -54,6 +54,18 @@ void CodeGen::visit(BinaryExpression *node) {
     currentValue = builder.CreateFMul(left, right, "multmp");
   } else if (node->op == "/") {
     currentValue = builder.CreateFDiv(left, right, "divtmp");
+  } else if (node->op == ">=") {
+    currentValue = builder.CreateFCmpOGE(left, right, "gtetmpe");
+  } else if (node->op == "<=") {
+    currentValue = builder.CreateFCmpOLE(left, right, "ltetmp");
+  } else if (node->op == "<") {
+    currentValue = builder.CreateFCmpOLT(left, right, "lttmp");
+  } else if (node->op == ">") {
+    currentValue = builder.CreateFCmpOGT(left, right, "gttmp");
+  } else if (node->op == "==") {
+    currentValue = builder.CreateFCmpOEQ(left, right, "eqtmp");
+  } else if (node->op == "!=") {
+    currentValue = builder.CreateFCmpONE(left, right, "netmp");
   }
 }
 

@@ -18,7 +18,7 @@ bool Parser::is_eof() const {
 }
 
 void Parser::advance() {
-  if (!is_eof()) {
+  if (!is_eof() && next()) {
     ++current;
   }
 }
@@ -91,7 +91,6 @@ std::shared_ptr<Function> Parser::parse_function() {
   auto returnType = parse_type();
   consume("do", "Expected 'do' keyword before function body");
   auto statements = parse_statements();
-  consume("end", "Expected 'end' keyword to close function");
   return std::make_shared<Function>(identifier, std::move(parameters),
                                     std::move(returnType),
                                     std::move(statements));
@@ -113,15 +112,6 @@ std::vector<Parameter> Parser::parse_parameters() {
   return parameters;
 }
 
-std::shared_ptr<StatementList> Parser::parse_statements() {
-  std::cerr << "DEBUG: Parsing statements" << std::endl;
-  std::vector<StmtPtr> stmts;
-  while (peek() && peek()->lexeme != "end") {
-    stmts.push_back(parse_statement());
-  }
-  return std::make_shared<StatementList>(stmts);
-}
-
 std::shared_ptr<Statement> Parser::parse_statement() {
   std::cerr << "DEBUG: Parsing statement" << std::endl;
   if (match("var")) {
@@ -135,11 +125,26 @@ std::shared_ptr<Statement> Parser::parse_statement() {
   } else {
     // TODO: better handle this error
     //  report_error();
+    if (is_eof()) {
+      return nullptr;
+    }
     std::cout << "Unknown or unimplemented statement kind" << std::endl;
     peek()->dump();
     exit(1);
-    // return nullptr;
   }
+}
+
+std::shared_ptr<StatementList> Parser::parse_statements() {
+  std::cerr << "DEBUG: Parsing statements" << std::endl;
+  std::vector<StmtPtr> stmts;
+  while (peek() && peek()->lexeme != "end" && !is_eof()) {
+    auto stmt = parse_statement();
+    stmts.push_back(stmt);
+  }
+  if (!is_eof()) {
+    consume("end", "expected 'end' at the end of block statement");
+  }
+  return std::make_shared<StatementList>(stmts);
 }
 
 std::shared_ptr<Statement> Parser::parse_variable_declaration() {
@@ -159,22 +164,21 @@ std::shared_ptr<Statement> Parser::parse_return_statement() {
 }
 
 std::shared_ptr<Statement> Parser::parse_if_statement() {
-  std::cout << "Parsing if else" << std::endl;
   advance();
   auto condition = parse_expression(0);
   consume("then", "Expected 'then' keyword after condition");
   auto thenBranch = parse_statements();
   std::shared_ptr<StatementList> elseBranch = nullptr;
-  consume("end", "Expected 'end' keyword after if statement");
   if (match("else")) {
     advance();
-    if (match("if")) {
-      elseBranch = parse_statements();
-    } else {
-      consume("then", "Expected 'then' keyword after condition");
-      elseBranch = parse_statements();
-      consume("end", "Expected 'end' keyword after else statement");
+    if (!match("then") && !match("if")) {
+      peek()->dump();
+      report_error("expected 'then' or 'if' after else block");
     }
+    if (match("then")) {
+      advance();
+    }
+    elseBranch = parse_statements();
   }
   return std::make_shared<IfStatement>(condition, thenBranch, elseBranch);
 }
@@ -194,15 +198,16 @@ enum Precedence {
   PREC_SUM,
   PREC_PRODUCT,
   PREC_PREFIX,
+  PREC_COMPARISON,
   PREC_POSTFIX,
   PREC_CALL
 };
 
 std::map<std::string, Precedence> precedence = {
-    {"+", PREC_SUM},
-    {"-", PREC_SUM},
-    {"*", PREC_PRODUCT},
-    {"/", PREC_PRODUCT},
+    {"+", PREC_SUM},         {"-", PREC_SUM},         {"*", PREC_PRODUCT},
+    {"/", PREC_PRODUCT},     {"<", PREC_COMPARISON},  {">", PREC_COMPARISON},
+    {"==", PREC_COMPARISON}, {"<=", PREC_COMPARISON}, {">=", PREC_COMPARISON},
+    {"!=", PREC_COMPARISON},
 };
 
 std::map<std::string, Parser::PrefixParserFunc> Parser::prefixParsers = {
@@ -234,6 +239,37 @@ std::map<std::string, Parser::InfixParserFunc> Parser::infixParsers = {
        return std::make_shared<BinaryExpression>(
            left, "/", parser.parse_expression(PREC_PRODUCT));
      }},
+    {"<",
+     [](Parser &parser, auto left) {
+       return std::make_shared<BinaryExpression>(
+           left, "<", parser.parse_expression(PREC_COMPARISON));
+     }},
+    {">",
+     [](Parser &parser, auto left) {
+       return std::make_shared<BinaryExpression>(
+           left, ">", parser.parse_expression(PREC_COMPARISON));
+     }},
+    {"==",
+     [](Parser &parser, auto left) {
+       return std::make_shared<BinaryExpression>(
+           left, "==", parser.parse_expression(PREC_COMPARISON));
+     }},
+    {"<=",
+     [](Parser &parser, auto left) {
+       return std::make_shared<BinaryExpression>(
+           left, "<=", parser.parse_expression(PREC_COMPARISON));
+     }},
+    {">=",
+     [](Parser &parser, auto left) {
+       return std::make_shared<BinaryExpression>(
+           left, ">=", parser.parse_expression(PREC_COMPARISON));
+     }},
+    {"!=",
+     [](Parser &parser, auto left) {
+       return std::make_shared<BinaryExpression>(
+           left, "!=", parser.parse_expression(PREC_COMPARISON));
+     }},
+
 };
 
 std::shared_ptr<Expression> Parser::parse_expression(int min_precedence) {

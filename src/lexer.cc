@@ -67,7 +67,12 @@ void Lexer::lex() {
       tokens.push_back(Token(pos, TokenKind::COMMA, ","));
       break;
     case '=':
-      tokens.push_back(Token(pos, TokenKind::EQUALS, "="));
+      if (peek_token(1) == '=') {
+        tokens.push_back(Token(pos, TokenKind::EQUALEQUAL, "=="));
+        consume_token();
+      } else {
+        tokens.push_back(Token(pos, TokenKind::EQUALS, "!"));
+      }
       break;
     case '_':
       tokens.push_back(Token(pos, TokenKind::UNDERSCORE, "_"));
