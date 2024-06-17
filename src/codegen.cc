@@ -2,6 +2,7 @@
 #include "ast.h"
 #include "type.h"
 #include <llvm/ADT/APFloat.h>
+#include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Instructions.h>
@@ -154,24 +155,26 @@ void CodeGen::visit(IfStatement *node) {
 void CodeGen::visit(WhileLoop *node) {
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
-  llvm::BasicBlock *loopBB =
-      llvm::BasicBlock::Create(context, "loop", function);
+  llvm::BasicBlock *condBB =
+      llvm::BasicBlock::Create(context, "loopcond", function);
+  llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(context, "loopbody");
   llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(context, "afterloop");
 
-  builder.CreateBr(loopBB);
-  builder.SetInsertPoint(loopBB);
+  builder.CreateBr(condBB);
+  builder.SetInsertPoint(condBB);
 
   node->condition->accept(*this);
   llvm::Value *condValue = currentValue;
-  builder.CreateCondBr(condValue, loopBB, afterBB);
+  builder.CreateCondBr(condValue, bodyBB, afterBB);
 
-  afterBB->insertInto(function);
-  builder.SetInsertPoint(loopBB);
-  for (auto &stmt : node->body) {
-    stmt->accept(*this);
-  }
-  builder.CreateBr(loopBB);
+  function->insert(function->end(), bodyBB);
 
+  builder.SetInsertPoint(bodyBB);
+
+  node->body->accept(*this);
+  builder.CreateBr(condBB);
+
+  function->insert(function->end(), afterBB);
   builder.SetInsertPoint(afterBB);
 }
 
@@ -271,7 +274,7 @@ llvm::Type *CodeGen::getLLVMType(AlohaType::Type type) {
 
 void CodeGen::dumpIR() const {
   module->print(llvm::outs(), nullptr);
-  dumpNamedValues();
+  // dumpNamedValues();
 }
 
 void CodeGen::print_value() const { print_value(currentValue); }

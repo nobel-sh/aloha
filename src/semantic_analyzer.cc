@@ -91,9 +91,7 @@ void SemanticAnalyzer::visit(IfStatement *node) {
 void SemanticAnalyzer::visit(WhileLoop *node) {
   node->condition->accept(*this);
   symbolTable.enterScope();
-  for (auto &stmt : node->body) {
-    stmt->accept(*this);
-  }
+  node->body->accept(*this);
   symbolTable.leaveScope();
 }
 

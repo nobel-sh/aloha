@@ -71,7 +71,7 @@ void Lexer::lex() {
         tokens.push_back(Token(pos, TokenKind::EQUALEQUAL, "=="));
         consume_token();
       } else {
-        tokens.push_back(Token(pos, TokenKind::EQUALS, "!"));
+        tokens.push_back(Token(pos, TokenKind::EQUALS, "="));
       }
       break;
     case '_':

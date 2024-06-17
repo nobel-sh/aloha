@@ -188,8 +188,7 @@ std::shared_ptr<Statement> Parser::parse_while_loop() {
   auto condition = parse_expression(0);
   consume("do", "Expected 'do' keyword after condition");
   auto body = parse_statements();
-  consume("end", "Expected 'end' keyword after while loop");
-  return std::make_shared<WhileLoop>(condition, body->statements);
+  return std::make_shared<WhileLoop>(condition, body);
 }
 
 enum Precedence {
@@ -300,7 +299,7 @@ Parser::parse_infix_expressions(std::shared_ptr<Expression> left,
       break;
     if (auto infixParserIter = infixParsers.find(lexeme);
         infixParserIter != infixParsers.end()) {
-      advance(); // Consume the operator token
+      advance();
       left = infixParserIter->second(*this, left);
     } else {
       report_error("No infix parser found for operator: " + lexeme);
@@ -313,7 +312,7 @@ Parser::parse_infix_expressions(std::shared_ptr<Expression> left,
 std::shared_ptr<Expression> Parser::parse_primary() {
   if (auto token = peek()) {
     if (token->kind == TokenKind::LPAREN) {
-      advance(); // Consume '('
+      advance();
       auto expression = parse_expression(PREC_ASSIGNMENT);
       consume(")", "Expected ')' after expression");
       return expression;
@@ -336,7 +335,6 @@ std::shared_ptr<Expression> Parser::parse_primary() {
       return std::make_shared<Number>(token->lexeme);
     }
   }
-
   report_error("Expected expression");
   return nullptr;
 }

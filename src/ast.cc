@@ -73,7 +73,7 @@ void WhileLoop::write(std::ostream &os, int indent) const {
   os << std::string(indent + 2, ' ') << "Condition:" << std::endl;
   condition->write(os, indent + 4);
   os << std::string(indent + 2, ' ') << "Body:" << std::endl;
-  for (const auto &stmt : body) {
+  for (const auto &stmt : body->statements) {
     stmt->write(os, indent + 4);
   }
 }

@@ -149,8 +149,8 @@ public:
 class WhileLoop : public Statement {
 public:
   ExprPtr condition;
-  std::vector<StmtPtr> body;
-  WhileLoop(ExprPtr cond, std::vector<StmtPtr> b)
+  std::shared_ptr<StatementList> body;
+  WhileLoop(ExprPtr cond, std::shared_ptr<StatementList> b)
       : condition(std::move(cond)), body(std::move(b)) {}
   void write(std::ostream &os, int indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
