@@ -61,6 +61,7 @@ private:
   std::shared_ptr<Expression>
   parse_infix_expressions(std::shared_ptr<Expression> left, int min_precedence);
   std::shared_ptr<Expression> parse_primary();
+  std::shared_ptr<Expression> parse_function_call();
 };
 
 #endif // PARSER_H_

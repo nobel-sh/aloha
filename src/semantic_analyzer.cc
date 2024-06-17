@@ -1,5 +1,6 @@
 #include "semantic_analyzer.h"
 #include "type.h"
+#include <vector>
 
 void SemanticAnalyzer::analyze(Program *program) { program->accept(*this); }
 
@@ -45,19 +46,19 @@ void SemanticAnalyzer::visit(Declaration *node) {
 }
 
 void SemanticAnalyzer::visit(FunctionCall *node) {
-  FunctionInfo *funcInfo = symbolTable.getFunction(node->functionName);
+  FunctionInfo *funcInfo = symbolTable.getFunction(node->funcName->name);
   if (!funcInfo) {
-    throw TypeError("Undeclared function: " + node->functionName);
+    throw TypeError("Undeclared function: " + node->funcName->name);
   }
   if (node->arguments.size() != funcInfo->parameterTypes.size()) {
     throw TypeError("Argument count mismatch in function call: " +
-                    node->functionName);
+                    node->funcName->name);
   }
   for (size_t i = 0; i < node->arguments.size(); ++i) {
     node->arguments[i]->accept(*this);
     if (node->arguments[i]->getType() != funcInfo->parameterTypes[i]) {
       throw TypeError("Argument type mismatch in function call: " +
-                      node->functionName);
+                      node->funcName->name);
     }
   }
 }
@@ -107,7 +108,12 @@ void SemanticAnalyzer::visit(ForLoop *node) {
 }
 
 void SemanticAnalyzer::visit(Function *node) {
-  if (!symbolTable.addFunction(node->name->name, node->returnType, {})) {
+  std::vector<AlohaType::Type> parameterType;
+  for (const auto &param : node->parameters) {
+    parameterType.push_back(param.type);
+  }
+  if (!symbolTable.addFunction(node->name->name, node->returnType,
+                               parameterType)) {
     throw TypeError("Function redeclaration: " + node->name->name);
   }
 

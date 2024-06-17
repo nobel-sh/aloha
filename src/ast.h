@@ -115,13 +115,14 @@ public:
 
 class FunctionCall : public Expression {
 public:
-  std::string functionName;
+  std::shared_ptr<Identifier> funcName;
   std::vector<ExprPtr> arguments;
-  FunctionCall(const std::string &funcName, std::vector<ExprPtr> args)
-      : functionName(funcName), arguments(std::move(args)) {}
+  AlohaType::Type type;
+  FunctionCall(std::shared_ptr<Identifier> &funcName, std::vector<ExprPtr> args)
+      : funcName(funcName), arguments(std::move(args)) {}
   void write(std::ostream &os, int indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type getType() const override { return AlohaType::Type::VOID; }
+  AlohaType::Type getType() const override { return type; }
 };
 
 class ReturnStatement : public Statement {

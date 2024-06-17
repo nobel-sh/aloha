@@ -317,6 +317,9 @@ std::shared_ptr<Expression> Parser::parse_primary() {
       consume(")", "Expected ')' after expression");
       return expression;
     } else if (token->kind == TokenKind::IDENT) {
+      if (next()->kind == TokenKind::LPAREN) {
+        return parse_function_call();
+      }
       advance();
       if (is_reserved_ident(*token)) {
         if (token->lexeme == "null")
@@ -337,6 +340,24 @@ std::shared_ptr<Expression> Parser::parse_primary() {
   }
   report_error("Expected expression");
   return nullptr;
+}
+
+std::shared_ptr<Expression> Parser::parse_function_call() {
+  auto name = expect_identifier();
+  consume(TokenKind::LPAREN, "function call must be followed by `(`");
+  std::vector<ExprPtr> args;
+  if (match(TokenKind::RPAREN)) {
+    advance();
+    return std::make_shared<FunctionCall>(name, args);
+  }
+  args.push_back(parse_expression(0));
+  while (match(TokenKind::COMMA)) {
+    advance();
+    auto arg = parse_expression(0);
+    args.push_back(arg);
+  }
+  consume(TokenKind::RPAREN, "function call must be end with `)`");
+  return std::make_shared<FunctionCall>(name, args);
 }
 
 std::shared_ptr<Identifier> Parser::expect_identifier() {

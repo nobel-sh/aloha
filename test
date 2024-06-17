@@ -1,9 +1,14 @@
-fun isTrue(a:bool,b:bool)->bool
+fun foo(idx:number,accumulator:number)-> number
 do
-    if a then
-       return true
-    end else if b then
-        return true
+    if idx == 10 then
+       return accumulator
     end
-    return false
+    var incremented = idx + 1
+    return foo(incremented ,accumulator+incremented)
+
+end
+
+fun bar()->number
+do
+    return foo(0,0)
 end

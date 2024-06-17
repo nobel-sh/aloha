@@ -40,7 +40,7 @@ void Declaration::write(std::ostream &os, int indent) const {
 }
 
 void FunctionCall::write(std::ostream &os, int indent) const {
-  os << std::string(indent, ' ') << "Function Call: " << functionName
+  os << std::string(indent, ' ') << "Function Call: " << funcName->name
      << std::endl;
   for (const auto &arg : arguments) {
     arg->write(os, indent + 2);
@@ -93,6 +93,7 @@ void ForLoop::write(std::ostream &os, int indent) const {
 }
 
 void Function::write(std::ostream &os, int indent) const {
+  os << std::endl;
   os << std::string(indent, ' ') << "Function: " << name->name << std::endl;
   os << std::string(indent, ' ') << "Parameters:" << std::endl;
   for (const auto &p : parameters) {

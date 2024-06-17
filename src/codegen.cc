@@ -98,10 +98,10 @@ void CodeGen::visit(Declaration *node) {
 }
 
 void CodeGen::visit(FunctionCall *node) {
-  llvm::Function *calleeF = module->getFunction(node->functionName);
+  llvm::Function *calleeF = module->getFunction(node->funcName->name);
   if (!calleeF) {
     throw std::runtime_error("Unknown function referenced: " +
-                             node->functionName);
+                             node->funcName->name);
   }
   std::vector<llvm::Value *> argsV;
   for (unsigned i = 0, e = node->arguments.size(); i != e; ++i) {
