@@ -2,6 +2,7 @@
 #define SYMBOLTABLE_H_
 
 #include "type.h"
+#include <algorithm>
 #include <iostream>
 #include <stack>
 #include <string>
@@ -31,11 +32,14 @@ public:
   void enterScope();
   void leaveScope();
 
+  bool isBuiltinFunction(std::string name) const;
   void dump() const;
 
 private:
   std::vector<std::unordered_map<std::string, VariableInfo>> variableTableStack;
   std::unordered_map<std::string, FunctionInfo> functionTable;
+  std::vector<std::string> predefined_functions = {"print", "println",
+                                                   "printNum", "printlnNum"};
 };
 
 #endif // SYMBOLTABLE_H_

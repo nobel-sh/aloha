@@ -40,6 +40,14 @@ public:
   bool empty() const { return statements.size() == 0; }
 };
 
+class ExpressionStatement : public Statement {
+public:
+  ExprPtr expr;
+  explicit ExpressionStatement(ExprPtr expr) : expr(std::move(expr)) {}
+  void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+};
+
 class Number : public Expression {
 public:
   std::string value;

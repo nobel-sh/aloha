@@ -14,6 +14,7 @@ class IfStatement;
 class WhileLoop;
 class ForLoop;
 class Function;
+class ExpressionStatement;
 class StatementList;
 class Program;
 
@@ -31,6 +32,7 @@ public:
   virtual void visit(WhileLoop *node) = 0;
   virtual void visit(ForLoop *node) = 0;
   virtual void visit(Function *node) = 0;
+  virtual void visit(ExpressionStatement *node) = 0;
   virtual void visit(StatementList *node) = 0;
   virtual void visit(Program *node) = 0;
 };

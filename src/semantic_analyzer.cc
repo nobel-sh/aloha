@@ -1,4 +1,5 @@
 #include "semantic_analyzer.h"
+#include "ast.h"
 #include "type.h"
 #include <vector>
 
@@ -12,6 +13,10 @@ void SemanticAnalyzer::analyze(Program *program) {
 void SemanticAnalyzer::visit(Number *node) {}
 
 void SemanticAnalyzer::visit(Boolean *node) {}
+
+void SemanticAnalyzer::visit(ExpressionStatement *node) {
+  node->expr->accept(*this);
+}
 
 void SemanticAnalyzer::visit(UnaryExpression *node) {
   node->expr->accept(*this);
@@ -52,8 +57,14 @@ void SemanticAnalyzer::visit(Declaration *node) {
 
 void SemanticAnalyzer::visit(FunctionCall *node) {
   FunctionInfo *funcInfo = symbolTable.getFunction(node->funcName->name);
+  auto isBuiltin = symbolTable.isBuiltinFunction(node->funcName->name);
+  if (isBuiltin) {
+    return; // HACK: dont check anything for now but should be a good idea to
+            // add protoypes and check for types and so on
+  }
   if (!funcInfo) {
     error.addError("Undeclared function: " + node->funcName->name);
+    return;
   }
   if (node->arguments.size() != funcInfo->parameterTypes.size()) {
     error.addError("Argument count mismatch in function call: " +

@@ -17,6 +17,7 @@ public:
 
   void visit(Number *node) override;
   void visit(Boolean *node) override;
+  void visit(ExpressionStatement *node) override;
   void visit(UnaryExpression *node) override;
   void visit(BinaryExpression *node) override;
   void visit(Identifier *node) override;
@@ -40,6 +41,8 @@ public:
   std::unique_ptr<llvm::Module> module;
   llvm::IRBuilder<> builder;
   std::unordered_map<std::string, llvm::AllocaInst *> namedValues;
+
+  void addBuiltinFunctions();
 
 private:
   llvm::Value *currentValue;       // Current value during traversal

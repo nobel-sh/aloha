@@ -12,6 +12,10 @@ void Boolean::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Boolean: " << value_str << std::endl;
 }
 
+void ExpressionStatement::write(std::ostream &os, int indent) const {
+  os << std::string(indent, ' ') << "Expression Statement:" << std::endl;
+  expr->write(os, indent + 2);
+}
 void UnaryExpression::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Unary Expression: " << op << std::endl;
   expr->write(os, indent + 2);

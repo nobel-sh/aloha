@@ -17,7 +17,7 @@ project(aloha)
 
 set(SOURCE_FILES src/main.cc src/token.cc src/lexer.cc
                  src/ast.cc src/parser.cc src/semantic_analyzer.cc
-                 src/symbolTable.cc src/codegen.cc src/objgen.cc
+                 src/symbolTable.cc src/codegen.cc src/objgen.cc src/stdlib.cc
                )
 llvm_map_components_to_libnames(LLVM_LIBS
     core

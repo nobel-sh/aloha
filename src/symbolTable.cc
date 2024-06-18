@@ -51,6 +51,12 @@ void SymbolTable::leaveScope() {
   }
 }
 
+bool SymbolTable::isBuiltinFunction(std::string name) const {
+  auto it =
+      std::find(predefined_functions.begin(), predefined_functions.end(), name);
+  return it != predefined_functions.end();
+}
+
 void SymbolTable::dump() const {
   std::cout << "Symbol Table Dump:" << std::endl;
   std::cout << "Functions:" << std::endl;

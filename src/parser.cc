@@ -123,6 +123,9 @@ std::shared_ptr<Statement> Parser::parse_statement() {
   } else if (match("while")) {
     return parse_while_loop();
   } else {
+    if (peek()->kind == TokenKind::IDENT) {
+      return parse_expression_statement();
+    }
     // TODO: better handle this error
     //  report_error();
     if (is_eof()) {
@@ -134,6 +137,10 @@ std::shared_ptr<Statement> Parser::parse_statement() {
   }
 }
 
+std::shared_ptr<Statement> Parser::parse_expression_statement() {
+  auto expr = parse_expression(0);
+  return std::make_shared<ExpressionStatement>(expr);
+}
 std::shared_ptr<StatementList> Parser::parse_statements() {
   std::cerr << "DEBUG: Parsing statements" << std::endl;
   std::vector<StmtPtr> stmts;

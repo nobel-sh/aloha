@@ -18,6 +18,7 @@ CodeGen::CodeGen()
 }
 
 bool CodeGen::generateCode(Program *program) {
+  addBuiltinFunctions();
   program->accept(*this);
   auto status = llvm::verifyModule(*module, &llvm::errs());
   dumpIR();
@@ -33,6 +34,8 @@ void CodeGen::visit(Boolean *node) {
   auto value = node->value;
   currentValue = llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
 }
+
+void CodeGen::visit(ExpressionStatement *node) { node->expr->accept(*this); }
 
 void CodeGen::visit(UnaryExpression *node) {
   node->expr->accept(*this);
@@ -304,4 +307,17 @@ void CodeGen::dumpNamedValues() const {
     print_llvm_type(pair.second->getAllocatedType());
     std::cout << std::endl;
   }
+}
+void CodeGen::addBuiltinFunctions() {
+  llvm::FunctionType *printType =
+      llvm::FunctionType::get(llvm::Type::getVoidTy(context),
+                              {llvm::PointerType::getUnqual(context)}, false);
+  llvm::FunctionType *printNumType =
+      llvm::FunctionType::get(llvm::Type::getVoidTy(context),
+                              {llvm::Type::getDoubleTy(context)}, false);
+
+  module->getOrInsertFunction("print", printType);
+  module->getOrInsertFunction("println", printType);
+  module->getOrInsertFunction("printNum", printNumType);
+  module->getOrInsertFunction("printlnNum", printNumType);
 }

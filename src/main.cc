@@ -31,8 +31,8 @@ int main() {
     std::cout << "------------------" << std::endl;
     CodeGen codegen;
     auto status = codegen.generateCode(p.get());
-    if (!status)
-      objgen(codegen, "output.o");
+    // if (!status)
+    objgen(codegen, "output.o");
   } catch (TypeError e) {
     e.print_error();
   }
