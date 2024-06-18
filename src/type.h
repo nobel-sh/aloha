@@ -2,14 +2,25 @@
 #define TYPE_H_
 
 #include <cassert>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
-class TypeError : public std::runtime_error {
+class TypeError {
 public:
-  explicit TypeError(const std::string &message)
-      : std::runtime_error(message) {}
+  explicit TypeError() {}
+  void print_error() {
+    for (const auto error : errors_) {
+      std::cerr << "ERROR: " << error << std::endl;
+    }
+  }
+  void addError(const std::string &message) { errors_.push_back(message); }
+  bool isEmpty() { return errors_.empty(); }
+
+private:
+  std::vector<std::string> errors_;
 };
 
 namespace AlohaType {

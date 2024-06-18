@@ -2,7 +2,12 @@
 #include "type.h"
 #include <vector>
 
-void SemanticAnalyzer::analyze(Program *program) { program->accept(*this); }
+void SemanticAnalyzer::analyze(Program *program) {
+  program->accept(*this);
+  if (!error.isEmpty()) {
+    throw error;
+  }
+}
 
 void SemanticAnalyzer::visit(Number *node) {}
 
@@ -20,15 +25,14 @@ void SemanticAnalyzer::visit(BinaryExpression *node) {
   if (node->left->getType() == node->right->getType()) {
     node->type = node->left->getType();
   } else {
-    node->type = AlohaType::Type::UNKNOWN;
-    throw TypeError("Type mismatch in binary expression");
+    error.addError("Type mismatch in binary expression");
   }
 }
 
 void SemanticAnalyzer::visit(Identifier *node) {
   VariableInfo *varInfo = symbolTable.getVariable(node->name);
   if (!varInfo) {
-    throw TypeError("Undeclared variable: " + node->name);
+    error.addError("Undeclared variable: " + node->name);
   }
   node->type = varInfo->type;
 }
@@ -41,24 +45,25 @@ void SemanticAnalyzer::visit(Declaration *node) {
   }
 
   if (!symbolTable.addVariable(node->variableName, node->type.value())) {
-    throw TypeError("Variable redeclaration: " + node->variableName);
+    error.addError("Variable redeclaration: " + node->variableName);
+    // throw TypeError("Variable redeclaration: " + node->variableName);
   }
 }
 
 void SemanticAnalyzer::visit(FunctionCall *node) {
   FunctionInfo *funcInfo = symbolTable.getFunction(node->funcName->name);
   if (!funcInfo) {
-    throw TypeError("Undeclared function: " + node->funcName->name);
+    error.addError("Undeclared function: " + node->funcName->name);
   }
   if (node->arguments.size() != funcInfo->parameterTypes.size()) {
-    throw TypeError("Argument count mismatch in function call: " +
-                    node->funcName->name);
+    error.addError("Argument count mismatch in function call: " +
+                   node->funcName->name);
   }
   for (size_t i = 0; i < node->arguments.size(); ++i) {
     node->arguments[i]->accept(*this);
     if (node->arguments[i]->getType() != funcInfo->parameterTypes[i]) {
-      throw TypeError("Argument type mismatch in function call: " +
-                      node->funcName->name);
+      error.addError("Argument type mismatch in function call: " +
+                     node->funcName->name);
     }
   }
 }
@@ -72,8 +77,8 @@ void SemanticAnalyzer::visit(ReturnStatement *node) {
     std::cout << AlohaType::to_string(currentFunction->returnType) << std::endl;
 
     symbolTable.dump();
-    throw TypeError("Return type mismatch in function: " +
-                    currentFunction->name->name);
+    error.addError("Return type mismatch in function: " +
+                   currentFunction->name->name);
   }
 }
 
@@ -114,7 +119,7 @@ void SemanticAnalyzer::visit(Function *node) {
   }
   if (!symbolTable.addFunction(node->name->name, node->returnType,
                                parameterType)) {
-    throw TypeError("Function redeclaration: " + node->name->name);
+    error.addError("Function redeclaration: " + node->name->name);
   }
 
   symbolTable.enterScope();
@@ -122,7 +127,7 @@ void SemanticAnalyzer::visit(Function *node) {
 
   for (const auto &param : node->parameters) {
     if (!symbolTable.addVariable(param.name, param.type)) {
-      throw TypeError("Parameter redeclaration: " + param.name);
+      error.addError("Parameter redeclaration: " + param.name);
     }
   }
   node->body->accept(*this);

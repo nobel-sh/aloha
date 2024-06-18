@@ -4,6 +4,7 @@
 #include "ASTVisitor.h"
 #include "ast.h"
 #include "symbolTable.h"
+#include "type.h"
 
 class SemanticAnalyzer : public ASTVisitor {
 public:
@@ -29,6 +30,7 @@ public:
 private:
   SymbolTable symbolTable;
   Function *currentFunction = nullptr;
+  TypeError error;
 };
 
 #endif // SEMANTIC_ANALYZER_H

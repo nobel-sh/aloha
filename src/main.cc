@@ -34,6 +34,6 @@ int main() {
     if (!status)
       objgen(codegen, "output.o");
   } catch (TypeError e) {
-    std::cerr << e.what() << std::endl;
+    e.print_error();
   }
 }
