@@ -8,20 +8,25 @@
 #include <iostream>
 #include <vector>
 
-int main() {
-  auto source = AlohaReader("test").as_bytes();
-  Lexer lexer(source);
-  lexer.lex();
-  if (lexer.has_error) {
-    lexer.dump_error();
-    exit(1);
-  }
-  lexer.dump();
-  Parser parser(lexer.tokens);
-  auto p = parser.parse();
-  p->write(std::cout, 2);
-
+int main(int argc, char *argv[]) {
   try {
+    if (argc < 2) {
+      std::cerr << "ERROR: no input provided to the compiler." << std::endl;
+      exit(1);
+    }
+    auto filename = argv[1];
+    auto source = AlohaReader(filename).as_bytes();
+    Lexer lexer(source);
+    lexer.lex();
+    if (lexer.has_error) {
+      lexer.dump_error();
+      exit(1);
+    }
+    lexer.dump();
+    Parser parser(lexer.tokens);
+    auto p = parser.parse();
+    p->write(std::cout, 2);
+
     SemanticAnalyzer analyzer;
     analyzer.analyze(p.get());
     std::cout << "No semantic errors" << std::endl;
@@ -35,5 +40,7 @@ int main() {
     objgen(codegen, "output.o");
   } catch (TypeError e) {
     e.print_error();
+  } catch (const std::runtime_error &e) {
+    std::cerr << "ERROR: " << e.what() << std::endl;
   }
 }

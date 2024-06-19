@@ -1,0 +1,10 @@
+fun bar()->number
+do
+   return 69
+end
+
+fun main()->number
+do
+    printlnNum(10)
+    return 10
+end
