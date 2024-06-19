@@ -329,12 +329,13 @@ std::shared_ptr<Expression> Parser::parse_primary() {
         }
       }
       return std::make_shared<Identifier>(token->lexeme);
-    } else if (token->kind == TokenKind::INT) {
+    } else if (token->kind == TokenKind::INT ||
+               token->kind == TokenKind::FLOAT) {
       advance();
       return std::make_shared<Number>(token->lexeme);
-    } else if (token->kind == TokenKind::FLOAT) {
+    } else if (token->kind == TokenKind::STRING) {
       advance();
-      return std::make_shared<Number>(token->lexeme);
+      return std::make_shared<AlohaString>(token->lexeme);
     }
   }
   report_error("Expected expression");

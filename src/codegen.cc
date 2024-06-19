@@ -5,8 +5,10 @@
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/GlobalVariable.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Type.h>
+#include <llvm/IR/Value.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_os_ostream.h>
@@ -32,6 +34,11 @@ void CodeGen::visit(Number *node) {
 void CodeGen::visit(Boolean *node) {
   auto value = node->value;
   currentValue = llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
+}
+
+void CodeGen::visit(AlohaString *node) {
+  auto const &str = node->value;
+  currentValue = builder.CreateGlobalStringPtr(str, "str");
 }
 
 void CodeGen::visit(ExpressionStatement *node) { node->expr->accept(*this); }
@@ -271,6 +278,8 @@ llvm::Type *CodeGen::getLLVMType(AlohaType::Type type) {
     return llvm::Type::getVoidTy(context);
   case AlohaType::Type::BOOL:
     return llvm::Type::getInt1Ty(context);
+  case AlohaType::Type::STRING:
+    return llvm::PointerType::get(llvm::Type::getInt8Ty(context), 0);
   default:
     throw std::runtime_error(
         "Unknown type while converting from Aloha Type to LLVM Type");

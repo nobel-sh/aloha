@@ -12,6 +12,7 @@ public:
 
   void visit(Number *node) override;
   void visit(Boolean *node) override;
+  void visit(AlohaString *node) override;
   void visit(ExpressionStatement *node) override;
   void visit(UnaryExpression *node) override;
   void visit(BinaryExpression *node) override;

@@ -4,6 +4,7 @@
 // forward decls avoiding dependency cycle
 class Number;
 class Boolean;
+class AlohaString;
 class UnaryExpression;
 class BinaryExpression;
 class Identifier;
@@ -22,6 +23,7 @@ class ASTVisitor {
 public:
   virtual void visit(Number *node) = 0;
   virtual void visit(Boolean *node) = 0;
+  virtual void visit(AlohaString *node) = 0;
   virtual void visit(UnaryExpression *node) = 0;
   virtual void visit(BinaryExpression *node) = 0;
   virtual void visit(Identifier *node) = 0;

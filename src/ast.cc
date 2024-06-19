@@ -12,6 +12,10 @@ void Boolean::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Boolean: " << value_str << std::endl;
 }
 
+void AlohaString::write(std::ostream &os, int indent) const {
+  os << std::string(indent, ' ') << "String: " << value << std::endl;
+}
+
 void ExpressionStatement::write(std::ostream &os, int indent) const {
   os << std::string(indent, ' ') << "Expression Statement:" << std::endl;
   expr->write(os, indent + 2);

@@ -65,6 +65,16 @@ public:
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
   AlohaType::Type getType() const override { return AlohaType::Type::BOOL; }
 };
+
+class AlohaString : public Expression {
+public:
+  std::string value;
+  explicit AlohaString(const std::string &val) : value(std::move(val)) {}
+  void write(std::ostream &os, int indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type getType() const override { return AlohaType::Type::STRING; }
+};
+
 class UnaryExpression : public Expression {
 public:
   std::string op;
