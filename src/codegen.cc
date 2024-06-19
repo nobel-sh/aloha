@@ -110,7 +110,10 @@ void CodeGen::visit(FunctionCall *node) {
     node->arguments[i]->accept(*this);
     argsV.push_back(currentValue);
   }
-  currentValue = builder.CreateCall(calleeF, argsV, "calltmp");
+  if (calleeF->getReturnType()->isVoidTy()) {
+    currentValue = builder.CreateCall(calleeF, argsV);
+  } else
+    currentValue = builder.CreateCall(calleeF, argsV, "calltmp");
 }
 
 void CodeGen::visit(ReturnStatement *node) {
