@@ -209,11 +209,11 @@ std::map<std::string, Precedence> precedence = {
 };
 
 std::map<std::string, Parser::PrefixParserFunc> Parser::prefixParsers = {
-    {"-",
-     [](Parser &parser) {
-       return std::make_shared<UnaryExpression>(
-           "-", parser.parse_expression(PREC_PREFIX));
-     }},
+    // {"-",
+    //  [](Parser &parser) {
+    //    return std::make_shared<UnaryExpression>(
+    //        "-", parser.parse_expression(PREC_PREFIX));
+    //  }},
 };
 
 std::map<std::string, Parser::InfixParserFunc> Parser::infixParsers = {
