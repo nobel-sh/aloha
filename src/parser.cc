@@ -28,8 +28,6 @@ void Parser::consume(const T &value, std::string message) {
   if (match(value, false)) {
     advance();
   } else {
-    std::cout << "DEBUG: Match Failed" << std::endl;
-    std::cout << "DEBUG: Found:" << std::endl;
     peek()->dump();
     report_error(message);
     if (!this->get_errors().empty()) {
@@ -71,7 +69,6 @@ const std::vector<std::string> &Parser::get_errors() const {
 }
 
 std::unique_ptr<Program> Parser::parse() {
-  std::cerr << "DEBUG: Parsing Program" << std::endl;
   auto program = std::make_unique<Program>();
   while (!is_eof()) {
     program->nodes.push_back(parse_function());
@@ -80,7 +77,6 @@ std::unique_ptr<Program> Parser::parse() {
 }
 
 std::shared_ptr<Function> Parser::parse_function() {
-  std::cerr << "DEBUG: Parsing Function" << std::endl;
 
   consume("fun", "Expected 'fun' keyword");
   auto identifier = expect_identifier();
@@ -97,7 +93,6 @@ std::shared_ptr<Function> Parser::parse_function() {
 }
 
 std::vector<Parameter> Parser::parse_parameters() {
-  std::cerr << "DEBUG: Parsing parameters" << std::endl;
   std::vector<Parameter> parameters;
   while (peek() && peek()->lexeme != ")") {
     auto identifier = expect_identifier();
@@ -113,7 +108,6 @@ std::vector<Parameter> Parser::parse_parameters() {
 }
 
 std::shared_ptr<Statement> Parser::parse_statement() {
-  std::cerr << "DEBUG: Parsing statement" << std::endl;
   if (match("var")) {
     return parse_variable_declaration();
   } else if (match("return")) {
@@ -142,7 +136,6 @@ std::shared_ptr<Statement> Parser::parse_expression_statement() {
   return std::make_shared<ExpressionStatement>(expr);
 }
 std::shared_ptr<StatementList> Parser::parse_statements() {
-  std::cerr << "DEBUG: Parsing statements" << std::endl;
   std::vector<StmtPtr> stmts;
   while (peek() && peek()->lexeme != "end" && !is_eof()) {
     auto stmt = parse_statement();
@@ -155,7 +148,6 @@ std::shared_ptr<StatementList> Parser::parse_statements() {
 }
 
 std::shared_ptr<Statement> Parser::parse_variable_declaration() {
-  std::cerr << "DEBUG: Parsing variable declaration" << std::endl;
   consume("var", "Expected 'var' keyword");
   auto identifier = expect_identifier();
   auto type = optional_type();

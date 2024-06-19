@@ -21,7 +21,6 @@ bool CodeGen::generateCode(Program *program) {
   addBuiltinFunctions();
   program->accept(*this);
   auto status = llvm::verifyModule(*module, &llvm::errs());
-  dumpIR();
   return status;
 }
 
