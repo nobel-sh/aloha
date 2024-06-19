@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "semantic_analyzer.h"
 #include "type.h"
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -25,6 +26,28 @@ void print_dotted_lines(int count, bool newline = true) {
     std::cout << std::endl;
 }
 
+void link_objects(std::string object_name, std::string executable_name) {
+  std::string object_files = object_name + " stdlib.o";
+  std::string command = "clang++ " + object_files + " -o " + executable_name;
+  int result = std::system(command.c_str());
+  if (result == 0) {
+    std::cout << "Linking successful, executable created: " << executable_name
+              << std::endl;
+  } else {
+    std::cerr << "Linking failed with error code: " << result << std::endl;
+  }
+}
+
+std::vector<std::string> split_on(const std::string &str, char delimiter) {
+  std::vector<std::string> parts;
+  std::stringstream ss(str);
+  std::string item;
+  while (std::getline(ss, item, delimiter)) {
+    parts.push_back(item);
+  }
+  return parts;
+}
+
 int main(int argc, char *argv[]) {
   try {
     if (argc < 2) {
@@ -33,7 +56,8 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    std::filesystem::path filename = argv[1];
+    std::filesystem::path input_filename = argv[1];
+    std::string file_name = split_on(input_filename.string(), '.').front();
     std::optional<bool> dump_flag = std::nullopt;
 
     for (int i = 2; i < argc; ++i) {
@@ -44,12 +68,12 @@ int main(int argc, char *argv[]) {
       } else if (arg == "--dump") {
         dump_flag = true;
       } else if (arg == "--version") {
-        std::cout << "Program version 1.0\n";
+        std::cout << "Aloha version 0.1\n";
         return 0;
       }
     }
 
-    auto source = AlohaReader(filename.string()).as_bytes();
+    auto source = AlohaReader(input_filename.string()).as_bytes();
     Lexer lexer(source);
     lexer.lex();
 
@@ -68,7 +92,9 @@ int main(int argc, char *argv[]) {
     auto status = codegen.generateCode(p.get());
 
     // if (!status)
-    objgen(codegen, "output.o");
+    auto object_name = file_name + ".o";
+    objgen(codegen, object_name);
+    link_objects(object_name, file_name);
 
     if (dump_flag.value_or(false)) {
       std::cout << std::endl;

@@ -1,10 +1,6 @@
-fun bar()->number
+fun main()->void
 do
-   return 69
-end
+    var k = 10
+    print(k)
 
-fun main()->number
-do
-    printlnNum(10)
-    return 10
 end
