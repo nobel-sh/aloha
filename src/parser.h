@@ -20,6 +20,7 @@ public:
   explicit Parser(std::vector<Token> tokens);
 
   std::unique_ptr<Program> parse();
+  void dump(Program *p) const;
   const std::vector<std::string> &get_errors() const;
 
 private:

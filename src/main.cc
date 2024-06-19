@@ -76,41 +76,41 @@ int main(int argc, char *argv[]) {
     auto source = AlohaReader(input_filename.string()).as_bytes();
     Lexer lexer(source);
     lexer.lex();
-
-    if (lexer.has_error) {
-      lexer.dump_error();
-      return 1;
+    if (dump_flag.value_or(false)) {
+      std::cout << "Lexer Dump" << std::endl;
+      lexer.dump();
+      print_dotted_lines(50);
     }
 
     Parser parser(lexer.tokens);
     auto p = parser.parse();
+    if (dump_flag.value_or(false)) {
+      std::cout << "Untyped AST" << std::endl;
+      parser.dump(p.get());
+      print_dotted_lines(50);
+    }
 
     SemanticAnalyzer analyzer;
     analyzer.analyze(p.get());
+    if (dump_flag.value_or(false)) {
+      std::cout << "Semantic Analyzer: No semantic errors" << std::endl;
+      print_dotted_lines(50);
+      std::cout << "Typed AST" << std::endl;
+      parser.dump(p.get());
+      print_dotted_lines(50);
+    }
 
     CodeGen codegen;
     auto status = codegen.generateCode(p.get());
 
     // if (!status)
     auto object_name = file_name + ".o";
-    objgen(codegen, object_name);
-    link_objects(object_name, file_name);
-
     if (dump_flag.value_or(false)) {
-      std::cout << std::endl;
-      lexer.dump();
-      print_dotted_lines(50);
-      std::cout << "Untyped AST" << std::endl;
-      p->write(std::cout, 2);
-      print_dotted_lines(50);
-      std::cout << "Semantic Analyzer: No semantic errors" << std::endl;
-      print_dotted_lines(50);
-      std::cout << "Typed AST" << std::endl;
-      print_dotted_lines(50);
-      p->write(std::cout, 2);
       print_dotted_lines(50);
       codegen.dumpIR();
     }
+    objgen(codegen, object_name);
+    link_objects(object_name, file_name);
   } catch (const TypeError &e) {
     e.print_error();
   } catch (const std::runtime_error &e) {

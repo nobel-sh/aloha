@@ -403,3 +403,5 @@ bool Parser::is_reserved_ident() const {
     return true;
   return false;
 }
+
+void Parser::dump(Program *p) const { p->write(std::cout, 2); }
