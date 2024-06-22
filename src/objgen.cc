@@ -1,6 +1,8 @@
 #include "objgen.h"
 #include "codegen.h"
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Linker/Linker.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Support/FileSystem.h>
@@ -11,9 +13,28 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/TargetParser/Host.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Utils.h>
+#include <llvm/Transforms/Vectorize.h>
 #include <system_error>
 
 using namespace llvm;
+
+void optimize(CodeGen &codegen) {
+  legacy::PassManager pass_manager;
+  pass_manager.add(llvm::createLoopSimplifyPass());
+  pass_manager.add(llvm::createLCSSAPass());
+  pass_manager.add(llvm::createEarlyCSEPass());
+  pass_manager.add(llvm::createLoopUnrollPass());
+  pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
+  pass_manager.add(llvm::createInstructionCombiningPass());
+  pass_manager.add(llvm::createCFGSimplificationPass());
+  pass_manager.add(llvm::createDeadCodeEliminationPass());
+  pass_manager.run(*codegen.module);
+  verifyModule(*codegen.module);
+}
 
 void objgen(CodeGen &codegen, const std::string filename) {
 
@@ -22,9 +43,21 @@ void objgen(CodeGen &codegen, const std::string filename) {
   // InitializeAllTargetMCs();
   // InitializeAllAsmParsers();
   // InitializeAllAsmPrinters();
-  InitializeNativeTarget();
-  InitializeNativeTargetAsmParser();
-  InitializeNativeTargetAsmPrinter();
+  // InitializeNativeTarget();
+  // InitializeNativeTargetAsmParser();
+  // InitializeNativeTargetAsmPrinter();
+
+  // only handle x86 targets at this state
+  LLVMInitializeX86TargetInfo();
+  LLVMInitializeX86Target();
+  LLVMInitializeX86TargetMC();
+  LLVMInitializeX86AsmPrinter();
+  LLVMInitializeX86AsmParser();
+  LLVMInitializeWebAssemblyTargetInfo();
+  LLVMInitializeWebAssemblyTarget();
+  LLVMInitializeWebAssemblyTargetMC();
+  LLVMInitializeWebAssemblyAsmPrinter();
+  LLVMInitializeWebAssemblyAsmParser();
 
   auto TargetTriple = sys::getDefaultTargetTriple();
   codegen.module->setTargetTriple(TargetTriple);

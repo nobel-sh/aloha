@@ -1,6 +1,0 @@
-fun main()->void
-do
-    var k = 10
-    print(k)
-
-end

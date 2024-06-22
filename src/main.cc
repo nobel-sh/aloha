@@ -103,12 +103,15 @@ int main(int argc, char *argv[]) {
     CodeGen codegen;
     auto status = codegen.generateCode(p.get());
 
+    optimize(codegen);
+
     // if (!status)
     auto object_name = file_name + ".o";
     if (dump_flag.value_or(false)) {
       print_dotted_lines(50);
       codegen.dumpIR();
     }
+
     objgen(codegen, object_name);
     link_objects(object_name, file_name);
   } catch (const TypeError &e) {
