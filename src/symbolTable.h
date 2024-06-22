@@ -38,8 +38,8 @@ public:
 private:
   std::vector<std::unordered_map<std::string, VariableInfo>> variableTableStack;
   std::unordered_map<std::string, FunctionInfo> functionTable;
-  std::vector<std::string> predefined_functions = {"print", "println",
-                                                   "printNum", "printlnNum"};
+  std::vector<std::string> predefined_functions = {
+      "print", "println", "printNum", "printlnNum", "input"};
 };
 
 #endif // SYMBOLTABLE_H_

@@ -326,9 +326,15 @@ void CodeGen::addBuiltinFunctions() {
   llvm::FunctionType *printNumType =
       llvm::FunctionType::get(llvm::Type::getVoidTy(context),
                               {llvm::Type::getDoubleTy(context)}, false);
+  llvm::PointerType *char_type =
+      llvm::PointerType::get(llvm::Type::getInt8Ty(context), 0);
+
+  llvm::FunctionType *inputType = llvm::FunctionType::get(
+      char_type, {llvm::Type::getVoidTy(context)}, false);
 
   module->getOrInsertFunction("print", printType);
   module->getOrInsertFunction("println", printType);
   module->getOrInsertFunction("printNum", printNumType);
   module->getOrInsertFunction("printlnNum", printNumType);
+  module->getOrInsertFunction("input", inputType);
 }
