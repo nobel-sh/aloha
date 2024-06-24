@@ -164,7 +164,7 @@ void Lexer::handle_string() {
   Location loc(line, col);
   while (curr_char != '"') {
     curr_char = peek_token();
-    if (is_eof()) {
+    if (is_eof() || line != loc.line) {
       std::string err = "Non terminated String at: " + loc.to_string();
       has_error = true;
       errors.push_back(err);

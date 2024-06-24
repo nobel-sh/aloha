@@ -76,6 +76,10 @@ int main(int argc, char *argv[]) {
     auto source = AlohaReader(input_filename.string()).as_bytes();
     Lexer lexer(source);
     lexer.lex();
+    if (lexer.has_error) {
+      lexer.dump_error();
+      return 1;
+    }
     if (dump_flag.value_or(false)) {
       std::cout << "Lexer Dump" << std::endl;
       lexer.dump();
