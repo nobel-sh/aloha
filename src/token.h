@@ -1,10 +1,11 @@
 #ifndef TOKEN_H_
 #define TOKEN_H_
 
+#include "location.h"
 #include <cassert>
 #include <iostream>
-#include <memory>
 #include <map>
+#include <memory>
 
 enum class TokenKind {
   BANG,
@@ -41,16 +42,22 @@ enum class TokenKind {
 
 class Token {
 private:
- static const std::map<TokenKind, const std::string> token_to_string;
+  static const std::map<TokenKind, const std::string> token_to_string;
+  Location loc;
+
+public:
+  TokenKind kind;
+  const std::string lexeme;
+
 public:
   Token(unsigned int pos, TokenKind kind, const std::string lexeme)
-      : pos(pos), kind(kind), lexeme(std::move(lexeme)) {}
+      : loc(pos, pos), kind(kind), lexeme(lexeme) {}
 
-  void dump() const ;
+  Token(Location loc, TokenKind kind, const std::string lexeme)
+      : loc(loc), kind(kind), lexeme(std::move(lexeme)) {}
+
+  void dump() const;
   const std::string to_string() const;
-  TokenKind kind;
-  unsigned int pos;
-  const std::string lexeme;
 };
 
 #endif // TOKEN

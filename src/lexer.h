@@ -1,6 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include "location.h"
 #include "token.h"
 #include <cassert>
 #include <vector>
@@ -8,7 +9,7 @@
 class Lexer {
 public:
   Lexer(std::vector<char> source)
-      : source(std::move(source)), pos(0), has_error(false) {}
+      : source(std::move(source)), line(1), col(1), pos(0), has_error(false) {}
 
   void dump();
   void lex();
@@ -19,10 +20,14 @@ public:
 
 private:
   std::vector<char> source;
-  int pos;
+  unsigned int line;
+  unsigned int col;
+  unsigned int pos;
 
   bool is_eof() const;
-
+  void make_token(Location loc, TokenKind kind, std::string literal) {
+    tokens.push_back(Token(loc, kind, literal));
+  }
   void handle_string();
   void handle_number();
   void handle_ident();
@@ -34,4 +39,5 @@ private:
 
   std::vector<std::string> errors;
 };
+
 #endif

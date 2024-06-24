@@ -53,11 +53,6 @@ void objgen(CodeGen &codegen, const std::string filename) {
   LLVMInitializeX86TargetMC();
   LLVMInitializeX86AsmPrinter();
   LLVMInitializeX86AsmParser();
-  LLVMInitializeWebAssemblyTargetInfo();
-  LLVMInitializeWebAssemblyTarget();
-  LLVMInitializeWebAssemblyTargetMC();
-  LLVMInitializeWebAssemblyAsmPrinter();
-  LLVMInitializeWebAssemblyAsmParser();
 
   auto TargetTriple = sys::getDefaultTargetTriple();
   codegen.module->setTargetTriple(TargetTriple);
