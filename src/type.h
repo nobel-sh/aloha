@@ -12,7 +12,7 @@ class TypeError {
 public:
   explicit TypeError() {}
   void print_error() const {
-    for (const auto error : errors_) {
+    for (const std::string &error : errors_) {
       std::cerr << "ERROR: " << error << std::endl;
     }
   }

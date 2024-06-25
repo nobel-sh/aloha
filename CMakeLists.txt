@@ -2,13 +2,15 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_CXX_COMPILER "clang++")
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 23)
+endif()
+
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(aloha C CXX)
 
 find_package(LLVM REQUIRED CONFIG)
-
 find_package(ZLIB REQUIRED)
 find_package(LibEdit REQUIRED)
 find_package(Terminfo REQUIRED)
@@ -55,7 +57,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
         -Wall
         -Wextra
         -Werror
-    )
+        -Wshadow
+        -Wconversion
+        -Wpedantic
+        -Wno-unused-variable
+        -Wno-unused-function
+        -Wno-unused-parameter
+  )
 endif()
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")

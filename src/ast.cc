@@ -3,41 +3,41 @@
 #include <ostream>
 #include <string>
 
-void Number::write(std::ostream &os, int indent) const {
+void Number::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Number: " << value << std::endl;
 }
 
-void Boolean::write(std::ostream &os, int indent) const {
+void Boolean::write(std::ostream &os, unsigned long indent) const {
   auto value_str = value == true ? "True" : "False";
   os << std::string(indent, ' ') << "Boolean: " << value_str << std::endl;
 }
 
-void AlohaString::write(std::ostream &os, int indent) const {
+void AlohaString::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "String: " << value << std::endl;
 }
 
-void ExpressionStatement::write(std::ostream &os, int indent) const {
+void ExpressionStatement::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Expression Statement:" << std::endl;
   expr->write(os, indent + 2);
 }
-void UnaryExpression::write(std::ostream &os, int indent) const {
+void UnaryExpression::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Unary Expression: " << op << std::endl;
   expr->write(os, indent + 2);
 }
 
-void BinaryExpression::write(std::ostream &os, int indent) const {
+void BinaryExpression::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Binary Expression: " << op << std::endl;
   left->write(os, indent + 2);
   right->write(os, indent + 2);
 }
 
-void Identifier::write(std::ostream &os, int indent) const {
+void Identifier::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Identifier: " << name << std::endl;
   auto str_type = AlohaType::to_string(type);
   os << std::string(indent, ' ') << "Type: " << str_type << std::endl;
 }
 
-void Declaration::write(std::ostream &os, int indent) const {
+void Declaration::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Declaration: " << variableName
      << std::endl;
   if (type) {
@@ -47,7 +47,7 @@ void Declaration::write(std::ostream &os, int indent) const {
   expression->write(os, indent + 2);
 }
 
-void FunctionCall::write(std::ostream &os, int indent) const {
+void FunctionCall::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Function Call: " << funcName->name
      << std::endl;
   for (const auto &arg : arguments) {
@@ -55,12 +55,12 @@ void FunctionCall::write(std::ostream &os, int indent) const {
   }
 }
 
-void ReturnStatement::write(std::ostream &os, int indent) const {
+void ReturnStatement::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Return Statement:" << std::endl;
   expression->write(os, indent + 2);
 }
 
-void IfStatement::write(std::ostream &os, int indent) const {
+void IfStatement::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "If Statement:" << std::endl;
   os << std::string(indent + 2, ' ') << "Condition:" << std::endl;
   condition->write(os, indent + 4);
@@ -76,7 +76,7 @@ void IfStatement::write(std::ostream &os, int indent) const {
   }
 }
 
-void WhileLoop::write(std::ostream &os, int indent) const {
+void WhileLoop::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "While Loop:" << std::endl;
   os << std::string(indent + 2, ' ') << "Condition:" << std::endl;
   condition->write(os, indent + 4);
@@ -86,7 +86,7 @@ void WhileLoop::write(std::ostream &os, int indent) const {
   }
 }
 
-void ForLoop::write(std::ostream &os, int indent) const {
+void ForLoop::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "For Loop:" << std::endl;
   os << std::string(indent, ' ') << "Initializer:" << std::endl;
   initializer->write(os, indent + 2);
@@ -100,7 +100,7 @@ void ForLoop::write(std::ostream &os, int indent) const {
   }
 }
 
-void Function::write(std::ostream &os, int indent) const {
+void Function::write(std::ostream &os, unsigned long indent) const {
   os << std::endl;
   os << std::string(indent, ' ') << "Function: " << name->name << std::endl;
   os << std::string(indent, ' ') << "Parameters:" << std::endl;
@@ -116,13 +116,13 @@ void Function::write(std::ostream &os, int indent) const {
   }
 }
 
-void StatementList::write(std::ostream &os, int indent) const {
+void StatementList::write(std::ostream &os, unsigned long indent) const {
   for (const auto &statement : statements) {
     statement->write(os, indent + 2);
   }
 }
 
-void Program::write(std::ostream &os, int indent) const {
+void Program::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Program:" << std::endl;
   for (const auto &node : nodes) {
     node->write(os, indent + 2);

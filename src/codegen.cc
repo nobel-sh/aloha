@@ -15,7 +15,7 @@
 #include <string>
 
 CodeGen::CodeGen()
-    : builder(context), currentFunction(nullptr), currentValue(nullptr) {
+    : builder(context), currentValue(nullptr), currentFunction(nullptr) {
   module = std::make_unique<llvm::Module>("my_module", context);
 }
 
@@ -113,7 +113,7 @@ void CodeGen::visit(FunctionCall *node) {
                              node->funcName->name);
   }
   std::vector<llvm::Value *> argsV;
-  for (unsigned i = 0, e = node->arguments.size(); i != e; ++i) {
+  for (unsigned long i = 0, e = node->arguments.size(); i != e; ++i) {
     node->arguments[i]->accept(*this);
     argsV.push_back(currentValue);
   }

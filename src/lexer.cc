@@ -15,12 +15,12 @@ void Lexer::dump_error() {
 }
 
 // peek current token
-unsigned char Lexer::peek_token() const { return peek_token(0); }
+char Lexer::peek_token() const { return peek_token(0); }
 
 // peek nth token
-unsigned char Lexer::peek_token(int nth) const {
+char Lexer::peek_token(unsigned int nth) const {
   if (pos + nth >= source.size())
-    return EOF;
+    return 0;
   return source[pos + nth];
 }
 

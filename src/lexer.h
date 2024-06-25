@@ -9,7 +9,7 @@
 class Lexer {
 public:
   Lexer(std::vector<char> source)
-      : source(std::move(source)), line(1), col(1), pos(0), has_error(false) {}
+      : has_error(false), source(std::move(source)), line(1), col(1), pos(0) {}
 
   void dump();
   void lex();
@@ -32,8 +32,8 @@ private:
   void handle_number();
   void handle_ident();
 
-  unsigned char peek_token() const;
-  unsigned char peek_token(int nth) const;
+  char peek_token() const;
+  char peek_token(unsigned int nth) const;
   void consume_token();
   void consume_token(int n);
 

@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     }
 
     CodeGen codegen;
-    auto status = codegen.generateCode(p.get());
+    codegen.generateCode(p.get());
 
     optimize(codegen);
 
