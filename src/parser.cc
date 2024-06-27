@@ -109,7 +109,7 @@ std::vector<Parameter> Parser::parse_parameters() {
 }
 
 std::shared_ptr<Statement> Parser::parse_statement() {
-  if (match("var")) {
+  if (match("mut") || match("imut")) {
     return parse_variable_declaration();
   } else if (match("return")) {
     return parse_return_statement();
@@ -152,12 +152,25 @@ std::shared_ptr<StatementList> Parser::parse_statements() {
 }
 
 std::shared_ptr<Statement> Parser::parse_variable_declaration() {
-  consume("var", "Expected 'var' keyword");
+  // consume("var", "Expected 'var' keyword");
+  bool is_mutable;
+  if (match("mut")) {
+    is_mutable = true;
+    advance();
+  } else {
+    is_mutable = false;
+    consume("imut",
+            "Expected 'mut' or 'imut' keyword to start variable declaration.");
+  }
   auto identifier = expect_identifier();
   auto type = optional_type();
-  consume("=", "Expected '=' after variable declaration");
-  std::shared_ptr<Expression> expression = parse_expression(0);
-  return std::make_shared<Declaration>(identifier->name, type, expression);
+  std::shared_ptr<Expression> expression = nullptr;
+  if (match("=")) {
+    advance();
+    expression = parse_expression(0);
+  }
+  return std::make_shared<Declaration>(identifier->name, type, expression,
+                                       is_mutable);
 }
 
 std::shared_ptr<Statement> Parser::parse_variable_assignment() {

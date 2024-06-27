@@ -11,7 +11,8 @@
 
 struct VariableInfo {
   AlohaType::Type type;
-  bool is_declared;
+  bool is_assigned;
+  bool is_mutable;
 };
 
 struct FunctionInfo {
@@ -23,7 +24,8 @@ struct FunctionInfo {
 class SymbolTable {
 public:
   SymbolTable();
-  bool addVariable(const std::string &name, AlohaType::Type type);
+  bool addVariable(const std::string &name, AlohaType::Type type,
+                   bool is_assigned, bool is_mutable);
   bool addFunction(const std::string &name, AlohaType::Type return_type,
                    const std::vector<AlohaType::Type> &param_types);
   VariableInfo *getVariable(const std::string &name);

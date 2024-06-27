@@ -125,11 +125,12 @@ public:
   std::optional<AlohaType::Type> type;
   ExprPtr expression;
   bool is_assigned;
+  bool is_mutable;
   explicit Declaration(const std::string &var_name,
-                       std::optional<AlohaType::Type> type, ExprPtr expr)
+                       std::optional<AlohaType::Type> type, ExprPtr expr,
+                       bool is_mutable)
       : variable_name(var_name), type(type), expression(std::move(expr)),
-        is_assigned(expression != nullptr) {}
-
+        is_assigned(expression != nullptr), is_mutable(is_mutable) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };

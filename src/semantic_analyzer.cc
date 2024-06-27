@@ -46,25 +46,33 @@ void SemanticAnalyzer::visit(Identifier *node) {
 }
 
 void SemanticAnalyzer::visit(Declaration *node) {
-  if (!node->expression) {
-    return;
+  if (node->is_assigned) {
+    node->expression->accept(*this);
+    if (!node->type) {
+      node->type = node->expression->get_type();
+    }
   }
-  node->expression->accept(*this);
-  if (!node->type) {
-    node->type = node->expression->get_type();
-  }
-  if (!symbol_table.addVariable(node->variable_name, node->type.value())) {
+  AlohaType::Type type =
+      node->type ? node->type.value() : AlohaType::Type::UNKNOWN;
+  if (!symbol_table.addVariable(node->variable_name, type, node->is_assigned,
+                                node->is_mutable)) {
     error.addError("Variable redeclaration: " + node->variable_name);
     // throw TypeError("Variable redeclaration: " + node->variableName);
   }
 }
 
 void SemanticAnalyzer::visit(Assignment *node) {
-  node->expression->accept(*this);
   VariableInfo *var_info = symbol_table.getVariable(node->variable_name);
   if (!var_info) {
-    error.addError("Expression assigned on undeclared variable");
+    error.addError("Cannnot assign to an undeclared variable: " +
+                   node->variable_name);
   }
+  if (!var_info->is_mutable && var_info->is_assigned) {
+    error.addError("Cannot mutate immutable assigned variable: " +
+                   node->variable_name);
+  }
+  var_info->is_assigned = true;
+  node->expression->accept(*this);
   if (var_info->type == AlohaType::Type::UNKNOWN) {
     node->type = node->expression->get_type();
   } else {
@@ -161,7 +169,9 @@ void SemanticAnalyzer::visit(Function *node) {
   current_fn = node;
 
   for (const auto &param : node->parameters) {
-    if (!symbol_table.addVariable(param.name, param.type)) {
+    if (!symbol_table.addVariable(
+            param.name, param.type, false,
+            true)) { // TODO: allow mutability to be defined in params
       error.addError("Parameter redeclaration: " + param.name);
     }
   }

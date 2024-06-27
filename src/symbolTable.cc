@@ -4,13 +4,14 @@
 
 SymbolTable::SymbolTable() { enterScope(); }
 
-bool SymbolTable::addVariable(const std::string &name, AlohaType::Type type) {
+bool SymbolTable::addVariable(const std::string &name, AlohaType::Type type,
+                              bool is_assigned, bool is_mutable) {
   auto &currentScope = variable_table_stack.back();
   if (currentScope.find(name) != currentScope.end()) {
     return false;
   }
   // variableTableStack.back()[name] = {type, true};
-  currentScope[name] = {type, true};
+  currentScope[name] = {type, is_assigned, is_mutable};
   return true;
 }
 

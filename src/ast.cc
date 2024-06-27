@@ -44,16 +44,21 @@ void Declaration::write(std::ostream &os, unsigned long indent) const {
     os << std::string(indent + 2, ' ')
        << "Type: " << AlohaType::to_string(type.value()) << std::endl;
   }
+  std::string mutability = is_mutable ? "Yes" : "No";
+  os << std::string(indent + 2, ' ') << "Mutable: " << mutability << std::endl;
   if (is_assigned) {
     expression->write(os, indent + 2);
+  } else {
+    os << std::string(indent + 2, ' ') << "Expression: Not assigned"
+       << std::endl;
   }
 }
 
 void Assignment::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Assignment: " << variable_name
      << std::endl;
-  os << std::string(indent + 2, ' ')
-     << "Type: " << AlohaType::to_string(type) << std::endl;
+  os << std::string(indent + 2, ' ') << "Type: " << AlohaType::to_string(type)
+     << std::endl;
   expression->write(os, indent + 2);
 }
 void FunctionCall::write(std::ostream &os, unsigned long indent) const {
