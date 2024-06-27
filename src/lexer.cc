@@ -85,7 +85,12 @@ void Lexer::lex() {
       }
       break;
     case '_':
-      tokens.push_back(Token(loc, TokenKind::UNDERSCORE, "_"));
+      if (std::isalpha(peek_token(1))) {
+        handle_ident();
+        continue;
+      } else {
+        tokens.push_back(Token(loc, TokenKind::UNDERSCORE, "_"));
+      }
       break;
     case '+':
       tokens.push_back(Token(loc, TokenKind::PLUS, "+"));
@@ -200,6 +205,11 @@ void Lexer::handle_number() {
 void Lexer::handle_ident() {
   unsigned int start_pos = pos;
   Location loc(line, col);
+  if (isalpha(peek_token()) || peek_token() == '_') {
+    consume_token();
+  } else {
+    return;
+  }
   while (isalnum(peek_token()) || peek_token() == '_') {
     consume_token();
   }
