@@ -22,22 +22,22 @@ void SemanticAnalyzer::visit(ExpressionStatement *node) {
 
 void SemanticAnalyzer::visit(UnaryExpression *node) {
   node->expr->accept(*this);
-  node->type = node->expr->getType();
+  node->type = node->expr->get_type();
 }
 
 void SemanticAnalyzer::visit(BinaryExpression *node) {
   node->left->accept(*this);
   node->right->accept(*this);
 
-  if (node->left->getType() == node->right->getType()) {
-    node->type = node->left->getType();
+  if (node->left->get_type() == node->right->get_type()) {
+    node->type = node->left->get_type();
   } else {
     error.addError("Type mismatch in binary expression");
   }
 }
 
 void SemanticAnalyzer::visit(Identifier *node) {
-  VariableInfo *varInfo = symbolTable.getVariable(node->name);
+  VariableInfo *varInfo = symbol_table.getVariable(node->name);
   if (!varInfo) {
     error.addError("Undeclared variable: " + node->name);
   }
@@ -48,18 +48,18 @@ void SemanticAnalyzer::visit(Declaration *node) {
   node->expression->accept(*this);
 
   if (!node->type) {
-    node->type = node->expression->getType();
+    node->type = node->expression->get_type();
   }
 
-  if (!symbolTable.addVariable(node->variableName, node->type.value())) {
-    error.addError("Variable redeclaration: " + node->variableName);
+  if (!symbol_table.addVariable(node->variable_name, node->type.value())) {
+    error.addError("Variable redeclaration: " + node->variable_name);
     // throw TypeError("Variable redeclaration: " + node->variableName);
   }
 }
 
 void SemanticAnalyzer::visit(FunctionCall *node) {
-  FunctionInfo *funcInfo = symbolTable.getFunction(node->funcName->name);
-  auto isBuiltin = symbolTable.isBuiltinFunction(node->funcName->name);
+  FunctionInfo *funcInfo = symbol_table.getFunction(node->funcName->name);
+  auto isBuiltin = symbol_table.isBuiltinFunction(node->funcName->name);
   if (isBuiltin) {
     return; // HACK: dont check anything for now but should be a good idea to
             // add protoypes and check for types and so on
@@ -68,13 +68,13 @@ void SemanticAnalyzer::visit(FunctionCall *node) {
     error.addError("Undeclared function: " + node->funcName->name);
     return;
   }
-  if (node->arguments.size() != funcInfo->parameterTypes.size()) {
+  if (node->arguments.size() != funcInfo->param_types.size()) {
     error.addError("Argument count mismatch in function call: " +
                    node->funcName->name);
   }
   for (size_t i = 0; i < node->arguments.size(); ++i) {
     node->arguments[i]->accept(*this);
-    if (node->arguments[i]->getType() != funcInfo->parameterTypes[i]) {
+    if (node->arguments[i]->get_type() != funcInfo->param_types[i]) {
       error.addError("Argument type mismatch in function call: " +
                      node->funcName->name);
     }
@@ -84,45 +84,45 @@ void SemanticAnalyzer::visit(FunctionCall *node) {
 void SemanticAnalyzer::visit(ReturnStatement *node) {
   node->expression->accept(*this);
 
-  if (currentFunction &&
-      node->expression->getType() != currentFunction->returnType) {
-    std::cout << AlohaType::to_string(node->expression->getType()) << std::endl;
-    std::cout << AlohaType::to_string(currentFunction->returnType) << std::endl;
+  if (current_fn && node->expression->get_type() != current_fn->return_type) {
+    std::cout << AlohaType::to_string(node->expression->get_type())
+              << std::endl;
+    std::cout << AlohaType::to_string(current_fn->return_type) << std::endl;
 
-    symbolTable.dump();
+    symbol_table.dump();
     error.addError("Return type mismatch in function: " +
-                   currentFunction->name->name);
+                   current_fn->name->name);
   }
 }
 
 void SemanticAnalyzer::visit(IfStatement *node) {
   node->condition->accept(*this);
-  symbolTable.enterScope();
-  node->thenBranch->accept(*this);
-  symbolTable.leaveScope();
+  symbol_table.enterScope();
+  node->then_branch->accept(*this);
+  symbol_table.leaveScope();
   if (node->has_else_branch()) {
-    symbolTable.enterScope();
-    node->elseBranch->accept(*this);
-    symbolTable.leaveScope();
+    symbol_table.enterScope();
+    node->else_branch->accept(*this);
+    symbol_table.leaveScope();
   }
 }
 
 void SemanticAnalyzer::visit(WhileLoop *node) {
   node->condition->accept(*this);
-  symbolTable.enterScope();
+  symbol_table.enterScope();
   node->body->accept(*this);
-  symbolTable.leaveScope();
+  symbol_table.leaveScope();
 }
 
 void SemanticAnalyzer::visit(ForLoop *node) {
-  symbolTable.enterScope();
+  symbol_table.enterScope();
   node->initializer->accept(*this);
   node->condition->accept(*this);
   node->increment->accept(*this);
   for (auto &stmt : node->body) {
     stmt->accept(*this);
   }
-  symbolTable.leaveScope();
+  symbol_table.leaveScope();
 }
 
 void SemanticAnalyzer::visit(Function *node) {
@@ -130,22 +130,22 @@ void SemanticAnalyzer::visit(Function *node) {
   for (const auto &param : node->parameters) {
     parameterType.push_back(param.type);
   }
-  if (!symbolTable.addFunction(node->name->name, node->returnType,
-                               parameterType)) {
+  if (!symbol_table.addFunction(node->name->name, node->return_type,
+                                parameterType)) {
     error.addError("Function redeclaration: " + node->name->name);
   }
 
-  symbolTable.enterScope();
-  currentFunction = node;
+  symbol_table.enterScope();
+  current_fn = node;
 
   for (const auto &param : node->parameters) {
-    if (!symbolTable.addVariable(param.name, param.type)) {
+    if (!symbol_table.addVariable(param.name, param.type)) {
       error.addError("Parameter redeclaration: " + param.name);
     }
   }
   node->body->accept(*this);
-  currentFunction = nullptr;
-  symbolTable.leaveScope();
+  current_fn = nullptr;
+  symbol_table.leaveScope();
 }
 
 void SemanticAnalyzer::visit(StatementList *node) {

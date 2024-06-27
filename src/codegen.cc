@@ -15,12 +15,12 @@
 #include <string>
 
 CodeGen::CodeGen()
-    : builder(context), currentValue(nullptr), currentFunction(nullptr) {
+    : builder(context), current_val(nullptr), current_fn(nullptr) {
   module = std::make_unique<llvm::Module>("my_module", context);
 }
 
-bool CodeGen::generateCode(Program *program) {
-  addBuiltinFunctions();
+bool CodeGen::generate_code(Program *program) {
+  add_builtin_fns();
   program->accept(*this);
   auto status = llvm::verifyModule(*module, &llvm::errs());
   return status;
@@ -28,17 +28,17 @@ bool CodeGen::generateCode(Program *program) {
 
 void CodeGen::visit(Number *node) {
   auto num = std::stod(node->value);
-  currentValue = llvm::ConstantFP::get(context, llvm::APFloat(num));
+  current_val = llvm::ConstantFP::get(context, llvm::APFloat(num));
 }
 
 void CodeGen::visit(Boolean *node) {
   auto value = node->value;
-  currentValue = llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
+  current_val = llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
 }
 
 void CodeGen::visit(AlohaString *node) {
   auto const &str = node->value;
-  currentValue = builder.CreateGlobalStringPtr(str, "str");
+  current_val = builder.CreateGlobalStringPtr(str, "str");
 }
 
 void CodeGen::visit(ExpressionStatement *node) { node->expr->accept(*this); }
@@ -46,186 +46,186 @@ void CodeGen::visit(ExpressionStatement *node) { node->expr->accept(*this); }
 void CodeGen::visit(UnaryExpression *node) {
   node->expr->accept(*this);
   if (node->op == "-") {
-    currentValue = builder.CreateFNeg(currentValue, "negtmp");
+    current_val = builder.CreateFNeg(current_val, "negtmp");
   }
 }
 
 void CodeGen::visit(BinaryExpression *node) {
   node->left->accept(*this);
-  llvm::Value *left = currentValue;
+  llvm::Value *left = current_val;
   node->right->accept(*this);
-  llvm::Value *right = currentValue;
+  llvm::Value *right = current_val;
 
   if (node->op == "+") {
-    currentValue = builder.CreateFAdd(left, right, "addtmp");
+    current_val = builder.CreateFAdd(left, right, "addtmp");
   } else if (node->op == "-") {
-    currentValue = builder.CreateFSub(left, right, "subtmp");
+    current_val = builder.CreateFSub(left, right, "subtmp");
   } else if (node->op == "*") {
-    currentValue = builder.CreateFMul(left, right, "multmp");
+    current_val = builder.CreateFMul(left, right, "multmp");
   } else if (node->op == "/") {
-    currentValue = builder.CreateFDiv(left, right, "divtmp");
+    current_val = builder.CreateFDiv(left, right, "divtmp");
   } else if (node->op == ">=") {
-    currentValue = builder.CreateFCmpOGE(left, right, "gtetmpe");
+    current_val = builder.CreateFCmpOGE(left, right, "gtetmpe");
   } else if (node->op == "<=") {
-    currentValue = builder.CreateFCmpOLE(left, right, "ltetmp");
+    current_val = builder.CreateFCmpOLE(left, right, "ltetmp");
   } else if (node->op == "<") {
-    currentValue = builder.CreateFCmpOLT(left, right, "lttmp");
+    current_val = builder.CreateFCmpOLT(left, right, "lttmp");
   } else if (node->op == ">") {
-    currentValue = builder.CreateFCmpOGT(left, right, "gttmp");
+    current_val = builder.CreateFCmpOGT(left, right, "gttmp");
   } else if (node->op == "==") {
-    currentValue = builder.CreateFCmpOEQ(left, right, "eqtmp");
+    current_val = builder.CreateFCmpOEQ(left, right, "eqtmp");
   } else if (node->op == "!=") {
-    currentValue = builder.CreateFCmpONE(left, right, "netmp");
+    current_val = builder.CreateFCmpONE(left, right, "netmp");
   }
 }
 
 void CodeGen::visit(Identifier *node) {
-  auto it = namedValues.find(node->name);
-  if (it == namedValues.end()) {
+  auto itr = named_values.find(node->name);
+  if (itr == named_values.end()) {
     throw std::runtime_error("Unknown variable name: " + node->name);
   }
 
-  auto *alloca = it->second;
+  auto *alloca = itr->second;
 
   if (!alloca) {
     throw std::runtime_error("Variable has no value: " + node->name);
   }
-  currentValue =
+  current_val =
       builder.CreateLoad(alloca->getAllocatedType(), alloca, node->name);
 }
 
 void CodeGen::visit(Declaration *node) {
-  llvm::Type *type = getLLVMType(node->type.value());
+  llvm::Type *type = get_llvm_type(node->type.value());
   llvm::AllocaInst *alloca =
-      builder.CreateAlloca(type, nullptr, node->variableName);
-  namedValues[node->variableName] = alloca;
+      builder.CreateAlloca(type, nullptr, node->variable_name);
+  named_values[node->variable_name] = alloca;
 
   if (node->expression) {
     node->expression->accept(*this);
-    builder.CreateStore(currentValue, alloca);
+    builder.CreateStore(current_val, alloca);
   }
 }
 
 void CodeGen::visit(FunctionCall *node) {
-  llvm::Function *calleeF = module->getFunction(node->funcName->name);
-  if (!calleeF) {
+  llvm::Function *callee_fn = module->getFunction(node->funcName->name);
+  if (!callee_fn) {
     throw std::runtime_error("Unknown function referenced: " +
                              node->funcName->name);
   }
-  std::vector<llvm::Value *> argsV;
+  std::vector<llvm::Value *> args;
   for (unsigned long i = 0, e = node->arguments.size(); i != e; ++i) {
     node->arguments[i]->accept(*this);
-    argsV.push_back(currentValue);
+    args.push_back(current_val);
   }
-  if (calleeF->getReturnType()->isVoidTy()) {
-    currentValue = builder.CreateCall(calleeF, argsV);
+  if (callee_fn->getReturnType()->isVoidTy()) {
+    current_val = builder.CreateCall(callee_fn, args);
   } else
-    currentValue = builder.CreateCall(calleeF, argsV, "calltmp");
+    current_val = builder.CreateCall(callee_fn, args, "calltmp");
 }
 
 void CodeGen::visit(ReturnStatement *node) {
   node->expression->accept(*this);
-  builder.CreateRet(currentValue);
+  builder.CreateRet(current_val);
 
   // Ensure no more code is added to the function after a return statement.
-  llvm::BasicBlock *unreachableBlock =
-      llvm::BasicBlock::Create(context, "unreachable", currentFunction);
-  builder.SetInsertPoint(unreachableBlock);
+  llvm::BasicBlock *unreachable_block =
+      llvm::BasicBlock::Create(context, "unreachable", current_fn);
+  builder.SetInsertPoint(unreachable_block);
 }
 
 void CodeGen::visit(IfStatement *node) {
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
-  llvm::BasicBlock *thenBB =
+  llvm::BasicBlock *then_bb =
       llvm::BasicBlock::Create(context, "then", function);
-  llvm::BasicBlock *elseBB = llvm::BasicBlock::Create(context, "else");
-  llvm::BasicBlock *mergeBB = llvm::BasicBlock::Create(context, "ifcont");
+  llvm::BasicBlock *else_bb = llvm::BasicBlock::Create(context, "else");
+  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(context, "ifcont");
 
   node->condition->accept(*this);
-  llvm::Value *condValue = currentValue;
-  builder.CreateCondBr(condValue, thenBB, elseBB);
+  llvm::Value *condValue = current_val;
+  builder.CreateCondBr(condValue, then_bb, else_bb);
 
-  builder.SetInsertPoint(thenBB);
-  node->thenBranch->accept(*this);
+  builder.SetInsertPoint(then_bb);
+  node->then_branch->accept(*this);
   if (!builder.GetInsertBlock()->getTerminator()) {
-    builder.CreateBr(mergeBB);
+    builder.CreateBr(merge_bb);
   }
 
-  function->insert(function->end(), elseBB);
-  builder.SetInsertPoint(elseBB);
-  if (node->elseBranch) {
-    node->elseBranch->accept(*this);
+  function->insert(function->end(), else_bb);
+  builder.SetInsertPoint(else_bb);
+  if (node->else_branch) {
+    node->else_branch->accept(*this);
   }
   if (!builder.GetInsertBlock()->getTerminator()) {
-    builder.CreateBr(mergeBB);
+    builder.CreateBr(merge_bb);
   }
 
-  function->insert(function->end(), mergeBB);
-  builder.SetInsertPoint(mergeBB);
+  function->insert(function->end(), merge_bb);
+  builder.SetInsertPoint(merge_bb);
 }
 
 void CodeGen::visit(WhileLoop *node) {
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
-  llvm::BasicBlock *condBB =
+  llvm::BasicBlock *cond_bb =
       llvm::BasicBlock::Create(context, "loopcond", function);
-  llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(context, "loopbody");
-  llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(context, "afterloop");
+  llvm::BasicBlock *body_bb = llvm::BasicBlock::Create(context, "loopbody");
+  llvm::BasicBlock *after_bb = llvm::BasicBlock::Create(context, "afterloop");
 
-  builder.CreateBr(condBB);
-  builder.SetInsertPoint(condBB);
+  builder.CreateBr(cond_bb);
+  builder.SetInsertPoint(cond_bb);
 
   node->condition->accept(*this);
-  llvm::Value *condValue = currentValue;
-  builder.CreateCondBr(condValue, bodyBB, afterBB);
+  llvm::Value *condValue = current_val;
+  builder.CreateCondBr(condValue, body_bb, after_bb);
 
-  function->insert(function->end(), bodyBB);
+  function->insert(function->end(), body_bb);
 
-  builder.SetInsertPoint(bodyBB);
+  builder.SetInsertPoint(body_bb);
 
   node->body->accept(*this);
-  builder.CreateBr(condBB);
+  builder.CreateBr(cond_bb);
 
-  function->insert(function->end(), afterBB);
-  builder.SetInsertPoint(afterBB);
+  function->insert(function->end(), after_bb);
+  builder.SetInsertPoint(after_bb);
 }
 
 void CodeGen::visit(ForLoop *node) {
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
-  llvm::BasicBlock *preheaderBB = builder.GetInsertBlock();
-  llvm::BasicBlock *loopBB =
+  llvm::BasicBlock *preheader_bb = builder.GetInsertBlock();
+  llvm::BasicBlock *loop_bb =
       llvm::BasicBlock::Create(context, "loop", function);
-  llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(context, "afterloop");
+  llvm::BasicBlock *after_bb = llvm::BasicBlock::Create(context, "afterloop");
 
-  builder.CreateBr(loopBB);
-  builder.SetInsertPoint(loopBB);
+  builder.CreateBr(loop_bb);
+  builder.SetInsertPoint(loop_bb);
 
   node->initializer->accept(*this);
   node->condition->accept(*this);
-  llvm::Value *condValue = currentValue;
-  builder.CreateCondBr(condValue, loopBB, afterBB);
+  llvm::Value *condValue = current_val;
+  builder.CreateCondBr(condValue, loop_bb, after_bb);
 
   for (auto &stmt : node->body) {
     stmt->accept(*this);
   }
   node->increment->accept(*this);
-  builder.CreateBr(loopBB);
+  builder.CreateBr(loop_bb);
 
-  afterBB->insertInto(function);
-  builder.SetInsertPoint(afterBB);
+  after_bb->insertInto(function);
+  builder.SetInsertPoint(after_bb);
 }
 
 void CodeGen::visit(Function *node) {
-  std::vector<llvm::Type *> paramTypes;
+  std::vector<llvm::Type *> param_types;
   for (const auto &param : node->parameters) {
-    paramTypes.push_back(getLLVMType(param.type));
+    param_types.push_back(get_llvm_type(param.type));
   }
 
-  llvm::FunctionType *funcType =
-      llvm::FunctionType::get(getLLVMType(node->returnType), paramTypes, false);
+  llvm::FunctionType *func_type = llvm::FunctionType::get(
+      get_llvm_type(node->return_type), param_types, false);
   llvm::Function *function =
-      llvm::Function::Create(funcType, llvm::Function::ExternalLinkage,
+      llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
                              node->name->name, module.get());
 
   unsigned idx = 0;
@@ -233,26 +233,26 @@ void CodeGen::visit(Function *node) {
     arg.setName(node->parameters[idx++].name);
   }
 
-  llvm::BasicBlock *basicBlock =
+  llvm::BasicBlock *basic_block =
       llvm::BasicBlock::Create(context, "entry", function);
-  builder.SetInsertPoint(basicBlock);
+  builder.SetInsertPoint(basic_block);
 
-  namedValues.clear();
+  named_values.clear();
   for (auto &arg : function->args()) {
     llvm::AllocaInst *alloca =
         builder.CreateAlloca(arg.getType(), nullptr, arg.getName());
     builder.CreateStore(&arg, alloca);
-    namedValues[std::string(arg.getName())] = alloca;
+    named_values[std::string(arg.getName())] = alloca;
   }
 
-  currentFunction = function;
+  current_fn = function;
   node->body->accept(*this);
 
-  if (node->returnType == AlohaType::Type::VOID) {
+  if (node->return_type == AlohaType::Type::VOID) {
     builder.CreateRetVoid();
   } else if (!builder.GetInsertBlock()->getTerminator()) {
     builder.CreateRet(
-        llvm::Constant::getNullValue(getLLVMType(node->returnType)));
+        llvm::Constant::getNullValue(get_llvm_type(node->return_type)));
   }
 
   llvm::verifyFunction(*function);
@@ -270,7 +270,7 @@ void CodeGen::visit(Program *node) {
   }
 }
 
-llvm::Type *CodeGen::getLLVMType(AlohaType::Type type) {
+llvm::Type *CodeGen::get_llvm_type(AlohaType::Type type) {
   switch (type) {
   case AlohaType::Type::NUMBER:
     return llvm::Type::getDoubleTy(context);
@@ -286,12 +286,12 @@ llvm::Type *CodeGen::getLLVMType(AlohaType::Type type) {
   }
 }
 
-void CodeGen::dumpIR() const {
+void CodeGen::dump_ir() const {
   module->print(llvm::outs(), nullptr);
   // dumpNamedValues();
 }
 
-void CodeGen::print_value() const { print_value(currentValue); }
+void CodeGen::print_value() const { print_value(current_val); }
 
 void CodeGen::print_value(llvm::Value *value) const {
   std::string value_str;
@@ -306,9 +306,9 @@ void CodeGen::print_llvm_type(llvm::Type *type) const {
   std::cout << rso.str() << std::endl;
 }
 
-void CodeGen::dumpNamedValues() const {
+void CodeGen::dump_named_values() const {
   std::cout << "DUMPING NAMED VALUES" << std::endl;
-  for (const auto &pair : namedValues) {
+  for (const auto &pair : named_values) {
     std::string name = pair.first;
     std::cout << "Variable: " << name << std::endl;
     std::cout << "Value: " << std::endl;
@@ -319,22 +319,23 @@ void CodeGen::dumpNamedValues() const {
     std::cout << std::endl;
   }
 }
-void CodeGen::addBuiltinFunctions() {
-  llvm::FunctionType *printType =
+
+void CodeGen::add_builtin_fns() {
+  llvm::FunctionType *print_type =
       llvm::FunctionType::get(llvm::Type::getVoidTy(context),
                               {llvm::PointerType::getUnqual(context)}, false);
-  llvm::FunctionType *printNumType =
+  llvm::FunctionType *print_num_type =
       llvm::FunctionType::get(llvm::Type::getVoidTy(context),
                               {llvm::Type::getDoubleTy(context)}, false);
   llvm::PointerType *char_type =
       llvm::PointerType::get(llvm::Type::getInt8Ty(context), 0);
 
-  llvm::FunctionType *inputType = llvm::FunctionType::get(
+  llvm::FunctionType *input_type = llvm::FunctionType::get(
       char_type, {llvm::Type::getVoidTy(context)}, false);
 
-  module->getOrInsertFunction("print", printType);
-  module->getOrInsertFunction("println", printType);
-  module->getOrInsertFunction("printNum", printNumType);
-  module->getOrInsertFunction("printlnNum", printNumType);
-  module->getOrInsertFunction("input", inputType);
+  module->getOrInsertFunction("print", print_type);
+  module->getOrInsertFunction("println", print_type);
+  module->getOrInsertFunction("printNum", print_num_type);
+  module->getOrInsertFunction("printlnNum", print_num_type);
+  module->getOrInsertFunction("input", input_type);
 }

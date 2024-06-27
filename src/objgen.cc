@@ -54,23 +54,23 @@ void objgen(CodeGen &codegen, const std::string filename) {
   LLVMInitializeX86AsmPrinter();
   LLVMInitializeX86AsmParser();
 
-  auto TargetTriple = sys::getDefaultTargetTriple();
-  codegen.module->setTargetTriple(TargetTriple);
+  auto target_triple = sys::getDefaultTargetTriple();
+  codegen.module->setTargetTriple(target_triple);
   std::string Error;
-  auto Target = TargetRegistry::lookupTarget(TargetTriple, Error);
+  auto target = TargetRegistry::lookupTarget(target_triple, Error);
 
-  if (!Target) {
+  if (!target) {
     errs() << Error;
     return;
   }
-  auto CPU = "generic";
-  auto Features = "";
+  auto cpu = "generic";
+  auto features = "";
 
   TargetOptions opt;
-  auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features,
+  auto TargetMachine = target->createTargetMachine(target_triple, cpu, features,
                                                    opt, Reloc::PIC_);
   codegen.module->setDataLayout(TargetMachine->createDataLayout());
-  codegen.module->setTargetTriple(TargetTriple);
+  codegen.module->setTargetTriple(target_triple);
 
   std::error_code EC;
   raw_fd_ostream dest(filename.c_str(), EC, sys::fs::OF_None);

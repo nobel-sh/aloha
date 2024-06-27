@@ -11,21 +11,21 @@
 
 struct VariableInfo {
   AlohaType::Type type;
-  bool isDeclared;
+  bool is_declared;
 };
 
 struct FunctionInfo {
-  AlohaType::Type returnType;
-  std::vector<AlohaType::Type> parameterTypes;
-  bool isDeclared;
+  AlohaType::Type return_type;
+  std::vector<AlohaType::Type> param_types;
+  bool is_declared;
 };
 
 class SymbolTable {
 public:
   SymbolTable();
   bool addVariable(const std::string &name, AlohaType::Type type);
-  bool addFunction(const std::string &name, AlohaType::Type returnType,
-                   const std::vector<AlohaType::Type> &parameterTypes);
+  bool addFunction(const std::string &name, AlohaType::Type return_type,
+                   const std::vector<AlohaType::Type> &param_types);
   VariableInfo *getVariable(const std::string &name);
   FunctionInfo *getFunction(const std::string &name);
 
@@ -36,8 +36,9 @@ public:
   void dump() const;
 
 private:
-  std::vector<std::unordered_map<std::string, VariableInfo>> variableTableStack;
-  std::unordered_map<std::string, FunctionInfo> functionTable;
+  std::vector<std::unordered_map<std::string, VariableInfo>>
+      variable_table_stack;
+  std::unordered_map<std::string, FunctionInfo> function_table;
   std::vector<std::string> predefined_functions = {
       "print", "println", "printNum", "printlnNum", "input"};
 };

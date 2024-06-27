@@ -160,7 +160,7 @@ void Lexer::lex() {
 void Lexer::handle_string() {
   consume_token();
   char curr_char = peek_token();
-  auto start_pos = pos;
+  unsigned int start_pos = pos;
   Location loc(line, col);
   while (curr_char != '"') {
     curr_char = peek_token();
@@ -177,7 +177,7 @@ void Lexer::handle_string() {
 }
 
 void Lexer::handle_number() {
-  auto start_pos = pos;
+  unsigned int start_pos = pos;
   Location loc(line, col);
   while (isdigit(peek_token())) {
     consume_token();
@@ -198,7 +198,7 @@ void Lexer::handle_number() {
 }
 
 void Lexer::handle_ident() {
-  auto start_pos = pos;
+  unsigned int start_pos = pos;
   Location loc(line, col);
   while (isalnum(peek_token()) || peek_token() == '_') {
     consume_token();

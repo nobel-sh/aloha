@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     }
 
     CodeGen codegen;
-    codegen.generateCode(p.get());
+    codegen.generate_code(p.get());
 
     optimize(codegen);
 
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     auto object_name = file_name + ".o";
     if (dump_flag.value_or(false)) {
       print_dotted_lines(50);
-      codegen.dumpIR();
+      codegen.dump_ir();
     }
 
     objgen(codegen, object_name);

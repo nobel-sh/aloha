@@ -5,7 +5,7 @@
 SymbolTable::SymbolTable() { enterScope(); }
 
 bool SymbolTable::addVariable(const std::string &name, AlohaType::Type type) {
-  auto &currentScope = variableTableStack.back();
+  auto &currentScope = variable_table_stack.back();
   if (currentScope.find(name) != currentScope.end()) {
     return false;
   }
@@ -17,16 +17,16 @@ bool SymbolTable::addVariable(const std::string &name, AlohaType::Type type) {
 bool SymbolTable::addFunction(
     const std::string &name, AlohaType::Type returnType,
     const std::vector<AlohaType::Type> &parameterTypes) {
-  if (functionTable.find(name) != functionTable.end()) {
+  if (function_table.find(name) != function_table.end()) {
     return false;
   }
-  functionTable[name] = {returnType, parameterTypes, true};
+  function_table[name] = {returnType, parameterTypes, true};
   return true;
 }
 
 VariableInfo *SymbolTable::getVariable(const std::string &name) {
-  for (auto it = variableTableStack.rbegin(); it != variableTableStack.rend();
-       ++it) {
+  for (auto it = variable_table_stack.rbegin();
+       it != variable_table_stack.rend(); ++it) {
     auto found = it->find(name);
     if (found != it->end()) {
       return &found->second;
@@ -36,18 +36,18 @@ VariableInfo *SymbolTable::getVariable(const std::string &name) {
 }
 
 FunctionInfo *SymbolTable::getFunction(const std::string &name) {
-  auto it = functionTable.find(name);
-  if (it != functionTable.end()) {
+  auto it = function_table.find(name);
+  if (it != function_table.end()) {
     return &it->second;
   }
   return nullptr;
 }
 
-void SymbolTable::enterScope() { variableTableStack.push_back({}); }
+void SymbolTable::enterScope() { variable_table_stack.push_back({}); }
 
 void SymbolTable::leaveScope() {
-  if (!variableTableStack.empty()) {
-    variableTableStack.pop_back();
+  if (!variable_table_stack.empty()) {
+    variable_table_stack.pop_back();
   }
 }
 
@@ -60,18 +60,18 @@ bool SymbolTable::isBuiltinFunction(std::string name) const {
 void SymbolTable::dump() const {
   std::cout << "Symbol Table Dump:" << std::endl;
   std::cout << "Functions:" << std::endl;
-  for (const auto &[name, info] : functionTable) {
+  for (const auto &[name, info] : function_table) {
     std::cout << "  Function: " << name
-              << " -> Return Type: " << AlohaType::to_string(info.returnType)
+              << " -> Return Type: " << AlohaType::to_string(info.return_type)
               << ", Parameters: ";
-    for (const auto &paramType : info.parameterTypes) {
+    for (const auto &paramType : info.param_types) {
       std::cout << AlohaType::to_string(paramType) << " ";
     }
     std::cout << std::endl;
   }
   std::cout << "Variables:" << std::endl;
   int scopeLevel = 0;
-  for (const auto &scope : variableTableStack) {
+  for (const auto &scope : variable_table_stack) {
     std::cout << "  Scope Level " << scopeLevel++ << ":" << std::endl;
     for (const auto &[name, info] : scope) {
       std::cout << "    Variable: " << name

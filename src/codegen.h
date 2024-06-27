@@ -13,7 +13,26 @@ class CodeGen : public ASTVisitor {
 public:
   CodeGen();
 
-  bool generateCode(Program *program);
+  bool generate_code(Program *program);
+
+  void dump_ir() const;
+  void print_value() const;
+  void print_value(llvm::Value *value) const;
+  void print_llvm_type(llvm::Type *type) const;
+  void dump_named_values() const;
+
+  llvm::LLVMContext context;
+  std::unique_ptr<llvm::Module> module;
+  llvm::IRBuilder<> builder;
+  std::unordered_map<std::string, llvm::AllocaInst *> named_values;
+
+  void add_builtin_fns();
+
+private:
+  llvm::Value *current_val;   // Current value during traversal
+  llvm::Function *current_fn; // current function
+
+  llvm::Type *get_llvm_type(AlohaType::Type type);
 
   void visit(Number *node) override;
   void visit(Boolean *node) override;
@@ -31,26 +50,6 @@ public:
   void visit(Function *node) override;
   void visit(StatementList *node) override;
   void visit(Program *node) override;
-
-  void dumpIR() const;
-  void print_value() const;
-  void print_value(llvm::Value *value) const;
-  void print_llvm_type(llvm::Type *type) const;
-  void dumpNamedValues() const;
-
-  llvm::LLVMContext context;
-  std::unique_ptr<llvm::Module> module;
-  llvm::IRBuilder<> builder;
-  std::unordered_map<std::string, llvm::AllocaInst *> namedValues;
-
-  void addBuiltinFunctions();
-
-private:
-  llvm::Value *currentValue;       // Current value during traversal
-  llvm::Function *currentFunction; // Track the current function
-
-  llvm::Type *
-  getLLVMType(AlohaType::Type type); // Ensure this declaration exists
 };
 
 #endif // CODEGEN_H

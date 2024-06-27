@@ -22,7 +22,7 @@ public:
 // Expressions
 class Expression : public Node {
 public:
-  virtual AlohaType::Type getType() const = 0;
+  virtual AlohaType::Type get_type() const = 0;
 };
 
 class Statement : public Node {};
@@ -54,7 +54,7 @@ public:
   explicit Number(const std::string &val) : value(val) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type getType() const override { return AlohaType::Type::NUMBER; }
+  AlohaType::Type get_type() const override { return AlohaType::Type::NUMBER; }
 };
 
 class Boolean : public Expression {
@@ -63,7 +63,7 @@ public:
   explicit Boolean(const bool &val) : value(val) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type getType() const override { return AlohaType::Type::BOOL; }
+  AlohaType::Type get_type() const override { return AlohaType::Type::BOOL; }
 };
 
 class AlohaString : public Expression {
@@ -72,7 +72,7 @@ public:
   explicit AlohaString(const std::string &val) : value(std::move(val)) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type getType() const override { return AlohaType::Type::STRING; }
+  AlohaType::Type get_type() const override { return AlohaType::Type::STRING; }
 };
 
 class UnaryExpression : public Expression {
@@ -86,7 +86,7 @@ public:
 
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type getType() const override { return expr->getType(); }
+  AlohaType::Type get_type() const override { return expr->get_type(); }
 };
 
 class BinaryExpression : public Expression {
@@ -102,7 +102,7 @@ public:
 
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type getType() const override { return left->getType(); }
+  AlohaType::Type get_type() const override { return left->get_type(); }
 };
 
 class Identifier : public Expression {
@@ -115,18 +115,18 @@ public:
       : name(name), type(AlohaType::Type::UNKNOWN) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type getType() const override { return type; }
+  AlohaType::Type get_type() const override { return type; }
 };
 
 // Statements
 class Declaration : public Statement {
 public:
-  std::string variableName;
+  std::string variable_name;
   std::optional<AlohaType::Type> type;
   ExprPtr expression;
-  explicit Declaration(const std::string &varName,
+  explicit Declaration(const std::string &var_name,
                        std::optional<AlohaType::Type> type, ExprPtr expr)
-      : variableName(varName), type(type), expression(std::move(expr)) {}
+      : variable_name(var_name), type(type), expression(std::move(expr)) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
@@ -136,11 +136,12 @@ public:
   std::shared_ptr<Identifier> funcName;
   std::vector<ExprPtr> arguments;
   AlohaType::Type type;
-  FunctionCall(std::shared_ptr<Identifier> &funcName, std::vector<ExprPtr> args)
-      : funcName(funcName), arguments(std::move(args)) {}
+  FunctionCall(std::shared_ptr<Identifier> &func_name,
+               std::vector<ExprPtr> args)
+      : funcName(func_name), arguments(std::move(args)) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type getType() const override { return type; }
+  AlohaType::Type get_type() const override { return type; }
 };
 
 class ReturnStatement : public Statement {
@@ -154,15 +155,15 @@ public:
 class IfStatement : public Statement {
 public:
   ExprPtr condition;
-  std::shared_ptr<StatementList> thenBranch;
-  std::shared_ptr<StatementList> elseBranch;
-  IfStatement(ExprPtr cond, std::shared_ptr<StatementList> thenBr,
+  std::shared_ptr<StatementList> then_branch;
+  std::shared_ptr<StatementList> else_branch;
+  IfStatement(ExprPtr cond, std::shared_ptr<StatementList> then_branch,
               std::shared_ptr<StatementList> elseBr)
-      : condition(std::move(cond)), thenBranch(std::move(thenBr)),
-        elseBranch(std::move(elseBr)) {}
+      : condition(std::move(cond)), then_branch(std::move(then_branch)),
+        else_branch(std::move(elseBr)) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  bool has_else_branch() const { return elseBranch != nullptr; }
+  bool has_else_branch() const { return else_branch != nullptr; }
 };
 
 class WhileLoop : public Statement {
@@ -194,7 +195,6 @@ class Parameter {
 public:
   std::string name;
   AlohaType::Type type;
-
   Parameter(std::string ident, AlohaType::Type type)
       : name(ident), type(type) {}
 };
@@ -203,13 +203,13 @@ class Function : public Statement {
 public:
   std::shared_ptr<Identifier> name;
   std::vector<Parameter> parameters;
-  AlohaType::Type returnType;
+  AlohaType::Type return_type;
   std::shared_ptr<StatementList> body;
-  Function(const std::shared_ptr<Identifier> &funcName,
-           std::vector<Parameter> params, AlohaType::Type retType,
+  Function(const std::shared_ptr<Identifier> &func_name,
+           std::vector<Parameter> params, AlohaType::Type return_type,
            std::shared_ptr<StatementList> b)
-      : name(funcName), parameters(std::move(params)), returnType(retType),
-        body(std::move(b)) {}
+      : name(func_name), parameters(std::move(params)),
+        return_type(return_type), body(std::move(b)) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };

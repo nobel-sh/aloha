@@ -13,8 +13,9 @@
 
 class Parser {
 public:
-  using PrefixParserFunc = std::function<std::shared_ptr<Expression>(Parser &)>;
-  using InfixParserFunc = std::function<std::shared_ptr<Expression>(
+  using prefix_parser_func =
+      std::function<std::shared_ptr<Expression>(Parser &)>;
+  using infix_parser_func = std::function<std::shared_ptr<Expression>(
       Parser &, std::shared_ptr<Expression>)>;
 
   explicit Parser(std::vector<Token> tokens);
@@ -28,8 +29,8 @@ private:
   size_t current;
   ErrorCollector error_collector;
   void report_error(const std::string &message);
-  static std::map<std::string, PrefixParserFunc> prefixParsers;
-  static std::map<std::string, InfixParserFunc> infixParsers;
+  static std::map<std::string, prefix_parser_func> prefix_parsers;
+  static std::map<std::string, infix_parser_func> infix_parsers;
 
 private:
   [[nodiscard]] bool is_eof() const;

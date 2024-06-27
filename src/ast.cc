@@ -38,7 +38,7 @@ void Identifier::write(std::ostream &os, unsigned long indent) const {
 }
 
 void Declaration::write(std::ostream &os, unsigned long indent) const {
-  os << std::string(indent, ' ') << "Declaration: " << variableName
+  os << std::string(indent, ' ') << "Declaration: " << variable_name
      << std::endl;
   if (type) {
     os << std::string(indent + 2, ' ')
@@ -65,13 +65,13 @@ void IfStatement::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent + 2, ' ') << "Condition:" << std::endl;
   condition->write(os, indent + 4);
   os << std::string(indent + 2, ' ') << "Then Branch:" << std::endl;
-  for (const auto &stmt : thenBranch->statements) {
+  for (const auto &stmt : then_branch->statements) {
     stmt->write(os, indent + 4);
   }
   if (!has_else_branch())
     return;
   os << std::string(indent + 2, ' ') << "Else Branch:" << std::endl;
-  for (const auto &stmt : elseBranch->statements) {
+  for (const auto &stmt : else_branch->statements) {
     stmt->write(os, indent + 4);
   }
 }
@@ -109,7 +109,7 @@ void Function::write(std::ostream &os, unsigned long indent) const {
        << AlohaType::to_string(p.type) << std::endl;
   }
   os << std::string(indent, ' ')
-     << "Return Type: " << AlohaType::to_string(returnType) << std::endl;
+     << "Return Type: " << AlohaType::to_string(return_type) << std::endl;
   os << std::string(indent, ' ') << "Body:" << std::endl;
   for (const auto &stmt : body.get()->statements) {
     stmt->write(os, indent + 2);

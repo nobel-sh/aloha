@@ -100,8 +100,9 @@ std::vector<Parameter> Parser::parse_parameters() {
     auto type = parse_type();
     Parameter param(identifier->name, type);
     parameters.push_back(param);
-    if (!match(")"))
+    if (!match(")")) {
       consume(",", "Expected ',' or ')' after parameter declaration");
+    }
   }
 
   return parameters;
@@ -152,13 +153,13 @@ std::shared_ptr<Statement> Parser::parse_variable_declaration() {
   auto identifier = expect_identifier();
   auto type = optional_type();
   consume("=", "Expected '=' after variable declaration");
-  auto expression = parse_expression(0);
+  std::shared_ptr<Expression> expression = parse_expression(0);
   return std::make_shared<Declaration>(identifier->name, type, expression);
 }
 
 std::shared_ptr<Statement> Parser::parse_return_statement() {
   advance();
-  auto expression = parse_expression(0);
+  std::shared_ptr<Expression> expression = parse_expression(0);
   return std::make_shared<ReturnStatement>(expression);
 }
 
@@ -166,8 +167,8 @@ std::shared_ptr<Statement> Parser::parse_if_statement() {
   advance();
   auto condition = parse_expression(0);
   consume("then", "Expected 'then' keyword after condition");
-  auto thenBranch = parse_statements();
-  std::shared_ptr<StatementList> elseBranch = nullptr;
+  std::shared_ptr<StatementList> then_branch = parse_statements();
+  std::shared_ptr<StatementList> else_branch = nullptr;
   if (match("else")) {
     advance();
     if (!match("then") && !match("if")) {
@@ -177,9 +178,9 @@ std::shared_ptr<Statement> Parser::parse_if_statement() {
     if (match("then")) {
       advance();
     }
-    elseBranch = parse_statements();
+    else_branch = parse_statements();
   }
-  return std::make_shared<IfStatement>(condition, thenBranch, elseBranch);
+  return std::make_shared<IfStatement>(condition, then_branch, else_branch);
 }
 
 std::shared_ptr<Statement> Parser::parse_while_loop() {
@@ -208,7 +209,7 @@ std::map<std::string, Precedence> precedence = {
     {"!=", PREC_COMPARISON},
 };
 
-std::map<std::string, Parser::PrefixParserFunc> Parser::prefixParsers = {
+std::map<std::string, Parser::prefix_parser_func> Parser::prefix_parsers = {
     // {"-",
     //  [](Parser &parser) {
     //    return std::make_shared<UnaryExpression>(
@@ -216,7 +217,7 @@ std::map<std::string, Parser::PrefixParserFunc> Parser::prefixParsers = {
     //  }},
 };
 
-std::map<std::string, Parser::InfixParserFunc> Parser::infixParsers = {
+std::map<std::string, Parser::infix_parser_func> Parser::infix_parsers = {
     {"+",
      [](Parser &parser, auto left) {
        return std::make_shared<BinaryExpression>(
@@ -277,13 +278,11 @@ std::shared_ptr<Expression> Parser::parse_expression(int min_precedence) {
     return nullptr;
   }
   auto lexeme = token->lexeme;
-
-  auto prefixParserIter = prefixParsers.find(lexeme);
-  if (prefixParserIter != prefixParsers.end()) {
-    auto prefixParser = prefixParserIter->second;
+  auto prefix_parser_iter = prefix_parsers.find(lexeme);
+  if (prefix_parser_iter != prefix_parsers.end()) {
+    auto prefixParser = prefix_parser_iter->second;
     return parse_infix_expressions(prefixParser(*this), min_precedence);
   }
-
   auto left = parse_primary();
   return parse_infix_expressions(left, min_precedence);
 }
@@ -294,12 +293,13 @@ Parser::parse_infix_expressions(std::shared_ptr<Expression> left,
   while (auto token = peek()) {
     auto lexeme = token->lexeme;
     if (precedence.find(lexeme) == precedence.end() ||
-        precedence[lexeme] < min_precedence)
+        precedence[lexeme] < min_precedence) {
       break;
-    if (auto infixParserIter = infixParsers.find(lexeme);
-        infixParserIter != infixParsers.end()) {
+    }
+    if (auto infix_parsers_iter = infix_parsers.find(lexeme);
+        infix_parsers_iter != infix_parsers.end()) {
       advance();
-      left = infixParserIter->second(*this, left);
+      left = infix_parsers_iter->second(*this, left);
     } else {
       report_error("No infix parser found for operator: " + lexeme);
       return nullptr;
@@ -393,15 +393,17 @@ std::optional<AlohaType::Type> Parser::optional_type() {
 
 bool Parser::is_reserved_ident(Token t) const {
   auto lexeme = t.lexeme;
-  if (lexeme == "true" || lexeme == "false" || lexeme == "null")
+  if (lexeme == "true" || lexeme == "false" || lexeme == "null") {
     return true;
+  }
   return false;
 }
 
 bool Parser::is_reserved_ident() const {
   auto lexeme = peek()->lexeme;
-  if (lexeme == "true" || lexeme == "false" || lexeme == "null")
+  if (lexeme == "true" || lexeme == "false" || lexeme == "null") {
     return true;
+  }
   return false;
 }
 

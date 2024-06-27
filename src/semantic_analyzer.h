@@ -27,11 +27,11 @@ public:
   void visit(StatementList *node) override;
   void visit(Program *node) override;
 
-  void dump_symbol_table() { symbolTable.dump(); }
+  void dump_symbol_table() { symbol_table.dump(); }
 
 private:
-  SymbolTable symbolTable;
-  Function *currentFunction = nullptr;
+  SymbolTable symbol_table;
+  Function *current_fn = nullptr;
   TypeError error;
 };
 
