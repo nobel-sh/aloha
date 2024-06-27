@@ -119,6 +119,9 @@ std::shared_ptr<Statement> Parser::parse_statement() {
     return parse_while_loop();
   } else {
     if (peek()->kind == TokenKind::IDENT) {
+      if (next()->kind == TokenKind::EQUALS) {
+        return parse_variable_assignment();
+      }
       return parse_expression_statement();
     }
     // TODO: better handle this error
@@ -155,6 +158,13 @@ std::shared_ptr<Statement> Parser::parse_variable_declaration() {
   consume("=", "Expected '=' after variable declaration");
   std::shared_ptr<Expression> expression = parse_expression(0);
   return std::make_shared<Declaration>(identifier->name, type, expression);
+}
+
+std::shared_ptr<Statement> Parser::parse_variable_assignment() {
+  auto identifier = expect_identifier();
+  consume("=", "Expected '=' after variable declaration");
+  std::shared_ptr<Expression> expression = parse_expression(0);
+  return std::make_shared<Assignment>(identifier->name, expression);
 }
 
 std::shared_ptr<Statement> Parser::parse_return_statement() {

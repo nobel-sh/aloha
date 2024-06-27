@@ -1,5 +1,6 @@
 #include "semantic_analyzer.h"
 #include "ast.h"
+#include "symbolTable.h"
 #include "type.h"
 #include <vector>
 
@@ -45,15 +46,36 @@ void SemanticAnalyzer::visit(Identifier *node) {
 }
 
 void SemanticAnalyzer::visit(Declaration *node) {
+  if (!node->expression) {
+    return;
+  }
   node->expression->accept(*this);
-
   if (!node->type) {
     node->type = node->expression->get_type();
   }
-
   if (!symbol_table.addVariable(node->variable_name, node->type.value())) {
     error.addError("Variable redeclaration: " + node->variable_name);
     // throw TypeError("Variable redeclaration: " + node->variableName);
+  }
+}
+
+void SemanticAnalyzer::visit(Assignment *node) {
+  node->expression->accept(*this);
+  VariableInfo *var_info = symbol_table.getVariable(node->variable_name);
+  if (!var_info) {
+    error.addError("Expression assigned on undeclared variable");
+  }
+  if (var_info->type == AlohaType::Type::UNKNOWN) {
+    node->type = node->expression->get_type();
+  } else {
+    node->type = var_info->type;
+    if (node->type != node->expression->get_type()) {
+      std::string expr_type =
+          AlohaType::to_string(node->expression->get_type());
+      std::string var_type = AlohaType::to_string(node->type);
+      error.addError("Cannot assign expr of type " + expr_type +
+                     " to var of type " + var_type);
+    }
   }
 }
 

@@ -105,7 +105,11 @@ void CodeGen::visit(Declaration *node) {
     builder.CreateStore(current_val, alloca);
   }
 }
-
+void CodeGen::visit(Assignment *node) {
+  auto alloca = named_values[node->variable_name];
+  node->expression->accept(*this);
+  builder.CreateStore(current_val, alloca);
+}
 void CodeGen::visit(FunctionCall *node) {
   llvm::Function *callee_fn = module->getFunction(node->funcName->name);
   if (!callee_fn) {

@@ -124,9 +124,24 @@ public:
   std::string variable_name;
   std::optional<AlohaType::Type> type;
   ExprPtr expression;
+  bool is_assigned;
   explicit Declaration(const std::string &var_name,
                        std::optional<AlohaType::Type> type, ExprPtr expr)
-      : variable_name(var_name), type(type), expression(std::move(expr)) {}
+      : variable_name(var_name), type(type), expression(std::move(expr)),
+        is_assigned(expression != nullptr) {}
+
+  void write(std::ostream &os, unsigned long indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+};
+
+class Assignment : public Statement {
+public:
+  std::string variable_name;
+  AlohaType::Type type;
+  ExprPtr expression;
+  explicit Assignment(const std::string &var_name, ExprPtr expr)
+      : variable_name(var_name), type(AlohaType::Type::UNKNOWN),
+        expression(std::move(expr)) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };

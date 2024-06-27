@@ -18,6 +18,7 @@ public:
   void visit(BinaryExpression *node) override;
   void visit(Identifier *node) override;
   void visit(Declaration *node) override;
+  void visit(Assignment *node) override;
   void visit(FunctionCall *node) override;
   void visit(ReturnStatement *node) override;
   void visit(IfStatement *node) override;

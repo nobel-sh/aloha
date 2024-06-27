@@ -55,6 +55,7 @@ private:
   std::shared_ptr<StatementList> parse_statements();
   std::shared_ptr<Statement> parse_statement();
   std::shared_ptr<Statement> parse_variable_declaration();
+  std::shared_ptr<Statement> parse_variable_assignment();
   std::shared_ptr<Statement> parse_return_statement();
   std::shared_ptr<Statement> parse_if_statement();
   std::shared_ptr<Statement> parse_while_loop();

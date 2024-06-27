@@ -44,9 +44,18 @@ void Declaration::write(std::ostream &os, unsigned long indent) const {
     os << std::string(indent + 2, ' ')
        << "Type: " << AlohaType::to_string(type.value()) << std::endl;
   }
-  expression->write(os, indent + 2);
+  if (is_assigned) {
+    expression->write(os, indent + 2);
+  }
 }
 
+void Assignment::write(std::ostream &os, unsigned long indent) const {
+  os << std::string(indent, ' ') << "Assignment: " << variable_name
+     << std::endl;
+  os << std::string(indent + 2, ' ')
+     << "Type: " << AlohaType::to_string(type) << std::endl;
+  expression->write(os, indent + 2);
+}
 void FunctionCall::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Function Call: " << funcName->name
      << std::endl;
