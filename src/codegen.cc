@@ -19,38 +19,40 @@ CodeGen::CodeGen()
   module = std::make_unique<llvm::Module>("my_module", context);
 }
 
-bool CodeGen::generate_code(Program *program) {
+bool CodeGen::generate_code(Aloha::Program *program) {
   add_builtin_fns();
   program->accept(*this);
   auto status = llvm::verifyModule(*module, &llvm::errs());
   return status;
 }
 
-void CodeGen::visit(Number *node) {
+void CodeGen::visit(Aloha::Number *node) {
   auto num = std::stod(node->value);
   current_val = llvm::ConstantFP::get(context, llvm::APFloat(num));
 }
 
-void CodeGen::visit(Boolean *node) {
+void CodeGen::visit(Aloha::Boolean *node) {
   auto value = node->value;
   current_val = llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
 }
 
-void CodeGen::visit(AlohaString *node) {
+void CodeGen::visit(Aloha::AlohaString *node) {
   auto const &str = node->value;
   current_val = builder.CreateGlobalStringPtr(str, "str");
 }
 
-void CodeGen::visit(ExpressionStatement *node) { node->expr->accept(*this); }
+void CodeGen::visit(Aloha::ExpressionStatement *node) {
+  node->expr->accept(*this);
+}
 
-void CodeGen::visit(UnaryExpression *node) {
+void CodeGen::visit(Aloha::UnaryExpression *node) {
   node->expr->accept(*this);
   if (node->op == "-") {
     current_val = builder.CreateFNeg(current_val, "negtmp");
   }
 }
 
-void CodeGen::visit(BinaryExpression *node) {
+void CodeGen::visit(Aloha::BinaryExpression *node) {
   node->left->accept(*this);
   llvm::Value *left = current_val;
   node->right->accept(*this);
@@ -79,7 +81,7 @@ void CodeGen::visit(BinaryExpression *node) {
   }
 }
 
-void CodeGen::visit(Identifier *node) {
+void CodeGen::visit(Aloha::Identifier *node) {
   auto itr = named_values.find(node->name);
   if (itr == named_values.end()) {
     throw std::runtime_error("Unknown variable name: " + node->name);
@@ -94,7 +96,7 @@ void CodeGen::visit(Identifier *node) {
       builder.CreateLoad(alloca->getAllocatedType(), alloca, node->name);
 }
 
-void CodeGen::visit(Declaration *node) {
+void CodeGen::visit(Aloha::Declaration *node) {
   llvm::Type *type = get_llvm_type(node->type.value());
   llvm::AllocaInst *alloca =
       builder.CreateAlloca(type, nullptr, node->variable_name);
@@ -105,12 +107,12 @@ void CodeGen::visit(Declaration *node) {
     builder.CreateStore(current_val, alloca);
   }
 }
-void CodeGen::visit(Assignment *node) {
+void CodeGen::visit(Aloha::Assignment *node) {
   auto alloca = named_values[node->variable_name];
   node->expression->accept(*this);
   builder.CreateStore(current_val, alloca);
 }
-void CodeGen::visit(FunctionCall *node) {
+void CodeGen::visit(Aloha::FunctionCall *node) {
   llvm::Function *callee_fn = module->getFunction(node->funcName->name);
   if (!callee_fn) {
     throw std::runtime_error("Unknown function referenced: " +
@@ -127,7 +129,7 @@ void CodeGen::visit(FunctionCall *node) {
     current_val = builder.CreateCall(callee_fn, args, "calltmp");
 }
 
-void CodeGen::visit(ReturnStatement *node) {
+void CodeGen::visit(Aloha::ReturnStatement *node) {
   node->expression->accept(*this);
   builder.CreateRet(current_val);
 
@@ -137,7 +139,7 @@ void CodeGen::visit(ReturnStatement *node) {
   builder.SetInsertPoint(unreachable_block);
 }
 
-void CodeGen::visit(IfStatement *node) {
+void CodeGen::visit(Aloha::IfStatement *node) {
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
   llvm::BasicBlock *then_bb =
@@ -168,7 +170,7 @@ void CodeGen::visit(IfStatement *node) {
   builder.SetInsertPoint(merge_bb);
 }
 
-void CodeGen::visit(WhileLoop *node) {
+void CodeGen::visit(Aloha::WhileLoop *node) {
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
   llvm::BasicBlock *cond_bb =
@@ -194,7 +196,7 @@ void CodeGen::visit(WhileLoop *node) {
   builder.SetInsertPoint(after_bb);
 }
 
-void CodeGen::visit(ForLoop *node) {
+void CodeGen::visit(Aloha::ForLoop *node) {
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
   llvm::BasicBlock *preheader_bb = builder.GetInsertBlock();
@@ -220,7 +222,7 @@ void CodeGen::visit(ForLoop *node) {
   builder.SetInsertPoint(after_bb);
 }
 
-void CodeGen::visit(Function *node) {
+void CodeGen::visit(Aloha::Function *node) {
   std::vector<llvm::Type *> param_types;
   for (const auto &param : node->parameters) {
     param_types.push_back(get_llvm_type(param.type));
@@ -262,13 +264,13 @@ void CodeGen::visit(Function *node) {
   llvm::verifyFunction(*function);
 }
 
-void CodeGen::visit(StatementList *node) {
+void CodeGen::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
     stmt->accept(*this);
   }
 }
 
-void CodeGen::visit(Program *node) {
+void CodeGen::visit(Aloha::Program *node) {
   for (auto &n : node->nodes) {
     n->accept(*this);
   }

@@ -3,7 +3,6 @@
 #include "token.h"
 #include "type.h"
 #include <iostream>
-#include <map>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -68,15 +67,15 @@ const std::vector<std::string> &Parser::get_errors() const {
   return error_collector.get_errors();
 }
 
-std::unique_ptr<Program> Parser::parse() {
-  auto program = std::make_unique<Program>();
+std::unique_ptr<Aloha::Program> Parser::parse() {
+  auto program = std::make_unique<Aloha::Program>();
   while (!is_eof()) {
     program->nodes.push_back(parse_function());
   }
   return program;
 }
 
-std::shared_ptr<Function> Parser::parse_function() {
+std::shared_ptr<Aloha::Function> Parser::parse_function() {
 
   consume("fun", "Expected 'fun' keyword");
   auto identifier = expect_identifier();
@@ -87,18 +86,18 @@ std::shared_ptr<Function> Parser::parse_function() {
   auto returnType = parse_type();
   consume(TokenKind::LBRACE, "Expected '{' keyword before function body");
   auto statements = parse_statements();
-  return std::make_shared<Function>(identifier, std::move(parameters),
-                                    std::move(returnType),
-                                    std::move(statements));
+  return std::make_shared<Aloha::Function>(identifier, std::move(parameters),
+                                           std::move(returnType),
+                                           std::move(statements));
 }
 
-std::vector<Parameter> Parser::parse_parameters() {
-  std::vector<Parameter> parameters;
+std::vector<Aloha::Parameter> Parser::parse_parameters() {
+  std::vector<Aloha::Parameter> parameters;
   while (peek() && peek()->lexeme != ")") {
     auto identifier = expect_identifier();
     consume(":", "Expected ':' after parameter name");
     auto type = parse_type();
-    Parameter param(identifier->name, type);
+    Aloha::Parameter param(identifier->name, type);
     parameters.push_back(param);
     if (!match(")")) {
       consume(",", "Expected ',' or ')' after parameter declaration");
@@ -108,7 +107,7 @@ std::vector<Parameter> Parser::parse_parameters() {
   return parameters;
 }
 
-std::shared_ptr<Statement> Parser::parse_statement() {
+std::shared_ptr<Aloha::Statement> Parser::parse_statement() {
   if (match("mut") || match("imut")) {
     return parse_variable_declaration();
   } else if (match("return")) {
@@ -135,13 +134,13 @@ std::shared_ptr<Statement> Parser::parse_statement() {
   }
 }
 
-std::shared_ptr<Statement> Parser::parse_expression_statement() {
+std::shared_ptr<Aloha::Statement> Parser::parse_expression_statement() {
   auto expr = parse_expression(0);
-  return std::make_shared<ExpressionStatement>(expr);
+  return std::make_shared<Aloha::ExpressionStatement>(expr);
 }
 
-std::shared_ptr<StatementList> Parser::parse_statements() {
-  std::vector<StmtPtr> stmts;
+std::shared_ptr<Aloha::StatementList> Parser::parse_statements() {
+  std::vector<Aloha::StmtPtr> stmts;
   while (peek() && !match(TokenKind::RBRACE) && !is_eof()) {
     auto stmt = parse_statement();
     stmts.push_back(stmt);
@@ -149,10 +148,10 @@ std::shared_ptr<StatementList> Parser::parse_statements() {
   if (!is_eof()) {
     consume(TokenKind::RBRACE, "expected '}' at the end of block statement");
   }
-  return std::make_shared<StatementList>(stmts);
+  return std::make_shared<Aloha::StatementList>(stmts);
 }
 
-std::shared_ptr<Statement> Parser::parse_variable_declaration() {
+std::shared_ptr<Aloha::Statement> Parser::parse_variable_declaration() {
   bool is_mutable;
   if (match("mut")) {
     is_mutable = true;
@@ -164,53 +163,54 @@ std::shared_ptr<Statement> Parser::parse_variable_declaration() {
   }
   auto identifier = expect_identifier();
   auto type = optional_type();
-  std::shared_ptr<Expression> expression = nullptr;
+  std::shared_ptr<Aloha::Expression> expression = nullptr;
   if (match("=")) {
     advance();
     expression = parse_expression(0);
   }
-  return std::make_shared<Declaration>(identifier->name, type, expression,
-                                       is_mutable);
+  return std::make_shared<Aloha::Declaration>(identifier->name, type,
+                                              expression, is_mutable);
 }
 
-std::shared_ptr<Statement> Parser::parse_variable_assignment() {
+std::shared_ptr<Aloha::Statement> Parser::parse_variable_assignment() {
   auto identifier = expect_identifier();
   consume("=", "Expected '=' after variable declaration");
-  std::shared_ptr<Expression> expression = parse_expression(0);
-  return std::make_shared<Assignment>(identifier->name, expression);
+  std::shared_ptr<Aloha::Expression> expression = parse_expression(0);
+  return std::make_shared<Aloha::Assignment>(identifier->name, expression);
 }
 
-std::shared_ptr<Statement> Parser::parse_return_statement() {
+std::shared_ptr<Aloha::Statement> Parser::parse_return_statement() {
   advance();
-  std::shared_ptr<Expression> expression = parse_expression(0);
-  return std::make_shared<ReturnStatement>(expression);
+  std::shared_ptr<Aloha::Expression> expression = parse_expression(0);
+  return std::make_shared<Aloha::ReturnStatement>(expression);
 }
 
-std::shared_ptr<Statement> Parser::parse_if_statement() {
+std::shared_ptr<Aloha::Statement> Parser::parse_if_statement() {
   advance();
   auto condition = parse_expression(0);
   consume(TokenKind::LBRACE, "Expected '{' after condition");
-  std::shared_ptr<StatementList> then_branch = parse_statements();
-  std::shared_ptr<StatementList> else_branch = nullptr;
+  std::shared_ptr<Aloha::StatementList> then_branch = parse_statements();
+  std::shared_ptr<Aloha::StatementList> else_branch = nullptr;
   if (match("else")) {
     advance();
     if (match("if")) {
-      else_branch = std::make_shared<StatementList>();
+      else_branch = std::make_shared<Aloha::StatementList>();
       else_branch->statements.push_back(parse_if_statement());
     } else {
       consume(TokenKind::LBRACE, "expected '{' or 'if' after 'else' keyword");
       else_branch = parse_statements();
     }
   }
-  return std::make_shared<IfStatement>(condition, then_branch, else_branch);
+  return std::make_shared<Aloha::IfStatement>(condition, then_branch,
+                                              else_branch);
 }
 
-std::shared_ptr<Statement> Parser::parse_while_loop() {
+std::shared_ptr<Aloha::Statement> Parser::parse_while_loop() {
   advance();
   auto condition = parse_expression(0);
   consume(TokenKind::LBRACE, "Expected '{' keyword after condition");
   auto body = parse_statements();
-  return std::make_shared<WhileLoop>(condition, body);
+  return std::make_shared<Aloha::WhileLoop>(condition, body);
 }
 
 enum Precedence {
@@ -242,58 +242,59 @@ std::map<std::string, Parser::prefix_parser_func> Parser::prefix_parsers = {
 std::map<std::string, Parser::infix_parser_func> Parser::infix_parsers = {
     {"+",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, "+", parser.parse_expression(PREC_SUM));
      }},
     {"-",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, "-", parser.parse_expression(PREC_SUM));
      }},
     {"*",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, "*", parser.parse_expression(PREC_PRODUCT));
      }},
     {"/",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, "/", parser.parse_expression(PREC_PRODUCT));
      }},
     {"<",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, "<", parser.parse_expression(PREC_COMPARISON));
      }},
     {">",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, ">", parser.parse_expression(PREC_COMPARISON));
      }},
     {"==",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, "==", parser.parse_expression(PREC_COMPARISON));
      }},
     {"<=",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, "<=", parser.parse_expression(PREC_COMPARISON));
      }},
     {">=",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, ">=", parser.parse_expression(PREC_COMPARISON));
      }},
     {"!=",
      [](Parser &parser, auto left) {
-       return std::make_shared<BinaryExpression>(
+       return std::make_shared<Aloha::BinaryExpression>(
            left, "!=", parser.parse_expression(PREC_COMPARISON));
      }},
 
 };
 
-std::shared_ptr<Expression> Parser::parse_expression(int min_precedence) {
+std::shared_ptr<Aloha::Expression>
+Parser::parse_expression(int min_precedence) {
   auto token = next();
   if (!token) {
     report_error("Unexpected end of input");
@@ -309,8 +310,8 @@ std::shared_ptr<Expression> Parser::parse_expression(int min_precedence) {
   return parse_infix_expressions(left, min_precedence);
 }
 
-std::shared_ptr<Expression>
-Parser::parse_infix_expressions(std::shared_ptr<Expression> left,
+std::shared_ptr<Aloha::Expression>
+Parser::parse_infix_expressions(std::shared_ptr<Aloha::Expression> left,
                                 int min_precedence) {
   while (auto token = peek()) {
     auto lexeme = token->lexeme;
@@ -330,7 +331,7 @@ Parser::parse_infix_expressions(std::shared_ptr<Expression> left,
   return left;
 }
 
-std::shared_ptr<Expression> Parser::parse_primary() {
+std::shared_ptr<Aloha::Expression> Parser::parse_primary() {
   if (auto token = peek()) {
     if (token->kind == TokenKind::LPAREN) {
       advance();
@@ -344,33 +345,33 @@ std::shared_ptr<Expression> Parser::parse_primary() {
       advance();
       if (is_reserved_ident(*token)) {
         if (token->lexeme == "null")
-          return std::make_shared<Number>("null");
+          return std::make_shared<Aloha::Number>("null");
         else {
           auto value = token->lexeme == "true" ? true : false;
-          return std::make_shared<Boolean>(value);
+          return std::make_shared<Aloha::Boolean>(value);
         }
       }
-      return std::make_shared<Identifier>(token->lexeme);
+      return std::make_shared<Aloha::Identifier>(token->lexeme);
     } else if (token->kind == TokenKind::INT ||
                token->kind == TokenKind::FLOAT) {
       advance();
-      return std::make_shared<Number>(token->lexeme);
+      return std::make_shared<Aloha::Number>(token->lexeme);
     } else if (token->kind == TokenKind::STRING) {
       advance();
-      return std::make_shared<AlohaString>(token->lexeme);
+      return std::make_shared<Aloha::AlohaString>(token->lexeme);
     }
   }
   report_error("Expected expression");
   return nullptr;
 }
 
-std::shared_ptr<Expression> Parser::parse_function_call() {
+std::shared_ptr<Aloha::Expression> Parser::parse_function_call() {
   auto name = expect_identifier();
   consume(TokenKind::LPAREN, "function call must be followed by `(`");
-  std::vector<ExprPtr> args;
+  std::vector<Aloha::ExprPtr> args;
   if (match(TokenKind::RPAREN)) {
     advance();
-    return std::make_shared<FunctionCall>(name, args);
+    return std::make_shared<Aloha::FunctionCall>(name, args);
   }
   args.push_back(parse_expression(0));
   while (match(TokenKind::COMMA)) {
@@ -379,14 +380,14 @@ std::shared_ptr<Expression> Parser::parse_function_call() {
     args.push_back(arg);
   }
   consume(TokenKind::RPAREN, "function call must be end with `)`");
-  return std::make_shared<FunctionCall>(name, args);
+  return std::make_shared<Aloha::FunctionCall>(name, args);
 }
 
-std::shared_ptr<Identifier> Parser::expect_identifier() {
+std::shared_ptr<Aloha::Identifier> Parser::expect_identifier() {
   auto token = peek();
   if (token && token->kind == TokenKind::IDENT) {
     advance();
-    return std::make_shared<Identifier>(token->lexeme);
+    return std::make_shared<Aloha::Identifier>(token->lexeme);
   } else {
     report_error("Expected identifier");
     return nullptr;
@@ -429,4 +430,4 @@ bool Parser::is_reserved_ident() const {
   return false;
 }
 
-void Parser::dump(Program *p) const { p->write(std::cout, 2); }
+void Parser::dump(Aloha::Program *p) const { p->write(std::cout, 2); }

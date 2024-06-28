@@ -4,40 +4,37 @@
 #include "type.h"
 #include <vector>
 
-void SemanticAnalyzer::analyze(Program *program) {
+void SemanticAnalyzer::analyze(Aloha::Program *program) {
   program->accept(*this);
   if (!error.isEmpty()) {
     throw error;
   }
 }
 
-void SemanticAnalyzer::visit(Number *node) {}
+void SemanticAnalyzer::visit(Aloha::Number *node) {}
 
-void SemanticAnalyzer::visit(Boolean *node) {}
+void SemanticAnalyzer::visit(Aloha::Boolean *node) {}
 
-void SemanticAnalyzer::visit(AlohaString *node) {}
+void SemanticAnalyzer::visit(Aloha::AlohaString *node) {}
 
-void SemanticAnalyzer::visit(ExpressionStatement *node) {
+void SemanticAnalyzer::visit(Aloha::ExpressionStatement *node) {
   node->expr->accept(*this);
 }
 
-void SemanticAnalyzer::visit(UnaryExpression *node) {
+void SemanticAnalyzer::visit(Aloha::UnaryExpression *node) {
   node->expr->accept(*this);
-  node->type = node->expr->get_type();
 }
 
-void SemanticAnalyzer::visit(BinaryExpression *node) {
+void SemanticAnalyzer::visit(Aloha::BinaryExpression *node) {
   node->left->accept(*this);
   node->right->accept(*this);
 
-  if (node->left->get_type() == node->right->get_type()) {
-    node->type = node->left->get_type();
-  } else {
+  if (node->left->get_type() != node->right->get_type()) {
     error.addError("Type mismatch in binary expression");
   }
 }
 
-void SemanticAnalyzer::visit(Identifier *node) {
+void SemanticAnalyzer::visit(Aloha::Identifier *node) {
   VariableInfo *varInfo = symbol_table.getVariable(node->name);
   if (!varInfo) {
     error.addError("Undeclared variable: " + node->name);
@@ -45,7 +42,7 @@ void SemanticAnalyzer::visit(Identifier *node) {
   node->type = varInfo->type;
 }
 
-void SemanticAnalyzer::visit(Declaration *node) {
+void SemanticAnalyzer::visit(Aloha::Declaration *node) {
   if (node->is_assigned) {
     node->expression->accept(*this);
     if (!node->type) {
@@ -61,7 +58,7 @@ void SemanticAnalyzer::visit(Declaration *node) {
   }
 }
 
-void SemanticAnalyzer::visit(Assignment *node) {
+void SemanticAnalyzer::visit(Aloha::Assignment *node) {
   VariableInfo *var_info = symbol_table.getVariable(node->variable_name);
   if (!var_info) {
     error.addError("Cannnot assign to an undeclared variable: " +
@@ -87,7 +84,7 @@ void SemanticAnalyzer::visit(Assignment *node) {
   }
 }
 
-void SemanticAnalyzer::visit(FunctionCall *node) {
+void SemanticAnalyzer::visit(Aloha::FunctionCall *node) {
   FunctionInfo *funcInfo = symbol_table.getFunction(node->funcName->name);
   auto isBuiltin = symbol_table.isBuiltinFunction(node->funcName->name);
   if (isBuiltin) {
@@ -111,7 +108,7 @@ void SemanticAnalyzer::visit(FunctionCall *node) {
   }
 }
 
-void SemanticAnalyzer::visit(ReturnStatement *node) {
+void SemanticAnalyzer::visit(Aloha::ReturnStatement *node) {
   node->expression->accept(*this);
 
   if (current_fn && node->expression->get_type() != current_fn->return_type) {
@@ -125,7 +122,7 @@ void SemanticAnalyzer::visit(ReturnStatement *node) {
   }
 }
 
-void SemanticAnalyzer::visit(IfStatement *node) {
+void SemanticAnalyzer::visit(Aloha::IfStatement *node) {
   node->condition->accept(*this);
   symbol_table.enterScope();
   node->then_branch->accept(*this);
@@ -137,14 +134,14 @@ void SemanticAnalyzer::visit(IfStatement *node) {
   }
 }
 
-void SemanticAnalyzer::visit(WhileLoop *node) {
+void SemanticAnalyzer::visit(Aloha::WhileLoop *node) {
   node->condition->accept(*this);
   symbol_table.enterScope();
   node->body->accept(*this);
   symbol_table.leaveScope();
 }
 
-void SemanticAnalyzer::visit(ForLoop *node) {
+void SemanticAnalyzer::visit(Aloha::ForLoop *node) {
   symbol_table.enterScope();
   node->initializer->accept(*this);
   node->condition->accept(*this);
@@ -155,7 +152,7 @@ void SemanticAnalyzer::visit(ForLoop *node) {
   symbol_table.leaveScope();
 }
 
-void SemanticAnalyzer::visit(Function *node) {
+void SemanticAnalyzer::visit(Aloha::Function *node) {
   std::vector<AlohaType::Type> parameterType;
   for (const auto &param : node->parameters) {
     parameterType.push_back(param.type);
@@ -180,13 +177,13 @@ void SemanticAnalyzer::visit(Function *node) {
   symbol_table.leaveScope();
 }
 
-void SemanticAnalyzer::visit(StatementList *node) {
+void SemanticAnalyzer::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
     stmt->accept(*this);
   }
 }
 
-void SemanticAnalyzer::visit(Program *node) {
+void SemanticAnalyzer::visit(Aloha::Program *node) {
   for (auto &n : node->nodes) {
     n->accept(*this);
   }

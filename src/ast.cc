@@ -3,6 +3,8 @@
 #include <ostream>
 #include <string>
 
+namespace Aloha {
+
 void Number::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Number: " << value << std::endl;
 }
@@ -142,3 +144,5 @@ void Program::write(std::ostream &os, unsigned long indent) const {
     node->write(os, indent + 2);
   }
 }
+
+} // namespace Aloha

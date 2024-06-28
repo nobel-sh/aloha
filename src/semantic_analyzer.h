@@ -8,31 +8,31 @@
 
 class SemanticAnalyzer : public ASTVisitor {
 public:
-  void analyze(Program *program);
+  void analyze(Aloha::Program *program);
 
-  void visit(Number *node) override;
-  void visit(Boolean *node) override;
-  void visit(AlohaString *node) override;
-  void visit(ExpressionStatement *node) override;
-  void visit(UnaryExpression *node) override;
-  void visit(BinaryExpression *node) override;
-  void visit(Identifier *node) override;
-  void visit(Declaration *node) override;
-  void visit(Assignment *node) override;
-  void visit(FunctionCall *node) override;
-  void visit(ReturnStatement *node) override;
-  void visit(IfStatement *node) override;
-  void visit(WhileLoop *node) override;
-  void visit(ForLoop *node) override;
-  void visit(Function *node) override;
-  void visit(StatementList *node) override;
-  void visit(Program *node) override;
+  void visit(Aloha::Number *node) override;
+  void visit(Aloha::Boolean *node) override;
+  void visit(Aloha::AlohaString *node) override;
+  void visit(Aloha::ExpressionStatement *node) override;
+  void visit(Aloha::UnaryExpression *node) override;
+  void visit(Aloha::BinaryExpression *node) override;
+  void visit(Aloha::Identifier *node) override;
+  void visit(Aloha::Declaration *node) override;
+  void visit(Aloha::Assignment *node) override;
+  void visit(Aloha::FunctionCall *node) override;
+  void visit(Aloha::ReturnStatement *node) override;
+  void visit(Aloha::IfStatement *node) override;
+  void visit(Aloha::WhileLoop *node) override;
+  void visit(Aloha::ForLoop *node) override;
+  void visit(Aloha::Function *node) override;
+  void visit(Aloha::StatementList *node) override;
+  void visit(Aloha::Program *node) override;
 
   void dump_symbol_table() { symbol_table.dump(); }
 
 private:
   SymbolTable symbol_table;
-  Function *current_fn = nullptr;
+  Aloha::Function *current_fn = nullptr;
   TypeError error;
 };
 

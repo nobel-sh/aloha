@@ -2,6 +2,7 @@
 #define ASTVISITOR_H_
 
 // forward decls avoiding dependency cycle
+namespace Aloha {
 class Number;
 class Boolean;
 class AlohaString;
@@ -20,25 +21,26 @@ class ExpressionStatement;
 class StatementList;
 class Program;
 
+}; // namespace Aloha
 class ASTVisitor {
 public:
-  virtual void visit(Number *node) = 0;
-  virtual void visit(Boolean *node) = 0;
-  virtual void visit(AlohaString *node) = 0;
-  virtual void visit(UnaryExpression *node) = 0;
-  virtual void visit(BinaryExpression *node) = 0;
-  virtual void visit(Identifier *node) = 0;
-  virtual void visit(Declaration *node) = 0;
-  virtual void visit(Assignment *node) = 0;
-  virtual void visit(FunctionCall *node) = 0;
-  virtual void visit(ReturnStatement *node) = 0;
-  virtual void visit(IfStatement *node) = 0;
-  virtual void visit(WhileLoop *node) = 0;
-  virtual void visit(ForLoop *node) = 0;
-  virtual void visit(Function *node) = 0;
-  virtual void visit(ExpressionStatement *node) = 0;
-  virtual void visit(StatementList *node) = 0;
-  virtual void visit(Program *node) = 0;
+  virtual void visit(Aloha::Number *node) = 0;
+  virtual void visit(Aloha::Boolean *node) = 0;
+  virtual void visit(Aloha::AlohaString *node) = 0;
+  virtual void visit(Aloha::UnaryExpression *node) = 0;
+  virtual void visit(Aloha::BinaryExpression *node) = 0;
+  virtual void visit(Aloha::Identifier *node) = 0;
+  virtual void visit(Aloha::Declaration *node) = 0;
+  virtual void visit(Aloha::Assignment *node) = 0;
+  virtual void visit(Aloha::FunctionCall *node) = 0;
+  virtual void visit(Aloha::ReturnStatement *node) = 0;
+  virtual void visit(Aloha::IfStatement *node) = 0;
+  virtual void visit(Aloha::WhileLoop *node) = 0;
+  virtual void visit(Aloha::ForLoop *node) = 0;
+  virtual void visit(Aloha::Function *node) = 0;
+  virtual void visit(Aloha::ExpressionStatement *node) = 0;
+  virtual void visit(Aloha::StatementList *node) = 0;
+  virtual void visit(Aloha::Program *node) = 0;
 };
 
 #endif // ASTVISITOR_H_
