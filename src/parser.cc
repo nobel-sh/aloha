@@ -85,7 +85,7 @@ std::shared_ptr<Function> Parser::parse_function() {
   consume(TokenKind::RPAREN, "Expected ')' after parameters");
   consume(TokenKind::THIN_ARROW, "Expected '->' before return type");
   auto returnType = parse_type();
-  consume("do", "Expected 'do' keyword before function body");
+  consume(TokenKind::LBRACE, "Expected '{' keyword before function body");
   auto statements = parse_statements();
   return std::make_shared<Function>(identifier, std::move(parameters),
                                     std::move(returnType),
@@ -139,20 +139,20 @@ std::shared_ptr<Statement> Parser::parse_expression_statement() {
   auto expr = parse_expression(0);
   return std::make_shared<ExpressionStatement>(expr);
 }
+
 std::shared_ptr<StatementList> Parser::parse_statements() {
   std::vector<StmtPtr> stmts;
-  while (peek() && peek()->lexeme != "end" && !is_eof()) {
+  while (peek() && !match(TokenKind::RBRACE) && !is_eof()) {
     auto stmt = parse_statement();
     stmts.push_back(stmt);
   }
   if (!is_eof()) {
-    consume("end", "expected 'end' at the end of block statement");
+    consume(TokenKind::RBRACE, "expected '}' at the end of block statement");
   }
   return std::make_shared<StatementList>(stmts);
 }
 
 std::shared_ptr<Statement> Parser::parse_variable_declaration() {
-  // consume("var", "Expected 'var' keyword");
   bool is_mutable;
   if (match("mut")) {
     is_mutable = true;
@@ -189,16 +189,16 @@ std::shared_ptr<Statement> Parser::parse_return_statement() {
 std::shared_ptr<Statement> Parser::parse_if_statement() {
   advance();
   auto condition = parse_expression(0);
-  consume("then", "Expected 'then' keyword after condition");
+  consume(TokenKind::LBRACE, "Expected '{' after condition");
   std::shared_ptr<StatementList> then_branch = parse_statements();
   std::shared_ptr<StatementList> else_branch = nullptr;
   if (match("else")) {
     advance();
-    if (!match("then") && !match("if")) {
+    if (!match(TokenKind::LBRACE) && !match("if")) {
       peek()->dump();
-      report_error("expected 'then' or 'if' after else block");
+      report_error("expected '{' or 'if' after 'else' keyword");
     }
-    if (match("then")) {
+    if (match(TokenKind::LPAREN)) {
       advance();
     }
     else_branch = parse_statements();
@@ -209,7 +209,7 @@ std::shared_ptr<Statement> Parser::parse_if_statement() {
 std::shared_ptr<Statement> Parser::parse_while_loop() {
   advance();
   auto condition = parse_expression(0);
-  consume("do", "Expected 'do' keyword after condition");
+  consume(TokenKind::LBRACE, "Expected '{' keyword after condition");
   auto body = parse_statements();
   return std::make_shared<WhileLoop>(condition, body);
 }

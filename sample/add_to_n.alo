@@ -1,13 +1,11 @@
-fun add_to_n(num: number, acc: number) -> number
-do
-    if num == 0 then
+fun add_to_n(num: number, acc: number) -> number {
+    if num == 0 {
        return acc
-    end
+    }
     return add_to_n(num - 1, acc + 1)
-end
+}
 
-fun main()->void
-do
+fun main() -> void {
     var k = add_to_n(10, 0)
     printlnNum(k)
-end
+}
