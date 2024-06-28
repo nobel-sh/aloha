@@ -30,14 +30,15 @@ class Statement : public Node {};
 using ExprPtr = std::shared_ptr<Expression>;
 using StmtPtr = std::shared_ptr<Statement>;
 
-class StatementList : public Node {
+class StatementList : public Statement {
 public:
   std::vector<std::shared_ptr<Statement>> statements;
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
   explicit StatementList(const std::vector<StmtPtr> stmts)
       : statements(std::move(stmts)) {}
-  bool empty() const { return statements.size() == 0; }
+  StatementList() : statements() {}
+  bool empty() const { return statements.empty(); }
 };
 
 class ExpressionStatement : public Statement {

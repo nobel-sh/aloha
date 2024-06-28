@@ -126,9 +126,9 @@ std::shared_ptr<Statement> Parser::parse_statement() {
     }
     // TODO: better handle this error
     //  report_error();
-    if (is_eof()) {
-      return nullptr;
-    }
+    // if (is_eof()) {
+    //   return nullptr;
+    // }
     std::cout << "Unknown or unimplemented statement kind" << std::endl;
     peek()->dump();
     exit(1);
@@ -194,14 +194,13 @@ std::shared_ptr<Statement> Parser::parse_if_statement() {
   std::shared_ptr<StatementList> else_branch = nullptr;
   if (match("else")) {
     advance();
-    if (!match(TokenKind::LBRACE) && !match("if")) {
-      peek()->dump();
-      report_error("expected '{' or 'if' after 'else' keyword");
+    if (match("if")) {
+      else_branch = std::make_shared<StatementList>();
+      else_branch->statements.push_back(parse_if_statement());
+    } else {
+      consume(TokenKind::LBRACE, "expected '{' or 'if' after 'else' keyword");
+      else_branch = parse_statements();
     }
-    if (match(TokenKind::LPAREN)) {
-      advance();
-    }
-    else_branch = parse_statements();
   }
   return std::make_shared<IfStatement>(condition, then_branch, else_branch);
 }
