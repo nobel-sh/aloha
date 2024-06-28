@@ -5,7 +5,7 @@
 namespace Aloha {
 class Number;
 class Boolean;
-class AlohaString;
+class String;
 class UnaryExpression;
 class BinaryExpression;
 class Identifier;
@@ -26,7 +26,7 @@ class ASTVisitor {
 public:
   virtual void visit(Aloha::Number *node) = 0;
   virtual void visit(Aloha::Boolean *node) = 0;
-  virtual void visit(Aloha::AlohaString *node) = 0;
+  virtual void visit(Aloha::String *node) = 0;
   virtual void visit(Aloha::UnaryExpression *node) = 0;
   virtual void visit(Aloha::BinaryExpression *node) = 0;
   virtual void visit(Aloha::Identifier *node) = 0;

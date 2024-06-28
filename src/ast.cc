@@ -14,7 +14,7 @@ void Boolean::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Boolean: " << value_str << std::endl;
 }
 
-void AlohaString::write(std::ostream &os, unsigned long indent) const {
+void String::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "String: " << value << std::endl;
 }
 

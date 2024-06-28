@@ -36,7 +36,7 @@ private:
 
   void visit(Aloha::Number *node) override;
   void visit(Aloha::Boolean *node) override;
-  void visit(Aloha::AlohaString *node) override;
+  void visit(Aloha::String *node) override;
   void visit(Aloha::ExpressionStatement *node) override;
   void visit(Aloha::UnaryExpression *node) override;
   void visit(Aloha::BinaryExpression *node) override;

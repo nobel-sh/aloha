@@ -36,7 +36,7 @@ void CodeGen::visit(Aloha::Boolean *node) {
   current_val = llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
 }
 
-void CodeGen::visit(Aloha::AlohaString *node) {
+void CodeGen::visit(Aloha::String *node) {
   auto const &str = node->value;
   current_val = builder.CreateGlobalStringPtr(str, "str");
 }

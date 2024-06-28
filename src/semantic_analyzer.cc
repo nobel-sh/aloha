@@ -15,7 +15,7 @@ void SemanticAnalyzer::visit(Aloha::Number *node) {}
 
 void SemanticAnalyzer::visit(Aloha::Boolean *node) {}
 
-void SemanticAnalyzer::visit(Aloha::AlohaString *node) {}
+void SemanticAnalyzer::visit(Aloha::String *node) {}
 
 void SemanticAnalyzer::visit(Aloha::ExpressionStatement *node) {
   node->expr->accept(*this);

@@ -358,7 +358,7 @@ std::shared_ptr<Aloha::Expression> Parser::parse_primary() {
       return std::make_shared<Aloha::Number>(token->lexeme);
     } else if (token->kind == TokenKind::STRING) {
       advance();
-      return std::make_shared<Aloha::AlohaString>(token->lexeme);
+      return std::make_shared<Aloha::String>(token->lexeme);
     }
   }
   report_error("Expected expression");

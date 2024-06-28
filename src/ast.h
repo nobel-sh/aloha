@@ -77,11 +77,11 @@ public:
   AlohaType::Type get_type() const override { return AlohaType::Type::BOOL; }
 };
 
-class AlohaString : public Expression {
+class String : public Expression {
 public:
   std::string value;
 
-  explicit AlohaString(std::string val) : value(std::move(val)) {}
+  explicit String(std::string val) : value(std::move(val)) {}
 
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
