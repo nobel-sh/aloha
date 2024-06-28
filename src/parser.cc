@@ -120,8 +120,13 @@ std::shared_ptr<Aloha::Statement> Parser::parse_statement() {
     if (peek()->kind == TokenKind::IDENT) {
       if (next()->kind == TokenKind::EQUALS) {
         return parse_variable_assignment();
+      } else if (next()->kind == TokenKind::LPAREN) {
+        return parse_expression_statement();
+      } else {
+        std::cout << "Unexpected keyword found" << std::endl;
+        peek()->dump();
+        exit(1);
       }
-      return parse_expression_statement();
     }
     // TODO: better handle this error
     //  report_error();

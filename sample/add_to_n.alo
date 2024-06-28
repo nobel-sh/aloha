@@ -6,6 +6,6 @@ fun add_to_n(num: number, acc: number) -> number {
 }
 
 fun main() -> void {
-    var k = add_to_n(10, 0)
+    imut k = add_to_n(10, 0)
     printlnNum(k)
 }
