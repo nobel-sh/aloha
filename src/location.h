@@ -12,7 +12,7 @@ public:
 
   std::string to_string() const {
     std::stringstream ss;
-    ss << line << ", " << col;
+    ss << line << ":" << col;
     return ss.str();
   }
 
