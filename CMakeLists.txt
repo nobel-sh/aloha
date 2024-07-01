@@ -78,3 +78,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
 install(TARGETS aloha
     DESTINATION bin
 )
+
+# For Testing
+enable_testing()
+add_subdirectory(tests)
