@@ -1,0 +1,6 @@
+fun main () -> void {
+  mut flag : number
+  flag = 10
+  flag = 10 + flag
+  printlnNum(flag)
+}

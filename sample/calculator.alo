@@ -1,0 +1,18 @@
+fun calculator(left:number, right:number, op:number) -> number {
+    mut result = 100
+    if op == 0 {
+       result = left+right
+    } else if op == 1 {
+       result = left - right
+    } else if op == 2 {
+       result = left * right
+    } else if op == 3 {
+       result = left / right
+    }
+    return result
+}
+
+fun main() -> void {
+    mut result  : number = calculator(10,20,0)
+    printlnNum(result)
+}

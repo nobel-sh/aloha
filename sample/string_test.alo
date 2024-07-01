@@ -1,0 +1,15 @@
+fun hello_world() -> void {
+    println("Hello, World!")
+}
+
+fun greet(name:string) -> void {
+    print("Hello, ")
+    print(name)
+    println("!")
+}
+
+fun main()->void {
+    hello_world()
+    imut name = "John Doe"
+    greet(name)
+}

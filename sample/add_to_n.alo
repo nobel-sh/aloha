@@ -2,7 +2,7 @@ fun add_to_n(num: number, acc: number) -> number {
     if num == 0 {
        return acc
     }
-    return add_to_n(num - 1, acc + 1)
+    return add_to_n(num - 1, acc + num)
 }
 
 fun main() -> void {
