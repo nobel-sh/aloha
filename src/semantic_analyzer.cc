@@ -85,16 +85,21 @@ void SemanticAnalyzer::visit(Aloha::Assignment *node) {
 }
 
 void SemanticAnalyzer::visit(Aloha::FunctionCall *node) {
-  FunctionInfo *funcInfo = symbol_table.getFunction(node->funcName->name);
   auto isBuiltin = symbol_table.isBuiltinFunction(node->funcName->name);
   if (isBuiltin) {
     return; // HACK: dont check anything for now but should be a good idea to
             // add protoypes and check for types and so on
   }
+
+  FunctionInfo *funcInfo = symbol_table.getFunction(node->funcName->name);
   if (!funcInfo) {
     error.addError("Undeclared function: " + node->funcName->name);
     return;
   }
+
+  // infer type from calle fn's return type
+  node->type = funcInfo->return_type;
+
   if (node->arguments.size() != funcInfo->param_types.size()) {
     error.addError("Argument count mismatch in function call: " +
                    node->funcName->name);
@@ -112,11 +117,12 @@ void SemanticAnalyzer::visit(Aloha::ReturnStatement *node) {
   node->expression->accept(*this);
 
   if (current_fn && node->expression->get_type() != current_fn->return_type) {
-    std::cout << AlohaType::to_string(node->expression->get_type())
-              << std::endl;
-    std::cout << AlohaType::to_string(current_fn->return_type) << std::endl;
-
     symbol_table.dump();
+    std::cout << "Expr type: "
+              << AlohaType::to_string(node->expression->get_type())
+              << std::endl;
+    std::cout << "Curr fn return type: "
+              << AlohaType::to_string(current_fn->return_type) << std::endl;
     error.addError("Return type mismatch in function: " +
                    current_fn->name->name);
   }
