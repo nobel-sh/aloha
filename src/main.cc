@@ -117,7 +117,9 @@ int main(int argc, char *argv[]) {
     }
 
     objgen(codegen, object_name);
-    link_objects(object_name, file_name);
+
+    auto executable_name = file_name + ".out";
+    link_objects(object_name, executable_name);
   } catch (const TypeError &e) {
     e.print_error();
   } catch (const std::runtime_error &e) {
