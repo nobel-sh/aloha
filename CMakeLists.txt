@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
+
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_CXX_COMPILER "clang++")
 
+project(aloha LANGUAGES C CXX)
 if (NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 23)
 endif()
-
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-project(aloha C CXX)
-
+# Required packages
 find_package(LLVM REQUIRED CONFIG)
 find_package(ZLIB REQUIRED)
 find_package(LibEdit REQUIRED)
@@ -20,23 +20,21 @@ message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-
 add_definitions(${LLVM_DEFINITIONS})
 
-set(SOURCE_FILES
-    src/main.cc
-    src/token.cc
-    src/lexer.cc
-    src/ast.cc
-    src/parser.cc
-    src/semantic_analyzer.cc
-    src/symbolTable.cc
-    src/codegen.cc
-    src/objgen.cc
-    src/stdlib.cc
-)
+# Source files
+file(GLOB_RECURSE SRC_FILES src/*.cc)
+# exclude main.cc from the list of source files
+list(FILTER SRC_FILES EXCLUDE REGEX ".*main.cc$")
 
-llvm_map_components_to_libnames(LLVM_LIBS
+# Standard library files
+file(GLOB_RECURSE STDLIB_FILES stdlib/*.cc)
+
+add_library(aloha_core STATIC ${SRC_FILES})
+add_library(aloha_stdlib STATIC ${STDLIB_FILES})
+
+# Map LLVM components to library names
+llvm_map_components_to_libnames(LLVM_COMPONENT_LIBS
     core
     orcjit
     native
@@ -44,31 +42,39 @@ llvm_map_components_to_libnames(LLVM_LIBS
     irreader
 )
 
-add_executable(aloha ${SOURCE_FILES})
-
-target_link_libraries(aloha
-    ${LLVM_LIBS}
+target_link_libraries(aloha_core
+    ${LLVM_COMPONENT_LIBS}
     ZLIB::ZLIB
     LibEdit::LibEdit
 )
 
+add_executable(aloha src/main.cc)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(aloha PRIVATE
-        -Wall
-        -Wextra
-        -Werror
-        -Wshadow
-        -Wconversion
-        -Wpedantic
-        -Wno-unused-variable
-        -Wno-unused-function
-        -Wno-unused-parameter
-  )
+    foreach (target aloha aloha_core aloha_stdlib)
+        target_compile_options(${target} PRIVATE
+            -Wall
+            -Wextra
+            -Werror
+            -Wshadow
+            -Wconversion
+            -Wpedantic
+
+            #dont warn about unused variables in tests
+            -Wno-unused-variable
+            -Wno-unused-function
+            -Wno-unused-parameter
+        )
+    endforeach()
 endif()
 
+target_link_libraries(aloha aloha_core aloha_stdlib)
+
+# optimization flags
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
 
+# Installation setup
 install(TARGETS aloha
     DESTINATION bin
 )
