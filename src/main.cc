@@ -1,8 +1,8 @@
 #include "codegen.h"
-#include "file.h"
 #include "lexer.h"
 #include "objgen.h"
 #include "parser.h"
+#include "reader.h"
 #include "semantic_analyzer.h"
 #include "type.h"
 #include <cstdlib>
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    auto source = AlohaReader(input_filename.string()).as_bytes();
+    auto source = Aloha::FileReader(input_filename.string()).as_bytes();
     Lexer lexer(source);
     lexer.lex();
     if (lexer.has_error) {
