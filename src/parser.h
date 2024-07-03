@@ -24,6 +24,11 @@ public:
   void dump(Aloha::Program *p) const;
   const std::vector<std::string> &get_errors() const;
 
+  // exposed for testing
+  std::shared_ptr<Aloha::StatementList> parse_statements();
+  std::shared_ptr<Aloha::Statement> parse_statement();
+  std::shared_ptr<Aloha::Expression> parse_expression(int min_precedence);
+
 private:
   const std::vector<Token> tokens;
   size_t current;
@@ -52,15 +57,12 @@ private:
 
   std::shared_ptr<Aloha::Function> parse_function();
   std::vector<Aloha::Parameter> parse_parameters();
-  std::shared_ptr<Aloha::StatementList> parse_statements();
-  std::shared_ptr<Aloha::Statement> parse_statement();
   std::shared_ptr<Aloha::Statement> parse_variable_declaration();
   std::shared_ptr<Aloha::Statement> parse_variable_assignment();
   std::shared_ptr<Aloha::Statement> parse_return_statement();
   std::shared_ptr<Aloha::Statement> parse_if_statement();
   std::shared_ptr<Aloha::Statement> parse_while_loop();
 
-  std::shared_ptr<Aloha::Expression> parse_expression(int min_precedence);
   std::shared_ptr<Aloha::Expression>
   parse_infix_expressions(std::shared_ptr<Aloha::Expression> left,
                           int min_precedence);
