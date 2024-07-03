@@ -237,11 +237,12 @@ std::map<std::string, Precedence> precedence = {
 };
 
 std::map<std::string, Parser::prefix_parser_func> Parser::prefix_parsers = {
-    // {"-",
-    //  [](Parser &parser) {
-    //    return std::make_shared<UnaryExpression>(
-    //        "-", parser.parse_expression(PREC_PREFIX));
-    //  }},
+    {"-",
+     [](Parser &parser) {
+       parser.advance();
+       return std::make_shared<Aloha::UnaryExpression>(
+           "-", parser.parse_expression(PREC_PREFIX));
+     }},
 };
 
 std::map<std::string, Parser::infix_parser_func> Parser::infix_parsers = {
@@ -299,75 +300,94 @@ std::map<std::string, Parser::infix_parser_func> Parser::infix_parsers = {
 };
 
 std::shared_ptr<Aloha::Expression>
-Parser::parse_expression(int min_precedence) {
-  auto token = next();
-  if (!token) {
-    report_error("Unexpected end of input");
-    return nullptr;
-  }
-  auto lexeme = token->lexeme;
-  auto prefix_parser_iter = prefix_parsers.find(lexeme);
-  if (prefix_parser_iter != prefix_parsers.end()) {
-    auto prefixParser = prefix_parser_iter->second;
-    return parse_infix_expressions(prefixParser(*this), min_precedence);
-  }
+Parser::parse_expression(int parent_precedence) {
   auto left = parse_primary();
-  return parse_infix_expressions(left, min_precedence);
-}
-
-std::shared_ptr<Aloha::Expression>
-Parser::parse_infix_expressions(std::shared_ptr<Aloha::Expression> left,
-                                int min_precedence) {
-  while (auto token = peek()) {
-    auto lexeme = token->lexeme;
-    if (precedence.find(lexeme) == precedence.end() ||
-        precedence[lexeme] < min_precedence) {
+  while (!is_eof()) {
+    if (!peek()) {
       break;
     }
-    if (auto infix_parsers_iter = infix_parsers.find(lexeme);
-        infix_parsers_iter != infix_parsers.end()) {
-      advance();
-      left = infix_parsers_iter->second(*this, left);
-    } else {
-      report_error("No infix parser found for operator: " + lexeme);
-      return nullptr;
+    auto token = peek();
+    // if (token->kind != TokenKind::OPERATOR) {
+    //   break;
+    // }
+    auto op = token->lexeme;
+    auto prec = precedence[op];
+    if (prec <= parent_precedence) {
+      break;
     }
+    auto infix = infix_parsers[op];
+    if (!infix) {
+      break;
+    }
+    advance();
+    left = infix(*this, left);
   }
   return left;
 }
 
+// std::shared_ptr<Aloha::Expression>
+// Parser::parse_infix_expressions(std::shared_ptr<Aloha::Expression> left,
+//                                 int min_precedence) {
+//   while (auto token = peek()) {
+//     auto lexeme = token->lexeme;
+//     if (precedence.find(lexeme) == precedence.end() ||
+//         precedence[lexeme] < min_precedence) {
+//       break;
+//     }
+//     if (auto infix_parsers_iter = infix_parsers.find(lexeme);
+//         infix_parsers_iter != infix_parsers.end()) {
+//       advance();
+//       left = infix_parsers_iter->second(*this, left);
+//     } else {
+//       report_error("No infix parser found for operator: " + lexeme);
+//       return nullptr;
+//     }
+//   }
+//   return left;
+// }
+
 std::shared_ptr<Aloha::Expression> Parser::parse_primary() {
-  if (auto token = peek()) {
-    if (token->kind == TokenKind::LPAREN) {
-      advance();
-      auto expression = parse_expression(PREC_ASSIGNMENT);
-      consume(")", "Expected ')' after expression");
-      return expression;
-    } else if (token->kind == TokenKind::IDENT) {
-      if (next()->kind == TokenKind::LPAREN) {
-        return parse_function_call();
-      }
-      advance();
-      if (is_reserved_ident(*token)) {
-        if (token->lexeme == "null")
-          return std::make_shared<Aloha::Number>("null");
-        else {
-          auto value = token->lexeme == "true" ? true : false;
-          return std::make_shared<Aloha::Boolean>(value);
-        }
-      }
-      return std::make_shared<Aloha::Identifier>(token->lexeme);
-    } else if (token->kind == TokenKind::INT ||
-               token->kind == TokenKind::FLOAT) {
-      advance();
-      return std::make_shared<Aloha::Number>(token->lexeme);
-    } else if (token->kind == TokenKind::STRING) {
-      advance();
-      return std::make_shared<Aloha::String>(token->lexeme);
-    }
+  std::optional<Token> token = peek();
+  if (!token) {
+    report_error("Unexpected end of input");
+    return nullptr;
   }
-  report_error("Expected expression");
-  return nullptr;
+  if (token->kind == TokenKind::LPAREN) {
+    advance();
+    auto expression = parse_expression(0);
+    consume(TokenKind::RPAREN, "Expected ')' after expression");
+    return expression;
+  } else if (token->kind == TokenKind::IDENT) {
+    if (next()->kind == TokenKind::LPAREN) {
+      return parse_function_call();
+    }
+    advance();
+    if (is_reserved_ident(*token)) {
+      if (token->lexeme == "null")
+        return std::make_shared<Aloha::Number>("null");
+      else {
+        auto value = token->lexeme == "true" ? true : false;
+        return std::make_shared<Aloha::Boolean>(value);
+      }
+    }
+    return std::make_shared<Aloha::Identifier>(token->lexeme);
+  } else if (token->kind == TokenKind::INT || token->kind == TokenKind::FLOAT) {
+    advance();
+    return std::make_shared<Aloha::Number>(token->lexeme);
+  } else if (token->kind == TokenKind::STRING) {
+    advance();
+    return std::make_shared<Aloha::String>(token->lexeme);
+  } else if (token->kind == TokenKind::MINUS) {
+    auto prefix = prefix_parsers[token->lexeme];
+    if (prefix) {
+      return prefix(*this);
+    }
+    report_error("Unexpected expor");
+    return nullptr;
+  } else {
+    report_error("Expected expression");
+    return nullptr;
+  }
 }
 
 std::shared_ptr<Aloha::Expression> Parser::parse_function_call() {
