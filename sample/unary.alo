@@ -1,0 +1,4 @@
+fun main() -> void{
+  imut tt = -10
+  printlnNum(tt)
+}
