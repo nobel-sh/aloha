@@ -43,18 +43,18 @@ enum class TokenKind {
 class Token {
 private:
   static const std::map<TokenKind, const std::string> token_to_string;
-  Location loc;
 
 public:
   TokenKind kind;
   const std::string lexeme;
+  Location loc;
 
 public:
-  Token(unsigned int pos, TokenKind kind, const std::string lexeme)
-      : loc(pos, pos), kind(kind), lexeme(lexeme) {}
+  Token(TokenKind kind, const std::string lexeme, unsigned int pos)
+      : kind(kind), lexeme(std::move(lexeme)), loc(pos, pos) {}
 
-  Token(Location loc, TokenKind kind, const std::string lexeme)
-      : loc(loc), kind(kind), lexeme(std::move(lexeme)) {}
+  Token(TokenKind kind, const std::string lexeme, Location loc)
+      : kind(kind), lexeme(std::move(lexeme)), loc(loc) {}
 
   void dump() const;
   const std::string to_string() const;

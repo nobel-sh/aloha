@@ -47,17 +47,16 @@ bool Lexer::is_eof() const { return pos >= source.size(); }
 
 // TODO: Remove the lexemes in unecessary cases
 // TODO: Can definitely refactor this code as code is repeated
-
 void Lexer::lex() {
   while (!is_eof()) {
     auto curr_char = peek_token();
     Location loc(line, col);
     switch (curr_char) {
     case '(':
-      tokens.push_back(Token(loc, TokenKind::LPAREN, "("));
+      tokens.push_back(Token(TokenKind::LPAREN, "(", loc));
       break;
     case ')':
-      tokens.push_back(Token(loc, TokenKind::RPAREN, ")"));
+      tokens.push_back(Token(TokenKind::RPAREN, ")", loc));
       break;
     case ' ':
     case '\n':
@@ -68,20 +67,20 @@ void Lexer::lex() {
       continue;
 
     case '{':
-      tokens.push_back(Token(loc, TokenKind::LBRACE, "{"));
+      tokens.push_back(Token(TokenKind::LBRACE, "{", loc));
       break;
     case '}':
-      tokens.push_back(Token(loc, TokenKind::RBRACE, "}"));
+      tokens.push_back(Token(TokenKind::RBRACE, "}", loc));
       break;
     case ',':
-      tokens.push_back(Token(loc, TokenKind::COMMA, ","));
+      tokens.push_back(Token(TokenKind::COMMA, ",", loc));
       break;
     case '=':
       if (peek_token(1) == '=') {
-        tokens.push_back(Token(pos, TokenKind::EQUALEQUAL, "=="));
+        tokens.push_back(Token(TokenKind::EQUALEQUAL, "==", loc));
         consume_token();
       } else {
-        tokens.push_back(Token(loc, TokenKind::EQUALS, "="));
+        tokens.push_back(Token(TokenKind::EQUALS, "=", loc));
       }
       break;
     case '_':
@@ -89,57 +88,57 @@ void Lexer::lex() {
         handle_ident();
         continue;
       } else {
-        tokens.push_back(Token(loc, TokenKind::UNDERSCORE, "_"));
+        tokens.push_back(Token(TokenKind::UNDERSCORE, "_", loc));
       }
       break;
     case '+':
-      tokens.push_back(Token(loc, TokenKind::PLUS, "+"));
+      tokens.push_back(Token(TokenKind::PLUS, "+", loc));
       break;
     case '-':
       if (peek_token(1) == '>') {
-        tokens.push_back(Token(loc, TokenKind::THIN_ARROW, "->"));
+        tokens.push_back(Token(TokenKind::THIN_ARROW, "->", loc));
         consume_token();
       } else
-        tokens.push_back(Token(loc, TokenKind::MINUS, "-"));
+        tokens.push_back(Token(TokenKind::MINUS, "-", loc));
       break;
     case '*':
-      tokens.push_back(Token(loc, TokenKind::STAR, "*"));
+      tokens.push_back(Token(TokenKind::STAR, "*", loc));
       break;
     case '/':
-      tokens.push_back(Token(loc, TokenKind::SLASH, "/"));
+      tokens.push_back(Token(TokenKind::SLASH, "/", loc));
       break;
     case '%':
-      tokens.push_back(Token(loc, TokenKind::PERCENT, "%"));
+      tokens.push_back(Token(TokenKind::PERCENT, "%", loc));
       break;
     case ';':
-      tokens.push_back(Token(loc, TokenKind::SEMICOLON, ";"));
+      tokens.push_back(Token(TokenKind::SEMICOLON, ";", loc));
       break;
     case '!':
       if (peek_token(1) == '=') {
-        tokens.push_back(Token(loc, TokenKind::NOTEQUAL, "!="));
+        tokens.push_back(Token(TokenKind::NOTEQUAL, "!=", loc));
         consume_token();
       } else {
-        tokens.push_back(Token(loc, TokenKind::BANG, "!"));
+        tokens.push_back(Token(TokenKind::BANG, "!", loc));
       }
       break;
     case '<':
       if (peek_token(1) == '=') {
-        tokens.push_back(Token(pos, TokenKind::LESSTHANEQUAL, "<="));
+        tokens.push_back(Token(TokenKind::LESSTHANEQUAL, "<=", loc));
         consume_token();
       } else {
-        tokens.push_back(Token(loc, TokenKind::LESSTHAN, "<"));
+        tokens.push_back(Token(TokenKind::LESSTHAN, "<", loc));
       }
       break;
     case '>':
       if (peek_token(1) == '=') {
-        tokens.push_back(Token(loc, TokenKind::GREATERTHANEQUAL, ">="));
+        tokens.push_back(Token(TokenKind::GREATERTHANEQUAL, ">=", loc));
         consume_token();
       } else {
-        tokens.push_back(Token(loc, TokenKind::GREATERTHAN, ">"));
+        tokens.push_back(Token(TokenKind::GREATERTHAN, ">", loc));
       }
       break;
     case ':':
-      tokens.push_back(Token(loc, TokenKind::COLON, ":"));
+      tokens.push_back(Token(TokenKind::COLON, ":", loc));
       break;
     case EOF:
       break;
@@ -159,7 +158,7 @@ void Lexer::lex() {
     consume_token();
   }
   Location loc(line, col);
-  tokens.push_back(Token(loc, TokenKind::EOF_TOKEN, "EOF"));
+  tokens.push_back(Token(TokenKind::EOF_TOKEN, "EOF", loc));
 }
 
 void Lexer::handle_string() {
@@ -178,7 +177,7 @@ void Lexer::handle_string() {
     consume_token();
   }
   std::string instruction(source.begin() + start_pos, source.begin() + pos - 1);
-  tokens.push_back(Token(loc, TokenKind::STRING, std::move(instruction)));
+  tokens.push_back(Token(TokenKind::STRING, std::move(instruction), loc));
 }
 
 void Lexer::handle_number() {
@@ -192,13 +191,13 @@ void Lexer::handle_number() {
     while (isdigit(peek_token())) {
       consume_token();
     }
-    tokens.push_back(
-        Token(pos, TokenKind::FLOAT,
-              std::string(source.begin() + start_pos, source.begin() + pos)));
+    tokens.push_back(Token(
+        TokenKind::FLOAT,
+        std::string(source.begin() + start_pos, source.begin() + pos), loc));
   } else {
-    tokens.push_back(
-        Token(pos, TokenKind::INT,
-              std::string(source.begin() + start_pos, source.begin() + pos)));
+    tokens.push_back(Token(
+        TokenKind::INT,
+        std::string(source.begin() + start_pos, source.begin() + pos), loc));
   }
 }
 
@@ -214,5 +213,5 @@ void Lexer::handle_ident() {
     consume_token();
   }
   std::string str(source.begin() + start_pos, source.begin() + pos);
-  tokens.push_back(Token(loc, TokenKind::IDENT, std::move(str)));
+  tokens.push_back(Token(TokenKind::IDENT, std::move(str), loc));
 }
