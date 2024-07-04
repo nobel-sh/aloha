@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
     std::filesystem::path input_filename = argv[1];
     std::string file_name = split_on(input_filename.string(), '.').front();
     std::optional<bool> dump_flag = std::nullopt;
+    std::optional<bool> optimization_flag = std::nullopt;
 
     for (int i = 2; i < argc; ++i) {
       std::string arg = argv[i];
@@ -70,6 +71,12 @@ int main(int argc, char *argv[]) {
       } else if (arg == "--version") {
         std::cout << "Aloha version 0.1\n";
         return 0;
+      } else if (arg == "--no-optimize") {
+        optimization_flag = false;
+      } else {
+        std::cerr << "ERROR: unknown option: " << arg << std::endl;
+        print_help();
+        return 1;
       }
     }
 
@@ -107,13 +114,27 @@ int main(int argc, char *argv[]) {
     CodeGen codegen;
     codegen.generate_code(p.get());
 
-    optimize(codegen);
+    print_dotted_lines(50);
+    if (dump_flag.value_or(false)) {
+      std::cout << "Unoptimized LLVM IR" << std::endl;
+      codegen.dump_ir();
+      print_dotted_lines(50);
 
-    // if (!status)
+      if (optimization_flag.value_or(true)) {
+        std::cout << "Optimization Turned ON" << std::endl;
+        optimize(codegen);
+      } else {
+        std::cout << "Optimization Turned OFF" << std::endl;
+      }
+    }
+
     auto object_name = file_name + ".o";
     if (dump_flag.value_or(false)) {
-      print_dotted_lines(50);
-      codegen.dump_ir();
+      if (optimization_flag.value_or(true)) {
+        print_dotted_lines(50);
+        std::cout << "Optimized LLVM IR" << std::endl;
+        codegen.dump_ir();
+      }
     }
 
     objgen(codegen, object_name);
