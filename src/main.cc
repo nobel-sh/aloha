@@ -16,7 +16,8 @@ void print_help() {
             << "Options:\n"
             << "  --help, -h   Show this help message\n"
             << "  --version    Show program version\n"
-            << "  --dump       Dump extra debug information\n";
+            << "  --dump       Dump extra debug information\n"
+            << "  --no-optimize Turn off optimization\n";
 }
 
 void print_dotted_lines(int count, bool newline = true) {
