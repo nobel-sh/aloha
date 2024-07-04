@@ -70,7 +70,10 @@ const std::vector<std::string> &Parser::get_errors() const {
 std::unique_ptr<Aloha::Program> Parser::parse() {
   auto program = std::make_unique<Aloha::Program>();
   while (!is_eof()) {
-    program->nodes.push_back(parse_function());
+    if (match("struct")) {
+      program->nodes.push_back(parse_struct_decl());
+    } else
+      program->nodes.push_back(parse_function());
   }
   return program;
 }
@@ -89,6 +92,32 @@ std::shared_ptr<Aloha::Function> Parser::parse_function() {
   return std::make_shared<Aloha::Function>(identifier, std::move(parameters),
                                            std::move(returnType),
                                            std::move(statements));
+}
+
+std::vector<Aloha::StructField> Parser::parse_struct_field() {
+  std::vector<Aloha::StructField> fields;
+  while (!match(TokenKind::RBRACE) && !is_eof()) {
+    auto identifier = expect_identifier();
+    consume(":", "Expected ':' after field name");
+    auto type = parse_type();
+    Aloha::StructField field(identifier->name, type);
+    fields.push_back(field);
+    if (!match(TokenKind::RBRACE)) {
+      consume(",", "Expected ',' or '}' after field declaration");
+    }
+  }
+  return fields;
+}
+
+std::shared_ptr<Aloha::StructDecl> Parser::parse_struct_decl() {
+
+  consume("struct", "Expected 'struct' keyword");
+  auto identifier = expect_identifier();
+  consume(TokenKind::LBRACE, "Expected '{' after function name");
+  auto fields = parse_struct_field();
+  consume(TokenKind::RBRACE, "Expected '}' after parameters");
+  return std::make_shared<Aloha::StructDecl>(identifier->name,
+                                             std::move(fields));
 }
 
 std::vector<Aloha::Parameter> Parser::parse_parameters() {

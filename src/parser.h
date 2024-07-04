@@ -57,6 +57,8 @@ private:
 
   std::shared_ptr<Aloha::Function> parse_function();
   std::vector<Aloha::Parameter> parse_parameters();
+  std::shared_ptr<Aloha::StructDecl> parse_struct_decl();
+  std::vector<Aloha::StructField> parse_struct_field();
   std::shared_ptr<Aloha::Statement> parse_variable_declaration();
   std::shared_ptr<Aloha::Statement> parse_variable_assignment();
   std::shared_ptr<Aloha::Statement> parse_return_statement();

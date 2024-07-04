@@ -258,6 +258,28 @@ public:
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
+class StructField {
+public:
+  std::string m_name;
+  AlohaType::Type m_type;
+
+  StructField(std::string t_name, AlohaType::Type t_type)
+      : m_name(std::move(t_name)), m_type(t_type) {}
+};
+
+class StructDecl : public Statement {
+public:
+  // std::shared_ptr<Identifier> m_ident;
+  std::string m_name;
+  std::vector<StructField> m_fields;
+
+  StructDecl(std::string t_name, std::vector<StructField> t_fields)
+      : m_name(std::move(t_name)), m_fields(std::move(t_fields)) {}
+
+  void write(std::ostream &os, unsigned long indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+};
+
 // Program
 class Program : public Node {
 public:

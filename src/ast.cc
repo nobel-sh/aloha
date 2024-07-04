@@ -137,6 +137,14 @@ void StatementList::write(std::ostream &os, unsigned long indent) const {
     statement->write(os, indent + 2);
   }
 }
+void StructDecl::write(std::ostream &os, unsigned long indent) const {
+  os << std::string(indent, ' ') << "Struct : " << m_name << std::endl;
+  os << std::string(indent, ' ') << "Fields:" << std::endl;
+  for (const auto &field : m_fields) {
+    os << std::string(indent + 4, ' ') << field.m_name << ": "
+       << AlohaType::to_string(field.m_type) << std::endl;
+  }
+}
 
 void Program::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Program:" << std::endl;

@@ -264,6 +264,7 @@ void CodeGen::visit(Aloha::Function *node) {
   llvm::verifyFunction(*function);
 }
 
+void CodeGen::visit(Aloha::StructDecl *node) {}
 void CodeGen::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
     stmt->accept(*this);
