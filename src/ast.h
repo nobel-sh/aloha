@@ -280,15 +280,21 @@ public:
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
-struct StructInstantiation : Expression {
+struct StructInstantiation : public Expression {
   std::string m_struct_name;
   std::vector<ExprPtr> m_field_values;
+  AlohaType::Type m_type;
 
   StructInstantiation(std::string t_name, std::vector<ExprPtr> t_values)
-      : m_struct_name(t_name), m_field_values(t_values) {}
+      : m_struct_name(t_name), m_field_values(std::move(t_values)),
+        m_type(AlohaType::Type::UNKNOWN) {}
+
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const override { return AlohaType::Type::STRUCT; }
+
+  AlohaType::Type get_type() const override { return m_type; }
+
+  void set_type(AlohaType::Type t_type) { m_type = t_type; }
 };
 
 // Program

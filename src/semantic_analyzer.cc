@@ -47,14 +47,34 @@ void SemanticAnalyzer::visit(Aloha::Declaration *node) {
     node->expression->accept(*this);
     if (!node->type) {
       node->type = node->expression->get_type();
+    } else if (node->type != node->expression->get_type()) {
+      if (AlohaType::is_struct_type(node->type.value()) &&
+          AlohaType::is_struct_type(node->expression->get_type())) {
+
+        if (node->type.value() != node->expression->get_type()) {
+          error.addError("Struct type mismatch in declaration of " +
+                         node->variable_name);
+        }
+      } else {
+        error.addError("Type mismatch in declaration of " +
+                       node->variable_name);
+      }
     }
   }
-  AlohaType::Type type =
-      node->type ? node->type.value() : AlohaType::Type::UNKNOWN;
-  if (!symbol_table.addVariable(node->variable_name, type, node->is_assigned,
-                                node->is_mutable)) {
+
+  if (node->type && AlohaType::is_struct_type(node->type.value())) {
+    std::shared_ptr<Aloha::StructInstantiation> struct_ints =
+        std::static_pointer_cast<Aloha::StructInstantiation>(node->expression);
+    if (!symbol_table.getStruct(struct_ints->m_struct_name)) {
+      error.addError("Undeclared struct type: " +
+                     AlohaType::to_string(node->type.value()));
+    }
+  }
+
+  if (!symbol_table.addVariable(node->variable_name,
+                                node->type.value_or(AlohaType::Type::UNKNOWN),
+                                node->is_assigned, node->is_mutable)) {
     error.addError("Variable redeclaration: " + node->variable_name);
-    // throw TypeError("Variable redeclaration: " + node->variableName);
   }
 }
 
@@ -63,23 +83,36 @@ void SemanticAnalyzer::visit(Aloha::Assignment *node) {
   if (!var_info) {
     error.addError("Cannnot assign to an undeclared variable: " +
                    node->variable_name);
+    return;
   }
   if (!var_info->is_mutable && var_info->is_assigned) {
     error.addError("Cannot mutate immutable assigned variable: " +
                    node->variable_name);
+    return;
   }
+
   var_info->is_assigned = true;
   node->expression->accept(*this);
+
   if (var_info->type == AlohaType::Type::UNKNOWN) {
-    node->type = node->expression->get_type();
+    var_info->type = node->expression->get_type();
+    node->type = var_info->type;
   } else {
     node->type = var_info->type;
     if (node->type != node->expression->get_type()) {
-      std::string expr_type =
-          AlohaType::to_string(node->expression->get_type());
-      std::string var_type = AlohaType::to_string(node->type);
-      error.addError("Cannot assign expr of type " + expr_type +
-                     " to var of type " + var_type);
+      if (AlohaType::is_struct_type(node->type) &&
+          AlohaType::is_struct_type(node->expression->get_type())) {
+        if (node->type != node->expression->get_type()) {
+          error.addError("Struct type mismatch in assignment to " +
+                         node->variable_name);
+        }
+      } else {
+        std::string expr_type =
+            AlohaType::to_string(node->expression->get_type());
+        std::string var_type = AlohaType::to_string(node->type);
+        error.addError("Cannot assign expr of type " + expr_type +
+                       " to var of type " + var_type);
+      }
     }
   }
 }
@@ -183,9 +216,41 @@ void SemanticAnalyzer::visit(Aloha::Function *node) {
   symbol_table.leaveScope();
 }
 
-void SemanticAnalyzer::visit(Aloha::StructDecl *node) {}
+void SemanticAnalyzer::visit(Aloha::StructDecl *node) {
+  std::vector<StructField> fields;
+  for (const auto &field : node->m_fields) {
+    fields.push_back({field.m_name, field.m_type});
+  }
 
-void SemanticAnalyzer::visit(Aloha::StructInstantiation *node) {}
+  AlohaType::Type structType = symbol_table.addStruct(node->m_name, fields);
+  if (structType == AlohaType::Type::UNKNOWN) {
+    error.addError("Struct redeclaration: " + node->m_name);
+  }
+}
+
+void SemanticAnalyzer::visit(Aloha::StructInstantiation *node) {
+  StructInfo *structInfo = symbol_table.getStruct(node->m_struct_name);
+  if (!structInfo) {
+    error.addError("Undeclared struct: " + node->m_struct_name);
+    return;
+  }
+
+  if (node->m_field_values.size() != structInfo->fields.size()) {
+    error.addError("Field count mismatch in struct instantiation: " +
+                   node->m_struct_name);
+    return;
+  }
+
+  for (size_t i = 0; i < node->m_field_values.size(); ++i) {
+    node->m_field_values[i]->accept(*this);
+    if (node->m_field_values[i]->get_type() != structInfo->fields[i].type) {
+      error.addError("Field type mismatch in struct instantiation: " +
+                     structInfo->fields[i].name + " in " + node->m_struct_name);
+    }
+  }
+
+  node->set_type(structInfo->type);
+}
 
 void SemanticAnalyzer::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {

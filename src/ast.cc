@@ -138,6 +138,7 @@ void StatementList::write(std::ostream &os, unsigned long indent) const {
   }
 }
 void StructDecl::write(std::ostream &os, unsigned long indent) const {
+  os << std::endl;
   os << std::string(indent, ' ') << "Struct : " << m_name << std::endl;
   os << std::string(indent, ' ') << "Fields:" << std::endl;
   for (const auto &field : m_fields) {
