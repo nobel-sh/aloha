@@ -21,6 +21,16 @@ struct FunctionInfo {
   bool is_declared;
 };
 
+struct StructField {
+  std::string name;
+  AlohaType::Type type;
+};
+
+struct StructInfo {
+  AlohaType::Type type;
+  std::vector<StructField> fields;
+};
+
 class SymbolTable {
 public:
   SymbolTable();
@@ -28,12 +38,13 @@ public:
                    bool is_assigned, bool is_mutable);
   bool addFunction(const std::string &name, AlohaType::Type return_type,
                    const std::vector<AlohaType::Type> &param_types);
+  AlohaType::Type addStruct(const std::string &name,
+                            const std::vector<StructField> &fields);
   VariableInfo *getVariable(const std::string &name);
   FunctionInfo *getFunction(const std::string &name);
-
+  StructInfo *getStruct(const std::string &name);
   void enterScope();
   void leaveScope();
-
   bool isBuiltinFunction(std::string name) const;
   void dump() const;
 
@@ -41,6 +52,8 @@ private:
   std::vector<std::unordered_map<std::string, VariableInfo>>
       variable_table_stack;
   std::unordered_map<std::string, FunctionInfo> function_table;
+  std::unordered_map<std::string, StructInfo> structs;
+  int struct_id_counter;
   std::vector<std::string> predefined_functions = {
       "print", "println", "printNum", "printlnNum", "input"};
 };

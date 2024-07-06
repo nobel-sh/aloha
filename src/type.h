@@ -29,8 +29,8 @@ enum class Type {
   STRING,
   BOOL,
   VOID,
-  STRUCT,
-  UNKNOWN, // for types that might be known later on
+  UNKNOWN,                  // for types that might be known later on
+  USER_DEFINED_START = 1000 // Reserve space for user-defined types
 };
 
 static std::string to_string(Type type) {
@@ -43,30 +43,47 @@ static std::string to_string(Type type) {
     return "bool";
   case Type::VOID:
     return "void";
-  case Type::STRUCT:
-    return "struct";
   case Type::UNKNOWN:
     return "unknown";
   default:
+    if (static_cast<int>(type) >= static_cast<int>(Type::USER_DEFINED_START)) {
+      return "struct_" +
+             std::to_string(static_cast<int>(type) -
+                            static_cast<int>(Type::USER_DEFINED_START));
+    }
     throw std::invalid_argument("Invalid type");
   }
 }
 static Type from_string(const std::string &type) {
-  if (type == "number")
-    return Type::NUMBER;
-  else if (type == "string")
-    return Type::STRING;
-  else if (type == "bool")
-    return Type::BOOL;
-  else if (type == "void")
-    return Type::VOID;
-  else if (type == "struct")
-    return Type::STRUCT;
-  else if (type == "unknown")
-    return Type::UNKNOWN;
-  else
-    throw std::invalid_argument("Unknown type");
+  static std::unordered_map<std::string, Type> type_map = {
+      {"number", Type::NUMBER},
+      {"string", Type::STRING},
+      {"bool", Type::BOOL},
+      {"void", Type::VOID},
+      {"unknown", Type::UNKNOWN}};
+
+  auto it = type_map.find(type);
+  if (it != type_map.end()) {
+    return it->second;
+  }
+
+  if (type.substr(0, 7) == "struct_") {
+    int type_id =
+        std::stoi(type.substr(7)) + static_cast<int>(Type::USER_DEFINED_START);
+    return static_cast<Type>(type_id);
+  }
+
+  throw std::invalid_argument("Unknown type: " + type);
 }
+
+static bool is_struct_type(Type type) {
+  return static_cast<int>(type) >= static_cast<int>(Type::USER_DEFINED_START);
+}
+
+static Type create_struct_type(int id) {
+  return static_cast<Type>(static_cast<int>(Type::USER_DEFINED_START) + id);
+}
+
 }; // namespace AlohaType
 
 #endif // TYPE_H_

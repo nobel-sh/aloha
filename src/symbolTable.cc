@@ -2,7 +2,7 @@
 #include "type.h"
 #include <utility>
 
-SymbolTable::SymbolTable() { enterScope(); }
+SymbolTable::SymbolTable() : struct_id_counter(0) { enterScope(); }
 
 bool SymbolTable::addVariable(const std::string &name, AlohaType::Type type,
                               bool is_assigned, bool is_mutable) {
@@ -25,6 +25,16 @@ bool SymbolTable::addFunction(
   return true;
 }
 
+AlohaType::Type SymbolTable::addStruct(const std::string &name,
+                                       const std::vector<StructField> &fields) {
+  if (structs.find(name) != structs.end()) {
+    return AlohaType::Type::UNKNOWN;
+  }
+  AlohaType::Type new_type = AlohaType::create_struct_type(struct_id_counter++);
+  structs[name] = {new_type, fields};
+  return new_type;
+}
+
 VariableInfo *SymbolTable::getVariable(const std::string &name) {
   for (auto it = variable_table_stack.rbegin();
        it != variable_table_stack.rend(); ++it) {
@@ -42,6 +52,11 @@ FunctionInfo *SymbolTable::getFunction(const std::string &name) {
     return &it->second;
   }
   return nullptr;
+}
+
+StructInfo *SymbolTable::getStruct(const std::string &name) {
+  auto it = structs.find(name);
+  return it != structs.end() ? &it->second : nullptr;
 }
 
 void SymbolTable::enterScope() { variable_table_stack.push_back({}); }
@@ -70,6 +85,7 @@ void SymbolTable::dump() const {
     }
     std::cout << std::endl;
   }
+
   std::cout << "Variables:" << std::endl;
   int scopeLevel = 0;
   for (const auto &scope : variable_table_stack) {
@@ -78,5 +94,18 @@ void SymbolTable::dump() const {
       std::cout << "    Variable: " << name
                 << " -> Type: " << AlohaType::to_string(info.type) << std::endl;
     }
+  }
+
+  std::cout << "Structs:" << std::endl;
+  for (const auto &struct_info : structs) {
+    std::cout << "  " << struct_info.first << ": "
+              << AlohaType::to_string(struct_info.second.type) << " {";
+    for (size_t i = 0; i < struct_info.second.fields.size(); ++i) {
+      if (i > 0)
+        std::cout << ", ";
+      std::cout << struct_info.second.fields[i].name << ": "
+                << AlohaType::to_string(struct_info.second.fields[i].type);
+    }
+    std::cout << "}" << std::endl;
   }
 }
