@@ -29,8 +29,10 @@ enum class Type {
   STRING,
   BOOL,
   VOID,
+  STRUCT,
   UNKNOWN, // for types that might be known later on
 };
+
 static std::string to_string(Type type) {
   switch (type) {
   case Type::NUMBER:
@@ -41,6 +43,8 @@ static std::string to_string(Type type) {
     return "bool";
   case Type::VOID:
     return "void";
+  case Type::STRUCT:
+    return "struct";
   case Type::UNKNOWN:
     return "unknown";
   default:
@@ -56,6 +60,8 @@ static Type from_string(const std::string &type) {
     return Type::BOOL;
   else if (type == "void")
     return Type::VOID;
+  else if (type == "struct")
+    return Type::STRUCT;
   else if (type == "unknown")
     return Type::UNKNOWN;
   else

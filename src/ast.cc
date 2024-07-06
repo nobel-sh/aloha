@@ -146,6 +146,15 @@ void StructDecl::write(std::ostream &os, unsigned long indent) const {
   }
 }
 
+void StructInstantiation::write(std::ostream &os, unsigned long indent) const {
+  os << std::string(indent, ' ') << "Struct Name: " << m_struct_name
+     << std::endl;
+  os << std::string(indent, ' ') << "Struct Fields:" << std::endl;
+  for (const auto &field : m_field_values) {
+    field->write(os, indent + 4);
+  }
+}
+
 void Program::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Program:" << std::endl;
   for (const auto &node : nodes) {

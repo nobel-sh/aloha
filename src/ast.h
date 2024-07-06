@@ -280,6 +280,17 @@ public:
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
+struct StructInstantiation : Expression {
+  std::string m_struct_name;
+  std::vector<ExprPtr> m_field_values;
+
+  StructInstantiation(std::string t_name, std::vector<ExprPtr> t_values)
+      : m_struct_name(t_name), m_field_values(t_values) {}
+  void write(std::ostream &os, unsigned long indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type get_type() const override { return AlohaType::Type::STRUCT; }
+};
+
 // Program
 class Program : public Node {
 public:

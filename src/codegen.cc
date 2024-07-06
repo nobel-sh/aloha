@@ -264,7 +264,23 @@ void CodeGen::visit(Aloha::Function *node) {
   llvm::verifyFunction(*function);
 }
 
-void CodeGen::visit(Aloha::StructDecl *node) {}
+void CodeGen::visit(Aloha::StructDecl *node) {
+  if (llvm::StructType::getTypeByName(context, node->m_name)) {
+    throw std::runtime_error("Struct with name " + node->m_name +
+                             " already exists");
+  }
+
+  std::vector<llvm::Type *> field_types;
+  for (const auto &field : node->m_fields) {
+    field_types.push_back(get_llvm_type(field.m_type));
+  }
+
+  llvm::StructType *struct_type =
+      llvm::StructType::create(context, field_types, node->m_name);
+}
+
+void CodeGen::visit(Aloha::StructInstantiation *node) {}
+
 void CodeGen::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
     stmt->accept(*this);

@@ -120,6 +120,23 @@ std::shared_ptr<Aloha::StructDecl> Parser::parse_struct_decl() {
                                              std::move(fields));
 }
 
+std::shared_ptr<Aloha::Expression> Parser::parse_struct_instantiation() {
+  auto structName = expect_identifier();
+  consume(TokenKind::LBRACE, "Expected '{' after struct name");
+
+  std::vector<Aloha::ExprPtr> fieldValues;
+  while (!match(TokenKind::RBRACE) && !is_eof()) {
+    fieldValues.push_back(parse_expression(0));
+    if (!match(TokenKind::RBRACE)) {
+      consume(TokenKind::COMMA, "Expected ',' or '}' after field value");
+    }
+  }
+
+  consume(TokenKind::RBRACE, "Expected '}' after struct instantiation");
+  return std::make_shared<Aloha::StructInstantiation>(structName->name,
+                                                      std::move(fieldValues));
+}
+
 std::vector<Aloha::Parameter> Parser::parse_parameters() {
   std::vector<Aloha::Parameter> parameters;
   while (peek() && peek()->lexeme != ")") {
@@ -200,7 +217,11 @@ std::shared_ptr<Aloha::Statement> Parser::parse_variable_declaration() {
   std::shared_ptr<Aloha::Expression> expression = nullptr;
   if (match("=")) {
     advance();
-    expression = parse_expression(0);
+    if (peek()->kind == TokenKind::IDENT && next()->kind == TokenKind::LBRACE) {
+      expression = parse_struct_instantiation();
+    } else {
+      expression = parse_expression(0);
+    }
   }
   return std::make_shared<Aloha::Declaration>(identifier->name, type,
                                               expression, is_mutable);
@@ -389,6 +410,8 @@ std::shared_ptr<Aloha::Expression> Parser::parse_primary() {
   } else if (token->kind == TokenKind::IDENT) {
     if (next()->kind == TokenKind::LPAREN) {
       return parse_function_call();
+    } else if (next()->kind == TokenKind::LBRACE) {
+      return parse_struct_instantiation();
     }
     advance();
     if (is_reserved_ident(*token)) {

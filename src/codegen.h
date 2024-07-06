@@ -50,6 +50,7 @@ private:
   void visit(Aloha::ForLoop *node) override;
   void visit(Aloha::Function *node) override;
   void visit(Aloha::StructDecl *node) override;
+  void visit(Aloha::StructInstantiation *node) override;
   void visit(Aloha::StatementList *node) override;
   void visit(Aloha::Program *node) override;
 };

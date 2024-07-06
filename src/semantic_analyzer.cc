@@ -185,6 +185,8 @@ void SemanticAnalyzer::visit(Aloha::Function *node) {
 
 void SemanticAnalyzer::visit(Aloha::StructDecl *node) {}
 
+void SemanticAnalyzer::visit(Aloha::StructInstantiation *node) {}
+
 void SemanticAnalyzer::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
     stmt->accept(*this);
