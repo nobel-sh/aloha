@@ -107,6 +107,7 @@ void CodeGen::visit(Aloha::Declaration *node) {
     builder.CreateStore(current_val, alloca);
   }
 }
+
 void CodeGen::visit(Aloha::Assignment *node) {
   auto alloca = named_values[node->variable_name];
   node->expression->accept(*this);
@@ -253,7 +254,6 @@ void CodeGen::visit(Aloha::Function *node) {
 
   current_fn = function;
   node->body->accept(*this);
-
   if (node->return_type == AlohaType::Type::VOID) {
     builder.CreateRetVoid();
   } else if (!builder.GetInsertBlock()->getTerminator()) {
@@ -265,8 +265,12 @@ void CodeGen::visit(Aloha::Function *node) {
 }
 
 void CodeGen::visit(Aloha::StructDecl *node) {
-  if (llvm::StructType::getTypeByName(context, node->m_name)) {
-    throw std::runtime_error("Struct with name " + node->m_name +
+  std::string struct_name = node->m_name;
+  AlohaType::Type struct_type =
+      AlohaType::create_struct_type((int)struct_types.size());
+  type_to_struct[struct_type] = struct_name;
+  if (llvm::StructType::getTypeByName(context, struct_name)) {
+    throw std::runtime_error("Struct with name " + struct_name +
                              " already exists");
   }
 
@@ -275,11 +279,67 @@ void CodeGen::visit(Aloha::StructDecl *node) {
     field_types.push_back(get_llvm_type(field.m_type));
   }
 
-  llvm::StructType *struct_type =
-      llvm::StructType::create(context, field_types, node->m_name);
+  llvm::StructType *llvm_struct_type =
+      llvm::StructType::create(context, field_types, struct_name);
+
+  struct_types[struct_name] = llvm_struct_type;
+  struct_types[AlohaType::to_string(struct_type)] = llvm_struct_type;
+
+  // The struct is valid
+  // now, create a constructor function for structs
+
+  std::vector<llvm::Type *> ctor_param_types = field_types;
+  llvm::FunctionType *ctor_type = llvm::FunctionType::get(
+      llvm::PointerType::getUnqual(llvm_struct_type), ctor_param_types, false);
+
+  llvm::Function *ctor_fn =
+      llvm::Function::Create(ctor_type, llvm::Function::ExternalLinkage,
+                             "create_" + node->m_name, module.get());
+  llvm::BasicBlock *ctor_bb =
+      llvm::BasicBlock::Create(context, "entry", ctor_fn);
+  builder.SetInsertPoint(ctor_bb);
+
+  llvm::AllocaInst *struct_alloca =
+      builder.CreateAlloca(llvm_struct_type, nullptr, "struct_instance");
+
+  auto arg_it = ctor_fn->arg_begin();
+  for (unsigned i = 0; i < node->m_fields.size(); ++i, ++arg_it) {
+    llvm::Value *field_ptr =
+        builder.CreateStructGEP(llvm_struct_type, struct_alloca, i);
+    builder.CreateStore(arg_it, field_ptr);
+  }
+
+  builder.CreateRet(struct_alloca);
+  std::cout << "passed struct" << std::endl;
 }
 
-void CodeGen::visit(Aloha::StructInstantiation *node) {}
+void CodeGen::visit(Aloha::StructInstantiation *node) {
+  AlohaType::Type struct_type = node->m_type;
+  std::string struct_name = type_to_struct[struct_type];
+
+  auto struct_type_it = struct_types.find(struct_name);
+  if (struct_type_it == struct_types.end()) {
+    throw std::runtime_error("Unknown struct type: " + node->m_struct_name);
+  }
+
+  llvm::StructType *llvm_struct_type = struct_type_it->second;
+
+  // Prepare arguments for the constructor call
+  std::vector<llvm::Value *> ctor_args;
+  for (const auto &arg : node->m_field_values) {
+    arg->accept(*this);
+    ctor_args.push_back(current_val);
+  }
+
+  // Call the constructor function
+  llvm::Function *ctor_function = module->getFunction("create_" + struct_name);
+  if (!ctor_function) {
+    throw std::runtime_error("Constructor function not found for struct: " +
+                             struct_name);
+  }
+
+  current_val = builder.CreateCall(ctor_function, ctor_args, "struct_instance");
+}
 
 void CodeGen::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
@@ -304,6 +364,18 @@ llvm::Type *CodeGen::get_llvm_type(AlohaType::Type type) {
   case AlohaType::Type::STRING:
     return llvm::PointerType::get(llvm::Type::getInt8Ty(context), 0);
   default:
+    if (AlohaType::is_struct_type(type)) {
+      auto it = type_to_struct.find(type);
+      if (it != type_to_struct.end()) {
+        std::string struct_name = it->second;
+        auto struct_it = struct_types.find(struct_name);
+        if (struct_it != struct_types.end()) {
+          return struct_it->second;
+        }
+      }
+      throw std::runtime_error("Unknown struct type: " +
+                               AlohaType::to_string(type));
+    }
     throw std::runtime_error(
         "Unknown type while converting from Aloha Type to LLVM Type");
   }
@@ -327,6 +399,17 @@ void CodeGen::print_llvm_type(llvm::Type *type) const {
   llvm::raw_string_ostream rso(type_str);
   type->print(rso);
   std::cout << rso.str() << std::endl;
+}
+
+void CodeGen::dump_struct_types() const {
+  std::cout << "DUMPING STRUCT TYPES" << std::endl;
+  for (const auto &pair : struct_types) {
+    std::string name = pair.first;
+    std::cout << "Struct: " << name << std::endl;
+    std::cout << "Type: ";
+    print_llvm_type(pair.second);
+    std::cout << std::endl;
+  }
 }
 
 void CodeGen::dump_named_values() const {

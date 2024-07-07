@@ -2,6 +2,7 @@
 #define CODEGEN_H
 
 #include "ast.h"
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -20,15 +21,17 @@ public:
   void print_value(llvm::Value *value) const;
   void print_llvm_type(llvm::Type *type) const;
   void dump_named_values() const;
+  void dump_struct_types() const;
 
   llvm::LLVMContext context;
   std::unique_ptr<llvm::Module> module;
   llvm::IRBuilder<> builder;
-  std::unordered_map<std::string, llvm::AllocaInst *> named_values;
-
-  void add_builtin_fns();
 
 private:
+  void add_builtin_fns();
+  std::unordered_map<std::string, llvm::AllocaInst *> named_values;
+  std::unordered_map<std::string, llvm::StructType *> struct_types;
+  std::unordered_map<AlohaType::Type, std::string> type_to_struct;
   llvm::Value *current_val;   // Current value during traversal
   llvm::Function *current_fn; // current function
 
