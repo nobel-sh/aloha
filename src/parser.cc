@@ -110,7 +110,7 @@ std::vector<Aloha::StructField> Parser::parse_struct_field() {
 }
 
 std::shared_ptr<Aloha::StructFieldAccess> Parser::parse_struct_field_access() {
-  auto struct_name = expect_identifier()->name;
+  auto struct_name = expect_identifier();
   consume(TokenKind::THIN_ARROW, "Expected '->' for a struct field access");
   auto field_name = expect_identifier()->name;
   return std::make_shared<Aloha::StructFieldAccess>(struct_name, field_name);

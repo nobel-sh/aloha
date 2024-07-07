@@ -43,6 +43,7 @@ public:
   VariableInfo *getVariable(const std::string &name);
   FunctionInfo *getFunction(const std::string &name);
   StructInfo *getStruct(const std::string &name);
+  StructInfo *getStructByType(const AlohaType::Type &type);
   void enterScope();
   void leaveScope();
   bool isBuiltinFunction(std::string name) const;
@@ -52,7 +53,8 @@ private:
   std::vector<std::unordered_map<std::string, VariableInfo>>
       variable_table_stack;
   std::unordered_map<std::string, FunctionInfo> function_table;
-  std::unordered_map<std::string, StructInfo> structs;
+  std::unordered_map<std::string, StructInfo> struct_table;
+  std::unordered_map<AlohaType::Type, std::string> struct_name;
   int struct_id_counter;
   std::vector<std::string> predefined_functions = {
       "print", "println", "printNum", "printlnNum", "input"};

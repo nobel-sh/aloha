@@ -132,16 +132,19 @@ public:
 
 class StructFieldAccess : public Expression {
 public:
-  std::string m_struct_name;
+  ExprPtr m_struct_expr;
   std::string m_field_name;
   AlohaType::Type m_type;
 
-  StructFieldAccess(const std::string struct_name, const std::string field_name)
-      : m_struct_name(std::move(struct_name)),
-        m_field_name(std::move(field_name)), m_type(AlohaType::Type::UNKNOWN) {}
+  StructFieldAccess(ExprPtr t_struct_expr, std::string t_field_name)
+      : m_struct_expr(std::move(t_struct_expr)),
+        m_field_name(std::move(t_field_name)),
+        m_type(AlohaType::Type::UNKNOWN) {}
+
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
   AlohaType::Type get_type() const override { return m_type; }
+  void set_type(AlohaType::Type t_type) { m_type = t_type; }
 };
 
 // Statements

@@ -40,8 +40,9 @@ void Identifier::write(std::ostream &os, unsigned long indent) const {
 }
 
 void StructFieldAccess::write(std::ostream &os, unsigned long indent) const {
-  os << std::string(indent, ' ') << "Field Access: " << m_struct_name << " -> "
-     << m_field_name << std::endl;
+  os << std::string(indent, ' ') << "Struct Field Access: " << std::endl;
+  m_struct_expr->write(os, indent + 2);
+  os << std::string(indent + 2, ' ') << "Field: " << m_field_name << std::endl;
 }
 
 void Declaration::write(std::ostream &os, unsigned long indent) const {

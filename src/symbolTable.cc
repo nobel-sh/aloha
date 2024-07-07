@@ -27,11 +27,12 @@ bool SymbolTable::addFunction(
 
 AlohaType::Type SymbolTable::addStruct(const std::string &name,
                                        const std::vector<StructField> &fields) {
-  if (structs.find(name) != structs.end()) {
+  if (struct_table.find(name) != struct_table.end()) {
     return AlohaType::Type::UNKNOWN;
   }
   AlohaType::Type new_type = AlohaType::create_struct_type(struct_id_counter++);
-  structs[name] = {new_type, fields};
+  struct_table[name] = {new_type, fields};
+  struct_name[new_type] = name;
   return new_type;
 }
 
@@ -55,8 +56,19 @@ FunctionInfo *SymbolTable::getFunction(const std::string &name) {
 }
 
 StructInfo *SymbolTable::getStruct(const std::string &name) {
-  auto it = structs.find(name);
-  return it != structs.end() ? &it->second : nullptr;
+  auto it = struct_table.find(name);
+  return it != struct_table.end() ? &it->second : nullptr;
+}
+
+StructInfo *SymbolTable::getStructByType(const AlohaType::Type &type) {
+  if (!AlohaType::is_struct_type(type)) {
+    throw std::invalid_argument("Not a struct type");
+  }
+  auto it = struct_name.find(type);
+  if (it != struct_name.end()) {
+    return getStruct(it->second);
+  }
+  return nullptr;
 }
 
 void SymbolTable::enterScope() { variable_table_stack.push_back({}); }
@@ -97,7 +109,7 @@ void SymbolTable::dump() const {
   }
 
   std::cout << "Structs:" << std::endl;
-  for (const auto &struct_info : structs) {
+  for (const auto &struct_info : struct_table) {
     std::cout << "  " << struct_info.first << ": "
               << AlohaType::to_string(struct_info.second.type) << " {";
     for (size_t i = 0; i < struct_info.second.fields.size(); ++i) {

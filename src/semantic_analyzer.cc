@@ -38,6 +38,7 @@ void SemanticAnalyzer::visit(Aloha::Identifier *node) {
   VariableInfo *varInfo = symbol_table.getVariable(node->name);
   if (!varInfo) {
     error.addError("Undeclared variable: " + node->name);
+    return;
   }
   node->type = varInfo->type;
 }
@@ -54,10 +55,12 @@ void SemanticAnalyzer::visit(Aloha::Declaration *node) {
         if (node->type.value() != node->expression->get_type()) {
           error.addError("Struct type mismatch in declaration of " +
                          node->variable_name);
+          return;
         }
       } else {
         error.addError("Type mismatch in declaration of " +
                        node->variable_name);
+        return;
       }
     }
   }
@@ -68,6 +71,7 @@ void SemanticAnalyzer::visit(Aloha::Declaration *node) {
     if (!symbol_table.getStruct(struct_ints->m_struct_name)) {
       error.addError("Undeclared struct type: " +
                      AlohaType::to_string(node->type.value()));
+      return;
     }
   }
 
@@ -136,6 +140,7 @@ void SemanticAnalyzer::visit(Aloha::FunctionCall *node) {
   if (node->arguments.size() != funcInfo->param_types.size()) {
     error.addError("Argument count mismatch in function call: " +
                    node->funcName->name);
+    return;
   }
   for (size_t i = 0; i < node->arguments.size(); ++i) {
     node->arguments[i]->accept(*this);
@@ -252,7 +257,34 @@ void SemanticAnalyzer::visit(Aloha::StructInstantiation *node) {
   node->set_type(structInfo->type);
 }
 
-void SemanticAnalyzer::visit(Aloha::StructFieldAccess *node) {}
+void SemanticAnalyzer::visit(Aloha::StructFieldAccess *node) {
+  node->m_struct_expr->accept(*this);
+  AlohaType::Type struct_type = node->m_struct_expr->get_type();
+
+  if (!AlohaType::is_struct_type(struct_type)) {
+    error.addError("Trying to access field of non-struct type");
+    return;
+  }
+  StructInfo *struct_info = symbol_table.getStructByType(struct_type);
+  if (!struct_info) {
+    error.addError("Unknown struct type");
+    return;
+  }
+
+  AlohaType::Type field_type = AlohaType::Type::UNKNOWN;
+  for (const auto &field : struct_info->fields) {
+    if (field.name == node->m_field_name) {
+      field_type = field.type;
+      break;
+    }
+  }
+
+  if (field_type == AlohaType::Type::UNKNOWN) {
+    error.addError("Struct has no field named '" + node->m_field_name + "'");
+    return;
+  }
+  node->set_type(field_type);
+}
 
 void SemanticAnalyzer::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
