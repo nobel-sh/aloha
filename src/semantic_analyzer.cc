@@ -252,6 +252,8 @@ void SemanticAnalyzer::visit(Aloha::StructInstantiation *node) {
   node->set_type(structInfo->type);
 }
 
+void SemanticAnalyzer::visit(Aloha::StructFieldAccess *node) {}
+
 void SemanticAnalyzer::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
     stmt->accept(*this);

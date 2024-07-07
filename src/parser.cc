@@ -109,6 +109,13 @@ std::vector<Aloha::StructField> Parser::parse_struct_field() {
   return fields;
 }
 
+std::shared_ptr<Aloha::StructFieldAccess> Parser::parse_struct_field_access() {
+  auto struct_name = expect_identifier()->name;
+  consume(TokenKind::THIN_ARROW, "Expected '->' for a struct field access");
+  auto field_name = expect_identifier()->name;
+  return std::make_shared<Aloha::StructFieldAccess>(struct_name, field_name);
+}
+
 std::shared_ptr<Aloha::StructDecl> Parser::parse_struct_decl() {
 
   consume("struct", "Expected 'struct' keyword");
@@ -412,6 +419,8 @@ std::shared_ptr<Aloha::Expression> Parser::parse_primary() {
       return parse_function_call();
     } else if (next()->kind == TokenKind::LBRACE) {
       return parse_struct_instantiation();
+    } else if (next()->kind == TokenKind::THIN_ARROW) {
+      return parse_struct_field_access();
     }
     advance();
     if (is_reserved_ident(*token)) {

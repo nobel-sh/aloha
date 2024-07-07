@@ -341,6 +341,8 @@ void CodeGen::visit(Aloha::StructInstantiation *node) {
   current_val = builder.CreateCall(ctor_function, ctor_args, "struct_instance");
 }
 
+void CodeGen::visit(Aloha::StructFieldAccess *node) {}
+
 void CodeGen::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
     stmt->accept(*this);

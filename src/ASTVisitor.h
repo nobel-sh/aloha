@@ -18,7 +18,8 @@ class WhileLoop;
 class ForLoop;
 class Function;
 class StructDecl;
-struct StructInstantiation;
+class StructInstantiation;
+class StructFieldAccess;
 class ExpressionStatement;
 class StatementList;
 class Program;
@@ -42,6 +43,7 @@ public:
   virtual void visit(Aloha::Function *node) = 0;
   virtual void visit(Aloha::StructDecl *node) = 0;
   virtual void visit(Aloha::StructInstantiation *node) = 0;
+  virtual void visit(Aloha::StructFieldAccess *node) = 0;
   virtual void visit(Aloha::ExpressionStatement *node) = 0;
   virtual void visit(Aloha::StatementList *node) = 0;
   virtual void visit(Aloha::Program *node) = 0;

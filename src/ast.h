@@ -130,6 +130,20 @@ public:
   AlohaType::Type get_type() const override { return type; }
 };
 
+class StructFieldAccess : public Expression {
+public:
+  std::string m_struct_name;
+  std::string m_field_name;
+  AlohaType::Type m_type;
+
+  StructFieldAccess(const std::string struct_name, const std::string field_name)
+      : m_struct_name(std::move(struct_name)),
+        m_field_name(std::move(field_name)), m_type(AlohaType::Type::UNKNOWN) {}
+  void write(std::ostream &os, unsigned long indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type get_type() const override { return m_type; }
+};
+
 // Statements
 class Declaration : public Statement {
 public:
@@ -280,7 +294,8 @@ public:
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
 };
 
-struct StructInstantiation : public Expression {
+class StructInstantiation : public Expression {
+public:
   std::string m_struct_name;
   std::vector<ExprPtr> m_field_values;
   AlohaType::Type m_type;
