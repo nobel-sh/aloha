@@ -12,6 +12,7 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <stdexcept>
 #include <string>
 
 CodeGen::CodeGen()
@@ -341,7 +342,26 @@ void CodeGen::visit(Aloha::StructInstantiation *node) {
   current_val = builder.CreateCall(ctor_function, ctor_args, "struct_instance");
 }
 
-void CodeGen::visit(Aloha::StructFieldAccess *node) {}
+void CodeGen::visit(Aloha::StructFieldAccess *node) {
+  node->m_struct_expr->accept(*this);
+  llvm::Value *struct_ptr = current_val;
+
+  AlohaType::Type struct_type = node->m_struct_expr->get_type();
+  std::string struct_name = type_to_struct[struct_type];
+
+  auto struct_type_it = struct_types.find(struct_name);
+  if (struct_type_it == struct_types.end()) {
+    throw std::runtime_error("Unknown struct type: " + struct_name);
+  }
+
+  llvm::StructType *llvm_struct_type = struct_type_it->second;
+  // for ()
+  unsigned int field_idx = 0; // TODO: (hardcoded) CHANGE THIS QUICK CURRENTLY
+                              // NO WAY TO IDENTIFY FIELD
+  llvm::Value *field_ptr =
+      builder.CreateStructGEP(llvm_struct_type, struct_ptr, field_idx);
+  current_val = builder.CreateLoad(get_llvm_type(node->get_type()), field_ptr);
+}
 
 void CodeGen::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
