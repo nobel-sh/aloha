@@ -286,6 +286,8 @@ void SemanticAnalyzer::visit(Aloha::StructFieldAccess *node) {
   node->set_type(field_type);
 }
 
+void SemanticAnalyzer::visit(Aloha::StructFieldAssignment *node) {}
+
 void SemanticAnalyzer::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
     stmt->accept(*this);

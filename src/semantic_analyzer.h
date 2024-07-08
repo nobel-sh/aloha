@@ -28,6 +28,7 @@ public:
   void visit(Aloha::StructDecl *node) override;
   void visit(Aloha::StructInstantiation *node) override;
   void visit(Aloha::StructFieldAccess *node) override;
+  void visit(Aloha::StructFieldAssignment *node) override;
   void visit(Aloha::StatementList *node) override;
   void visit(Aloha::Program *node) override;
 

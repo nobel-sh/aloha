@@ -45,6 +45,15 @@ void StructFieldAccess::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent + 2, ' ') << "Field: " << m_field_name << std::endl;
 }
 
+void StructFieldAssignment::write(std::ostream &os,
+                                  unsigned long indent) const {
+  os << std::string(indent, ' ') << "Struct Field Assigment: " << std::endl;
+  m_struct_expr->write(os, indent + 2);
+  os << std::string(indent + 2, ' ') << "Field: " << m_field_name << std::endl;
+  os << std::string(indent + 2, ' ') << "Assigned " << std::endl;
+  m_value->write(os, indent + 4);
+}
+
 void Declaration::write(std::ostream &os, unsigned long indent) const {
   os << std::string(indent, ' ') << "Declaration: " << variable_name
      << std::endl;

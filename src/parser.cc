@@ -109,7 +109,7 @@ std::vector<Aloha::StructField> Parser::parse_struct_field() {
   return fields;
 }
 
-std::shared_ptr<Aloha::StructFieldAccess> Parser::parse_struct_field_access() {
+std::shared_ptr<Aloha::Expression> Parser::parse_struct_field_access() {
   auto struct_name = expect_identifier();
   consume(TokenKind::THIN_ARROW, "Expected '->' for a struct field access");
   auto field_name = expect_identifier()->name;
@@ -175,6 +175,8 @@ std::shared_ptr<Aloha::Statement> Parser::parse_statement() {
         return parse_variable_assignment();
       } else if (next()->kind == TokenKind::LPAREN) {
         return parse_expression_statement();
+      } else if (next()->kind == TokenKind::THIN_ARROW) {
+        return parse_struct_field_assignment();
       } else {
         std::cout << "Unexpected keyword found" << std::endl;
         peek()->dump();
@@ -239,6 +241,18 @@ std::shared_ptr<Aloha::Statement> Parser::parse_variable_assignment() {
   consume("=", "Expected '=' after variable declaration");
   std::shared_ptr<Aloha::Expression> expression = parse_expression(0);
   return std::make_shared<Aloha::Assignment>(identifier->name, expression);
+}
+
+std::shared_ptr<Aloha::Statement> Parser::parse_struct_field_assignment() {
+  peek()->dump();
+  auto struct_expr = expect_identifier();
+  peek()->dump();
+  consume(TokenKind::THIN_ARROW, "Expected '->' for struct field assignment");
+  auto field_name = expect_identifier()->name;
+  consume(TokenKind::EQUALS, "Expected '=' in struct field assignment");
+  auto value = parse_expression(0);
+  return std::make_shared<Aloha::StructFieldAssignment>(struct_expr, field_name,
+                                                        value);
 }
 
 std::shared_ptr<Aloha::Statement> Parser::parse_return_statement() {

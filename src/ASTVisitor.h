@@ -1,8 +1,9 @@
 #ifndef ASTVISITOR_H_
 #define ASTVISITOR_H_
 
-// forward decls avoiding dependency cycle
 namespace Aloha {
+
+// forward decls avoiding dependency cycle
 class Number;
 class Boolean;
 class String;
@@ -20,6 +21,7 @@ class Function;
 class StructDecl;
 class StructInstantiation;
 class StructFieldAccess;
+class StructFieldAssignment;
 class ExpressionStatement;
 class StatementList;
 class Program;
@@ -44,6 +46,7 @@ public:
   virtual void visit(Aloha::StructDecl *node) = 0;
   virtual void visit(Aloha::StructInstantiation *node) = 0;
   virtual void visit(Aloha::StructFieldAccess *node) = 0;
+  virtual void visit(Aloha::StructFieldAssignment *node) = 0;
   virtual void visit(Aloha::ExpressionStatement *node) = 0;
   virtual void visit(Aloha::StatementList *node) = 0;
   virtual void visit(Aloha::Program *node) = 0;

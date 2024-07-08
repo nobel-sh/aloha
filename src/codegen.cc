@@ -363,6 +363,8 @@ void CodeGen::visit(Aloha::StructFieldAccess *node) {
   current_val = builder.CreateLoad(get_llvm_type(node->get_type()), field_ptr);
 }
 
+void CodeGen::visit(Aloha::StructFieldAssignment *node) {}
+
 void CodeGen::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
     stmt->accept(*this);

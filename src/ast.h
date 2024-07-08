@@ -147,6 +147,21 @@ public:
   void set_type(AlohaType::Type t_type) { m_type = t_type; }
 };
 
+class StructFieldAssignment : public Statement {
+public:
+  ExprPtr m_struct_expr;
+  std::string m_field_name;
+  ExprPtr m_value;
+
+  StructFieldAssignment(ExprPtr t_struct_expr, std::string t_field_name,
+                        ExprPtr t_value)
+      : m_struct_expr(std::move(t_struct_expr)),
+        m_field_name(std::move(t_field_name)), m_value(std::move(t_value)) {}
+
+  void write(std::ostream &os, unsigned long indent = 0) const override;
+  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+};
+
 // Statements
 class Declaration : public Statement {
 public:

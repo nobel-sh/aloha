@@ -59,7 +59,8 @@ private:
   std::vector<Aloha::Parameter> parse_parameters();
   std::shared_ptr<Aloha::StructDecl> parse_struct_decl();
   std::vector<Aloha::StructField> parse_struct_field();
-  std::shared_ptr<Aloha::StructFieldAccess> parse_struct_field_access();
+  std::shared_ptr<Aloha::Expression> parse_struct_field_access();
+  std::shared_ptr<Aloha::Statement> parse_struct_field_assignment();
   std::shared_ptr<Aloha::Expression> parse_struct_instantiation();
   std::shared_ptr<Aloha::Statement> parse_variable_declaration();
   std::shared_ptr<Aloha::Statement> parse_variable_assignment();
