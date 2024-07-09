@@ -286,7 +286,45 @@ void SemanticAnalyzer::visit(Aloha::StructFieldAccess *node) {
   node->set_type(field_type);
 }
 
-void SemanticAnalyzer::visit(Aloha::StructFieldAssignment *node) {}
+void SemanticAnalyzer::visit(Aloha::StructFieldAssignment *node) {
+  node->m_struct_expr->accept(*this);
+  AlohaType::Type struct_type = node->m_struct_expr->get_type();
+
+  if (!AlohaType::is_struct_type(struct_type)) {
+    error.addError("Trying to assign to a field of non-struct type");
+    return;
+  }
+
+  StructInfo *struct_info = symbol_table.getStructByType(struct_type);
+  if (!struct_info) {
+    error.addError("Unknown struct type");
+    return;
+  }
+
+  AlohaType::Type field_type = AlohaType::Type::UNKNOWN;
+  for (const auto &field : struct_info->fields) {
+    if (field.name == node->m_field_name) {
+      field_type = field.type;
+      break;
+    }
+  }
+
+  if (field_type == AlohaType::Type::UNKNOWN) {
+    error.addError("Struct has no field named '" + node->m_field_name + "'");
+    return;
+  }
+
+  node->m_value->accept(*this);
+
+  if (node->m_value->get_type() != field_type) {
+    std::string value_type = AlohaType::to_string(node->m_value->get_type());
+    std::string field_type_str = AlohaType::to_string(field_type);
+    error.addError("Cannot assign value of type '" + value_type +
+                   "' to struct field of type '" + field_type_str + "'");
+    return;
+  }
+  node->m_type = field_type;
+}
 
 void SemanticAnalyzer::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {

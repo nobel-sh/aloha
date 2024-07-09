@@ -152,14 +152,17 @@ public:
   ExprPtr m_struct_expr;
   std::string m_field_name;
   ExprPtr m_value;
+  AlohaType::Type m_type;
 
   StructFieldAssignment(ExprPtr t_struct_expr, std::string t_field_name,
                         ExprPtr t_value)
       : m_struct_expr(std::move(t_struct_expr)),
-        m_field_name(std::move(t_field_name)), m_value(std::move(t_value)) {}
+        m_field_name(std::move(t_field_name)), m_value(std::move(t_value)),
+        m_type(AlohaType::Type::UNKNOWN) {}
 
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  AlohaType::Type get_type() const { return m_type; }
 };
 
 // Statements
