@@ -7,7 +7,7 @@
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormattedStream.h>
-#include <llvm/Support/Host.h>
+// #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
@@ -17,7 +17,7 @@
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Utils.h>
-#include <llvm/Transforms/Vectorize.h>
+// #include <llvm/Transforms/Vectorize.h>
 #include <system_error>
 
 using namespace llvm;

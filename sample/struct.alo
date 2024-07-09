@@ -1,0 +1,31 @@
+struct Foo {
+  bar: number,
+  baz: string
+}
+
+struct Bar{
+    test: number
+}
+
+fun main()->void {
+    imut foo_struct = Foo{12, "hello"}
+    imut bar_struct = Bar{34}
+
+    imut foo_field = foo_struct->bar
+    imut bar_field = bar_struct->test
+
+    printlnNum(foo_field)
+    printlnNum(bar_field)
+
+
+    foo_struct->bar = 24
+    bar_struct->test = 68
+
+    imut new_foo_field = foo_struct->bar
+    imut new_bar_field = bar_struct->test
+
+    printlnNum(new_foo_field)
+    printlnNum(new_bar_field)
+
+
+}

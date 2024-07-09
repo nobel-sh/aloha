@@ -267,8 +267,10 @@ void CodeGen::visit(Aloha::Function *node) {
 
 void CodeGen::visit(Aloha::StructDecl *node) {
   std::string struct_name = node->m_name;
-  AlohaType::Type struct_type =
-      AlohaType::create_struct_type((int)struct_types.size());
+  AlohaType::Type struct_type = AlohaType::create_struct_type(
+      (int)struct_types.size() /
+      2); // divide by 2 because we are inserting twice in struct_types
+
   type_to_struct[struct_type] = struct_name;
   if (llvm::StructType::getTypeByName(context, struct_name)) {
     throw std::runtime_error("Struct with name " + struct_name +
@@ -360,10 +362,34 @@ void CodeGen::visit(Aloha::StructFieldAccess *node) {
                               // NO WAY TO IDENTIFY FIELD
   llvm::Value *field_ptr =
       builder.CreateStructGEP(llvm_struct_type, struct_ptr, field_idx);
-  current_val = builder.CreateLoad(get_llvm_type(node->get_type()), field_ptr);
+  current_val = builder.CreateLoad(get_llvm_type(node->get_type()), field_ptr,
+                                   "fieldptr");
 }
 
-void CodeGen::visit(Aloha::StructFieldAssignment *node) {}
+void CodeGen::visit(Aloha::StructFieldAssignment *node) {
+  node->m_struct_expr->accept(*this);
+  llvm::Value *struct_ptr = current_val;
+
+  AlohaType::Type struct_type = node->m_struct_expr->get_type();
+  std::string struct_name = type_to_struct[struct_type];
+
+  auto struct_type_it = struct_types.find(struct_name);
+  if (struct_type_it == struct_types.end()) {
+    throw std::runtime_error("Unknown struct type: " + struct_name);
+  }
+
+  node->m_value->accept(*this);
+  if (!current_val) {
+    std::runtime_error("Cannot codegen rvalue of struct");
+  }
+
+  llvm::StructType *llvm_struct_type = struct_type_it->second;
+  unsigned int field_idx = 0; // TODO: (hardcoded) CHANGE THIS QUICK CURRENTLY
+                              // NO WAY TO IDENTIFY FIELD
+  llvm::Value *field_ptr = builder.CreateStructGEP(llvm_struct_type, struct_ptr,
+                                                   field_idx, "fieldptr");
+  builder.CreateStore(current_val, field_ptr);
+}
 
 void CodeGen::visit(Aloha::StatementList *node) {
   for (auto &stmt : node->statements) {
