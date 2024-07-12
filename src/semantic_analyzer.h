@@ -3,7 +3,7 @@
 
 #include "ASTVisitor.h"
 #include "ast.h"
-#include "symbolTable.h"
+#include "symbol_table.h"
 #include "type.h"
 
 class SemanticAnalyzer : public ASTVisitor {

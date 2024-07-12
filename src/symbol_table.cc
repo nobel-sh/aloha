@@ -1,11 +1,11 @@
-#include "symbolTable.h"
+#include "symbol_table.h"
 #include "type.h"
 #include <utility>
 
-SymbolTable::SymbolTable() : struct_id_counter(0) { enterScope(); }
+SymbolTable::SymbolTable() : struct_id_counter(0) { enter_scope(); }
 
-bool SymbolTable::addVariable(const std::string &name, AlohaType::Type type,
-                              bool is_assigned, bool is_mutable) {
+bool SymbolTable::add_variable(const std::string &name, AlohaType::Type type,
+                               bool is_assigned, bool is_mutable) {
   auto &currentScope = variable_table_stack.back();
   if (currentScope.find(name) != currentScope.end()) {
     return false;
@@ -15,7 +15,7 @@ bool SymbolTable::addVariable(const std::string &name, AlohaType::Type type,
   return true;
 }
 
-bool SymbolTable::addFunction(
+bool SymbolTable::add_function(
     const std::string &name, AlohaType::Type returnType,
     const std::vector<AlohaType::Type> &parameterTypes) {
   if (function_table.find(name) != function_table.end()) {
@@ -25,8 +25,9 @@ bool SymbolTable::addFunction(
   return true;
 }
 
-AlohaType::Type SymbolTable::addStruct(const std::string &name,
-                                       const std::vector<StructField> &fields) {
+AlohaType::Type
+SymbolTable::add_struct(const std::string &name,
+                        const std::vector<StructField> &fields) {
   if (struct_table.find(name) != struct_table.end()) {
     return AlohaType::Type::UNKNOWN;
   }
@@ -36,7 +37,7 @@ AlohaType::Type SymbolTable::addStruct(const std::string &name,
   return new_type;
 }
 
-VariableInfo *SymbolTable::getVariable(const std::string &name) {
+VariableInfo *SymbolTable::get_variable(const std::string &name) {
   for (auto it = variable_table_stack.rbegin();
        it != variable_table_stack.rend(); ++it) {
     auto found = it->find(name);
@@ -47,7 +48,7 @@ VariableInfo *SymbolTable::getVariable(const std::string &name) {
   return nullptr;
 }
 
-FunctionInfo *SymbolTable::getFunction(const std::string &name) {
+FunctionInfo *SymbolTable::get_function(const std::string &name) {
   auto it = function_table.find(name);
   if (it != function_table.end()) {
     return &it->second;
@@ -55,31 +56,31 @@ FunctionInfo *SymbolTable::getFunction(const std::string &name) {
   return nullptr;
 }
 
-StructInfo *SymbolTable::getStruct(const std::string &name) {
+StructInfo *SymbolTable::get_struct(const std::string &name) {
   auto it = struct_table.find(name);
   return it != struct_table.end() ? &it->second : nullptr;
 }
 
-StructInfo *SymbolTable::getStructByType(const AlohaType::Type &type) {
+StructInfo *SymbolTable::get_struct_by_type(const AlohaType::Type &type) {
   if (!AlohaType::is_struct_type(type)) {
     throw std::invalid_argument("Not a struct type");
   }
   auto it = struct_name.find(type);
   if (it != struct_name.end()) {
-    return getStruct(it->second);
+    return get_struct(it->second);
   }
   return nullptr;
 }
 
-void SymbolTable::enterScope() { variable_table_stack.push_back({}); }
+void SymbolTable::enter_scope() { variable_table_stack.push_back({}); }
 
-void SymbolTable::leaveScope() {
+void SymbolTable::leave_scope() {
   if (!variable_table_stack.empty()) {
     variable_table_stack.pop_back();
   }
 }
 
-bool SymbolTable::isBuiltinFunction(std::string name) const {
+bool SymbolTable::is_builtin_function(std::string name) const {
   auto it =
       std::find(predefined_functions.begin(), predefined_functions.end(), name);
   return it != predefined_functions.end();

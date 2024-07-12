@@ -34,19 +34,19 @@ struct StructInfo {
 class SymbolTable {
 public:
   SymbolTable();
-  bool addVariable(const std::string &name, AlohaType::Type type,
-                   bool is_assigned, bool is_mutable);
-  bool addFunction(const std::string &name, AlohaType::Type return_type,
-                   const std::vector<AlohaType::Type> &param_types);
-  AlohaType::Type addStruct(const std::string &name,
-                            const std::vector<StructField> &fields);
-  VariableInfo *getVariable(const std::string &name);
-  FunctionInfo *getFunction(const std::string &name);
-  StructInfo *getStruct(const std::string &name);
-  StructInfo *getStructByType(const AlohaType::Type &type);
-  void enterScope();
-  void leaveScope();
-  bool isBuiltinFunction(std::string name) const;
+  bool add_variable(const std::string &name, AlohaType::Type type,
+                    bool is_assigned, bool is_mutable);
+  bool add_function(const std::string &name, AlohaType::Type return_type,
+                    const std::vector<AlohaType::Type> &param_types);
+  AlohaType::Type add_struct(const std::string &name,
+                             const std::vector<StructField> &fields);
+  VariableInfo *get_variable(const std::string &name);
+  FunctionInfo *get_function(const std::string &name);
+  StructInfo *get_struct(const std::string &name);
+  StructInfo *get_struct_by_type(const AlohaType::Type &type);
+  void enter_scope();
+  void leave_scope();
+  bool is_builtin_function(std::string name) const;
   void dump() const;
 
 private:

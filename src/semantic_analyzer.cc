@@ -1,13 +1,12 @@
 #include "semantic_analyzer.h"
 #include "ast.h"
-#include "symbolTable.h"
 #include "type.h"
 #include <memory>
 #include <vector>
 
 void SemanticAnalyzer::analyze(aloha::Program *program) {
   program->accept(*this);
-  if (!error.isEmpty()) {
+  if (!error.is_empty()) {
     throw error;
   }
 }
@@ -31,14 +30,14 @@ void SemanticAnalyzer::visit(aloha::BinaryExpression *node) {
   node->m_right->accept(*this);
 
   if (node->m_left->get_type() != node->m_right->get_type()) {
-    error.addError("Type mismatch in binary expression");
+    error.add_error("Type mismatch in binary expression");
   }
 }
 
 void SemanticAnalyzer::visit(aloha::Identifier *node) {
-  VariableInfo *varInfo = symbol_table.getVariable(node->m_name);
+  VariableInfo *varInfo = symbol_table.get_variable(node->m_name);
   if (!varInfo) {
-    error.addError("Undeclared variable: " + node->m_name);
+    error.add_error("Undeclared variable: " + node->m_name);
     return;
   }
   node->m_type = varInfo->type;
@@ -54,14 +53,14 @@ void SemanticAnalyzer::visit(aloha::Declaration *node) {
           AlohaType::is_struct_type(node->m_expression->get_type())) {
 
         if (node->m_type.value() != node->m_expression->get_type()) {
-          error.addError("Struct type mismatch in declaration of " +
-                         node->m_variable_name);
+          error.add_error("Struct type mismatch in declaration of " +
+                          node->m_variable_name);
           return;
         }
       } else {
         if (node->m_expression->get_type() != AlohaType::Type::UNKNOWN) {
-          error.addError("Type mismatch in declaration of " +
-                         node->m_variable_name);
+          error.add_error("Type mismatch in declaration of " +
+                          node->m_variable_name);
           return;
         }
       }
@@ -71,34 +70,35 @@ void SemanticAnalyzer::visit(aloha::Declaration *node) {
   if (node->m_type && AlohaType::is_struct_type(node->m_type.value())) {
     if (auto *struct_inst = dynamic_cast<aloha::StructInstantiation *>(
             node->m_expression.get())) {
-      if (!symbol_table.getStruct(struct_inst->m_struct_name)) {
-        error.addError("Undeclared struct type: " +
-                       AlohaType::to_string(node->m_type.value()));
+      if (!symbol_table.get_struct(struct_inst->m_struct_name)) {
+        error.add_error("Undeclared struct type: " +
+                        AlohaType::to_string(node->m_type.value()));
         return;
       }
     } else {
-      error.addError("Expected struct instantiation for struct type");
+      error.add_error("Expected struct instantiation for struct type");
       return;
     }
   }
 
-  if (!symbol_table.addVariable(node->m_variable_name,
-                                node->m_type.value_or(AlohaType::Type::UNKNOWN),
-                                node->m_is_assigned, node->m_is_mutable)) {
-    error.addError("Variable redeclaration: " + node->m_variable_name);
+  if (!symbol_table.add_variable(
+          node->m_variable_name,
+          node->m_type.value_or(AlohaType::Type::UNKNOWN), node->m_is_assigned,
+          node->m_is_mutable)) {
+    error.add_error("Variable redeclaration: " + node->m_variable_name);
   }
 }
 
 void SemanticAnalyzer::visit(aloha::Assignment *node) {
-  VariableInfo *var_info = symbol_table.getVariable(node->m_variable_name);
+  VariableInfo *var_info = symbol_table.get_variable(node->m_variable_name);
   if (!var_info) {
-    error.addError("Cannnot assign to an undeclared variable: " +
-                   node->m_variable_name);
+    error.add_error("Cannnot assign to an undeclared variable: " +
+                    node->m_variable_name);
     return;
   }
   if (!var_info->is_mutable && var_info->is_assigned) {
-    error.addError("Cannot mutate immutable assigned variable: " +
-                   node->m_variable_name);
+    error.add_error("Cannot mutate immutable assigned variable: " +
+                    node->m_variable_name);
     return;
   }
 
@@ -114,30 +114,30 @@ void SemanticAnalyzer::visit(aloha::Assignment *node) {
       if (AlohaType::is_struct_type(node->m_type) &&
           AlohaType::is_struct_type(node->m_expression->get_type())) {
         if (node->m_type != node->m_expression->get_type()) {
-          error.addError("Struct type mismatch in assignment to " +
-                         node->m_variable_name);
+          error.add_error("Struct type mismatch in assignment to " +
+                          node->m_variable_name);
         }
       } else {
         std::string expr_type =
             AlohaType::to_string(node->m_expression->get_type());
         std::string var_type = AlohaType::to_string(node->m_type);
-        error.addError("Cannot assign expr of type " + expr_type +
-                       " to var of type " + var_type);
+        error.add_error("Cannot assign expr of type " + expr_type +
+                        " to var of type " + var_type);
       }
     }
   }
 }
 
 void SemanticAnalyzer::visit(aloha::FunctionCall *node) {
-  auto isBuiltin = symbol_table.isBuiltinFunction(node->m_func_name->m_name);
+  auto isBuiltin = symbol_table.is_builtin_function(node->m_func_name->m_name);
   if (isBuiltin) {
     return; // HACK: dont check anything for now but should be a good idea to
             // add protoypes and check for types and so on
   }
 
-  FunctionInfo *funcInfo = symbol_table.getFunction(node->m_func_name->m_name);
+  FunctionInfo *funcInfo = symbol_table.get_function(node->m_func_name->m_name);
   if (!funcInfo) {
-    error.addError("Undeclared function: " + node->m_func_name->m_name);
+    error.add_error("Undeclared function: " + node->m_func_name->m_name);
     return;
   }
 
@@ -145,15 +145,15 @@ void SemanticAnalyzer::visit(aloha::FunctionCall *node) {
   node->m_type = funcInfo->return_type;
 
   if (node->m_arguments.size() != funcInfo->param_types.size()) {
-    error.addError("Argument count mismatch in function call: " +
-                   node->m_func_name->m_name);
+    error.add_error("Argument count mismatch in function call: " +
+                    node->m_func_name->m_name);
     return;
   }
   for (size_t i = 0; i < node->m_arguments.size(); ++i) {
     node->m_arguments[i]->accept(*this);
     if (node->m_arguments[i]->get_type() != funcInfo->param_types[i]) {
-      error.addError("Argument type mismatch in function call: " +
-                     node->m_func_name->m_name);
+      error.add_error("Argument type mismatch in function call: " +
+                      node->m_func_name->m_name);
     }
   }
 }
@@ -169,39 +169,39 @@ void SemanticAnalyzer::visit(aloha::ReturnStatement *node) {
               << std::endl;
     std::cout << "Curr fn return type: "
               << AlohaType::to_string(current_fn->m_return_type) << std::endl;
-    error.addError("Return type mismatch in function: " +
-                   current_fn->m_name->m_name);
+    error.add_error("Return type mismatch in function: " +
+                    current_fn->m_name->m_name);
   }
 }
 
 void SemanticAnalyzer::visit(aloha::IfStatement *node) {
   node->m_condition->accept(*this);
-  symbol_table.enterScope();
+  symbol_table.enter_scope();
   node->m_then_branch->accept(*this);
-  symbol_table.leaveScope();
+  symbol_table.leave_scope();
   if (node->has_else_branch()) {
-    symbol_table.enterScope();
+    symbol_table.enter_scope();
     node->m_else_branch->accept(*this);
-    symbol_table.leaveScope();
+    symbol_table.leave_scope();
   }
 }
 
 void SemanticAnalyzer::visit(aloha::WhileLoop *node) {
   node->m_condition->accept(*this);
-  symbol_table.enterScope();
+  symbol_table.enter_scope();
   node->m_body->accept(*this);
-  symbol_table.leaveScope();
+  symbol_table.leave_scope();
 }
 
 void SemanticAnalyzer::visit(aloha::ForLoop *node) {
-  symbol_table.enterScope();
+  symbol_table.enter_scope();
   node->m_initializer->accept(*this);
   node->m_condition->accept(*this);
   node->m_increment->accept(*this);
   for (auto &stmt : node->m_body) {
     stmt->accept(*this);
   }
-  symbol_table.leaveScope();
+  symbol_table.leave_scope();
 }
 
 void SemanticAnalyzer::visit(aloha::Function *node) {
@@ -209,24 +209,24 @@ void SemanticAnalyzer::visit(aloha::Function *node) {
   for (const auto &param : node->m_parameters) {
     parameterType.push_back(param.m_type);
   }
-  if (!symbol_table.addFunction(node->m_name->m_name, node->m_return_type,
-                                parameterType)) {
-    error.addError("Function redeclaration: " + node->m_name->m_name);
+  if (!symbol_table.add_function(node->m_name->m_name, node->m_return_type,
+                                 parameterType)) {
+    error.add_error("Function redeclaration: " + node->m_name->m_name);
   }
 
-  symbol_table.enterScope();
+  symbol_table.enter_scope();
   current_fn = node;
 
   for (const auto &param : node->m_parameters) {
-    if (!symbol_table.addVariable(
+    if (!symbol_table.add_variable(
             param.m_name, param.m_type, false,
             true)) { // TODO: allow mutability to be defined in params
-      error.addError("Parameter redeclaration: " + param.m_name);
+      error.add_error("Parameter redeclaration: " + param.m_name);
     }
   }
   node->m_body->accept(*this);
   current_fn = nullptr;
-  symbol_table.leaveScope();
+  symbol_table.leave_scope();
 }
 
 void SemanticAnalyzer::visit(aloha::StructDecl *node) {
@@ -235,30 +235,31 @@ void SemanticAnalyzer::visit(aloha::StructDecl *node) {
     fields.push_back({field.m_name, field.m_type});
   }
 
-  AlohaType::Type structType = symbol_table.addStruct(node->m_name, fields);
+  AlohaType::Type structType = symbol_table.add_struct(node->m_name, fields);
   if (structType == AlohaType::Type::UNKNOWN) {
-    error.addError("Struct redeclaration: " + node->m_name);
+    error.add_error("Struct redeclaration: " + node->m_name);
   }
 }
 
 void SemanticAnalyzer::visit(aloha::StructInstantiation *node) {
-  StructInfo *structInfo = symbol_table.getStruct(node->m_struct_name);
+  StructInfo *structInfo = symbol_table.get_struct(node->m_struct_name);
   if (!structInfo) {
-    error.addError("Undeclared struct: " + node->m_struct_name);
+    error.add_error("Undeclared struct: " + node->m_struct_name);
     return;
   }
 
   if (node->m_field_values.size() != structInfo->fields.size()) {
-    error.addError("Field count mismatch in struct instantiation: " +
-                   node->m_struct_name);
+    error.add_error("Field count mismatch in struct instantiation: " +
+                    node->m_struct_name);
     return;
   }
 
   for (size_t i = 0; i < node->m_field_values.size(); ++i) {
     node->m_field_values[i]->accept(*this);
     if (node->m_field_values[i]->get_type() != structInfo->fields[i].type) {
-      error.addError("Field type mismatch in struct instantiation: " +
-                     structInfo->fields[i].name + " in " + node->m_struct_name);
+      error.add_error("Field type mismatch in struct instantiation: " +
+                      structInfo->fields[i].name + " in " +
+                      node->m_struct_name);
     }
   }
 
@@ -270,12 +271,12 @@ void SemanticAnalyzer::visit(aloha::StructFieldAccess *node) {
   AlohaType::Type struct_type = node->m_struct_expr->get_type();
 
   if (!AlohaType::is_struct_type(struct_type)) {
-    error.addError("Trying to access field of non-struct type");
+    error.add_error("Trying to access field of non-struct type");
     return;
   }
-  StructInfo *struct_info = symbol_table.getStructByType(struct_type);
+  StructInfo *struct_info = symbol_table.get_struct_by_type(struct_type);
   if (!struct_info) {
-    error.addError("Unknown struct type");
+    error.add_error("Unknown struct type");
     return;
   }
 
@@ -288,7 +289,7 @@ void SemanticAnalyzer::visit(aloha::StructFieldAccess *node) {
   }
 
   if (field_type == AlohaType::Type::UNKNOWN) {
-    error.addError("Struct has no field named '" + node->m_field_name + "'");
+    error.add_error("Struct has no field named '" + node->m_field_name + "'");
     return;
   }
   node->set_type(field_type);
@@ -299,13 +300,13 @@ void SemanticAnalyzer::visit(aloha::StructFieldAssignment *node) {
   AlohaType::Type struct_type = node->m_struct_expr->get_type();
 
   if (!AlohaType::is_struct_type(struct_type)) {
-    error.addError("Trying to assign to a field of non-struct type");
+    error.add_error("Trying to assign to a field of non-struct type");
     return;
   }
 
-  StructInfo *struct_info = symbol_table.getStructByType(struct_type);
+  StructInfo *struct_info = symbol_table.get_struct_by_type(struct_type);
   if (!struct_info) {
-    error.addError("Unknown struct type");
+    error.add_error("Unknown struct type");
     return;
   }
 
@@ -318,7 +319,7 @@ void SemanticAnalyzer::visit(aloha::StructFieldAssignment *node) {
   }
 
   if (field_type == AlohaType::Type::UNKNOWN) {
-    error.addError("Struct has no field named '" + node->m_field_name + "'");
+    error.add_error("Struct has no field named '" + node->m_field_name + "'");
     return;
   }
 
@@ -327,8 +328,8 @@ void SemanticAnalyzer::visit(aloha::StructFieldAssignment *node) {
   if (node->m_value->get_type() != field_type) {
     std::string value_type = AlohaType::to_string(node->m_value->get_type());
     std::string field_type_str = AlohaType::to_string(field_type);
-    error.addError("Cannot assign value of type '" + value_type +
-                   "' to struct field of type '" + field_type_str + "'");
+    error.add_error("Cannot assign value of type '" + value_type +
+                    "' to struct field of type '" + field_type_str + "'");
     return;
   }
   node->m_type = field_type;
