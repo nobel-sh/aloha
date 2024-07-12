@@ -2,118 +2,125 @@
 #include "ast.h"
 #include "symbolTable.h"
 #include "type.h"
+#include <memory>
 #include <vector>
 
-void SemanticAnalyzer::analyze(Aloha::Program *program) {
+void SemanticAnalyzer::analyze(aloha::Program *program) {
   program->accept(*this);
   if (!error.isEmpty()) {
     throw error;
   }
 }
 
-void SemanticAnalyzer::visit(Aloha::Number *node) {}
+void SemanticAnalyzer::visit(aloha::Number *node) {}
 
-void SemanticAnalyzer::visit(Aloha::Boolean *node) {}
+void SemanticAnalyzer::visit(aloha::Boolean *node) {}
 
-void SemanticAnalyzer::visit(Aloha::String *node) {}
+void SemanticAnalyzer::visit(aloha::String *node) {}
 
-void SemanticAnalyzer::visit(Aloha::ExpressionStatement *node) {
-  node->expr->accept(*this);
+void SemanticAnalyzer::visit(aloha::ExpressionStatement *node) {
+  node->m_expr->accept(*this);
 }
 
-void SemanticAnalyzer::visit(Aloha::UnaryExpression *node) {
-  node->expr->accept(*this);
+void SemanticAnalyzer::visit(aloha::UnaryExpression *node) {
+  node->m_expr->accept(*this);
 }
 
-void SemanticAnalyzer::visit(Aloha::BinaryExpression *node) {
-  node->left->accept(*this);
-  node->right->accept(*this);
+void SemanticAnalyzer::visit(aloha::BinaryExpression *node) {
+  node->m_left->accept(*this);
+  node->m_right->accept(*this);
 
-  if (node->left->get_type() != node->right->get_type()) {
+  if (node->m_left->get_type() != node->m_right->get_type()) {
     error.addError("Type mismatch in binary expression");
   }
 }
 
-void SemanticAnalyzer::visit(Aloha::Identifier *node) {
-  VariableInfo *varInfo = symbol_table.getVariable(node->name);
+void SemanticAnalyzer::visit(aloha::Identifier *node) {
+  VariableInfo *varInfo = symbol_table.getVariable(node->m_name);
   if (!varInfo) {
-    error.addError("Undeclared variable: " + node->name);
+    error.addError("Undeclared variable: " + node->m_name);
     return;
   }
-  node->type = varInfo->type;
+  node->m_type = varInfo->type;
 }
 
-void SemanticAnalyzer::visit(Aloha::Declaration *node) {
-  if (node->is_assigned) {
-    node->expression->accept(*this);
-    if (!node->type) {
-      node->type = node->expression->get_type();
-    } else if (node->type != node->expression->get_type()) {
-      if (AlohaType::is_struct_type(node->type.value()) &&
-          AlohaType::is_struct_type(node->expression->get_type())) {
+void SemanticAnalyzer::visit(aloha::Declaration *node) {
+  if (node->m_is_assigned) {
+    node->m_expression->accept(*this);
+    if (!node->m_type) {
+      node->m_type = node->m_expression->get_type();
+    } else if (node->m_type != node->m_expression->get_type()) {
+      if (AlohaType::is_struct_type(node->m_type.value()) &&
+          AlohaType::is_struct_type(node->m_expression->get_type())) {
 
-        if (node->type.value() != node->expression->get_type()) {
+        if (node->m_type.value() != node->m_expression->get_type()) {
           error.addError("Struct type mismatch in declaration of " +
-                         node->variable_name);
+                         node->m_variable_name);
           return;
         }
       } else {
-        error.addError("Type mismatch in declaration of " +
-                       node->variable_name);
-        return;
+        if (node->m_expression->get_type() != AlohaType::Type::UNKNOWN) {
+          error.addError("Type mismatch in declaration of " +
+                         node->m_variable_name);
+          return;
+        }
       }
     }
   }
 
-  if (node->type && AlohaType::is_struct_type(node->type.value())) {
-    std::shared_ptr<Aloha::StructInstantiation> struct_ints =
-        std::static_pointer_cast<Aloha::StructInstantiation>(node->expression);
-    if (!symbol_table.getStruct(struct_ints->m_struct_name)) {
-      error.addError("Undeclared struct type: " +
-                     AlohaType::to_string(node->type.value()));
+  if (node->m_type && AlohaType::is_struct_type(node->m_type.value())) {
+    if (auto *struct_inst = dynamic_cast<aloha::StructInstantiation *>(
+            node->m_expression.get())) {
+      if (!symbol_table.getStruct(struct_inst->m_struct_name)) {
+        error.addError("Undeclared struct type: " +
+                       AlohaType::to_string(node->m_type.value()));
+        return;
+      }
+    } else {
+      error.addError("Expected struct instantiation for struct type");
       return;
     }
   }
 
-  if (!symbol_table.addVariable(node->variable_name,
-                                node->type.value_or(AlohaType::Type::UNKNOWN),
-                                node->is_assigned, node->is_mutable)) {
-    error.addError("Variable redeclaration: " + node->variable_name);
+  if (!symbol_table.addVariable(node->m_variable_name,
+                                node->m_type.value_or(AlohaType::Type::UNKNOWN),
+                                node->m_is_assigned, node->m_is_mutable)) {
+    error.addError("Variable redeclaration: " + node->m_variable_name);
   }
 }
 
-void SemanticAnalyzer::visit(Aloha::Assignment *node) {
-  VariableInfo *var_info = symbol_table.getVariable(node->variable_name);
+void SemanticAnalyzer::visit(aloha::Assignment *node) {
+  VariableInfo *var_info = symbol_table.getVariable(node->m_variable_name);
   if (!var_info) {
     error.addError("Cannnot assign to an undeclared variable: " +
-                   node->variable_name);
+                   node->m_variable_name);
     return;
   }
   if (!var_info->is_mutable && var_info->is_assigned) {
     error.addError("Cannot mutate immutable assigned variable: " +
-                   node->variable_name);
+                   node->m_variable_name);
     return;
   }
 
   var_info->is_assigned = true;
-  node->expression->accept(*this);
+  node->m_expression->accept(*this);
 
   if (var_info->type == AlohaType::Type::UNKNOWN) {
-    var_info->type = node->expression->get_type();
-    node->type = var_info->type;
+    var_info->type = node->m_expression->get_type();
+    node->m_type = var_info->type;
   } else {
-    node->type = var_info->type;
-    if (node->type != node->expression->get_type()) {
-      if (AlohaType::is_struct_type(node->type) &&
-          AlohaType::is_struct_type(node->expression->get_type())) {
-        if (node->type != node->expression->get_type()) {
+    node->m_type = var_info->type;
+    if (node->m_type != node->m_expression->get_type()) {
+      if (AlohaType::is_struct_type(node->m_type) &&
+          AlohaType::is_struct_type(node->m_expression->get_type())) {
+        if (node->m_type != node->m_expression->get_type()) {
           error.addError("Struct type mismatch in assignment to " +
-                         node->variable_name);
+                         node->m_variable_name);
         }
       } else {
         std::string expr_type =
-            AlohaType::to_string(node->expression->get_type());
-        std::string var_type = AlohaType::to_string(node->type);
+            AlohaType::to_string(node->m_expression->get_type());
+        std::string var_type = AlohaType::to_string(node->m_type);
         error.addError("Cannot assign expr of type " + expr_type +
                        " to var of type " + var_type);
       }
@@ -121,107 +128,108 @@ void SemanticAnalyzer::visit(Aloha::Assignment *node) {
   }
 }
 
-void SemanticAnalyzer::visit(Aloha::FunctionCall *node) {
-  auto isBuiltin = symbol_table.isBuiltinFunction(node->funcName->name);
+void SemanticAnalyzer::visit(aloha::FunctionCall *node) {
+  auto isBuiltin = symbol_table.isBuiltinFunction(node->m_func_name->m_name);
   if (isBuiltin) {
     return; // HACK: dont check anything for now but should be a good idea to
             // add protoypes and check for types and so on
   }
 
-  FunctionInfo *funcInfo = symbol_table.getFunction(node->funcName->name);
+  FunctionInfo *funcInfo = symbol_table.getFunction(node->m_func_name->m_name);
   if (!funcInfo) {
-    error.addError("Undeclared function: " + node->funcName->name);
+    error.addError("Undeclared function: " + node->m_func_name->m_name);
     return;
   }
 
   // infer type from calle fn's return type
-  node->type = funcInfo->return_type;
+  node->m_type = funcInfo->return_type;
 
-  if (node->arguments.size() != funcInfo->param_types.size()) {
+  if (node->m_arguments.size() != funcInfo->param_types.size()) {
     error.addError("Argument count mismatch in function call: " +
-                   node->funcName->name);
+                   node->m_func_name->m_name);
     return;
   }
-  for (size_t i = 0; i < node->arguments.size(); ++i) {
-    node->arguments[i]->accept(*this);
-    if (node->arguments[i]->get_type() != funcInfo->param_types[i]) {
+  for (size_t i = 0; i < node->m_arguments.size(); ++i) {
+    node->m_arguments[i]->accept(*this);
+    if (node->m_arguments[i]->get_type() != funcInfo->param_types[i]) {
       error.addError("Argument type mismatch in function call: " +
-                     node->funcName->name);
+                     node->m_func_name->m_name);
     }
   }
 }
 
-void SemanticAnalyzer::visit(Aloha::ReturnStatement *node) {
-  node->expression->accept(*this);
+void SemanticAnalyzer::visit(aloha::ReturnStatement *node) {
+  node->m_expression->accept(*this);
 
-  if (current_fn && node->expression->get_type() != current_fn->return_type) {
+  if (current_fn &&
+      node->m_expression->get_type() != current_fn->m_return_type) {
     symbol_table.dump();
     std::cout << "Expr type: "
-              << AlohaType::to_string(node->expression->get_type())
+              << AlohaType::to_string(node->m_expression->get_type())
               << std::endl;
     std::cout << "Curr fn return type: "
-              << AlohaType::to_string(current_fn->return_type) << std::endl;
+              << AlohaType::to_string(current_fn->m_return_type) << std::endl;
     error.addError("Return type mismatch in function: " +
-                   current_fn->name->name);
+                   current_fn->m_name->m_name);
   }
 }
 
-void SemanticAnalyzer::visit(Aloha::IfStatement *node) {
-  node->condition->accept(*this);
+void SemanticAnalyzer::visit(aloha::IfStatement *node) {
+  node->m_condition->accept(*this);
   symbol_table.enterScope();
-  node->then_branch->accept(*this);
+  node->m_then_branch->accept(*this);
   symbol_table.leaveScope();
   if (node->has_else_branch()) {
     symbol_table.enterScope();
-    node->else_branch->accept(*this);
+    node->m_else_branch->accept(*this);
     symbol_table.leaveScope();
   }
 }
 
-void SemanticAnalyzer::visit(Aloha::WhileLoop *node) {
-  node->condition->accept(*this);
+void SemanticAnalyzer::visit(aloha::WhileLoop *node) {
+  node->m_condition->accept(*this);
   symbol_table.enterScope();
-  node->body->accept(*this);
+  node->m_body->accept(*this);
   symbol_table.leaveScope();
 }
 
-void SemanticAnalyzer::visit(Aloha::ForLoop *node) {
+void SemanticAnalyzer::visit(aloha::ForLoop *node) {
   symbol_table.enterScope();
-  node->initializer->accept(*this);
-  node->condition->accept(*this);
-  node->increment->accept(*this);
-  for (auto &stmt : node->body) {
+  node->m_initializer->accept(*this);
+  node->m_condition->accept(*this);
+  node->m_increment->accept(*this);
+  for (auto &stmt : node->m_body) {
     stmt->accept(*this);
   }
   symbol_table.leaveScope();
 }
 
-void SemanticAnalyzer::visit(Aloha::Function *node) {
+void SemanticAnalyzer::visit(aloha::Function *node) {
   std::vector<AlohaType::Type> parameterType;
-  for (const auto &param : node->parameters) {
-    parameterType.push_back(param.type);
+  for (const auto &param : node->m_parameters) {
+    parameterType.push_back(param.m_type);
   }
-  if (!symbol_table.addFunction(node->name->name, node->return_type,
+  if (!symbol_table.addFunction(node->m_name->m_name, node->m_return_type,
                                 parameterType)) {
-    error.addError("Function redeclaration: " + node->name->name);
+    error.addError("Function redeclaration: " + node->m_name->m_name);
   }
 
   symbol_table.enterScope();
   current_fn = node;
 
-  for (const auto &param : node->parameters) {
+  for (const auto &param : node->m_parameters) {
     if (!symbol_table.addVariable(
-            param.name, param.type, false,
+            param.m_name, param.m_type, false,
             true)) { // TODO: allow mutability to be defined in params
-      error.addError("Parameter redeclaration: " + param.name);
+      error.addError("Parameter redeclaration: " + param.m_name);
     }
   }
-  node->body->accept(*this);
+  node->m_body->accept(*this);
   current_fn = nullptr;
   symbol_table.leaveScope();
 }
 
-void SemanticAnalyzer::visit(Aloha::StructDecl *node) {
+void SemanticAnalyzer::visit(aloha::StructDecl *node) {
   std::vector<StructField> fields;
   for (const auto &field : node->m_fields) {
     fields.push_back({field.m_name, field.m_type});
@@ -233,7 +241,7 @@ void SemanticAnalyzer::visit(Aloha::StructDecl *node) {
   }
 }
 
-void SemanticAnalyzer::visit(Aloha::StructInstantiation *node) {
+void SemanticAnalyzer::visit(aloha::StructInstantiation *node) {
   StructInfo *structInfo = symbol_table.getStruct(node->m_struct_name);
   if (!structInfo) {
     error.addError("Undeclared struct: " + node->m_struct_name);
@@ -257,7 +265,7 @@ void SemanticAnalyzer::visit(Aloha::StructInstantiation *node) {
   node->set_type(structInfo->type);
 }
 
-void SemanticAnalyzer::visit(Aloha::StructFieldAccess *node) {
+void SemanticAnalyzer::visit(aloha::StructFieldAccess *node) {
   node->m_struct_expr->accept(*this);
   AlohaType::Type struct_type = node->m_struct_expr->get_type();
 
@@ -286,7 +294,7 @@ void SemanticAnalyzer::visit(Aloha::StructFieldAccess *node) {
   node->set_type(field_type);
 }
 
-void SemanticAnalyzer::visit(Aloha::StructFieldAssignment *node) {
+void SemanticAnalyzer::visit(aloha::StructFieldAssignment *node) {
   node->m_struct_expr->accept(*this);
   AlohaType::Type struct_type = node->m_struct_expr->get_type();
 
@@ -326,14 +334,14 @@ void SemanticAnalyzer::visit(Aloha::StructFieldAssignment *node) {
   node->m_type = field_type;
 }
 
-void SemanticAnalyzer::visit(Aloha::StatementList *node) {
-  for (auto &stmt : node->statements) {
+void SemanticAnalyzer::visit(aloha::StatementList *node) {
+  for (auto &stmt : node->m_statements) {
     stmt->accept(*this);
   }
 }
 
-void SemanticAnalyzer::visit(Aloha::Program *node) {
-  for (auto &n : node->nodes) {
+void SemanticAnalyzer::visit(aloha::Program *node) {
+  for (auto &n : node->m_nodes) {
     n->accept(*this);
   }
 }

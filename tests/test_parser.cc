@@ -38,11 +38,11 @@ TEST(ParserTest, ParseFunctionDeclaration) {
   Parser parser(tokens);
   auto program = parser.parse();
 
-  ASSERT_EQ(program->nodes.size(), 1);
-  auto function = std::dynamic_pointer_cast<Aloha::Function>(program->nodes[0]);
+  ASSERT_EQ(program->m_nodes.size(), 1);
+  auto *function = dynamic_cast<aloha::Function *>(program->m_nodes[0].get());
   ASSERT_NE(function, nullptr);
-  EXPECT_EQ(function->name->name, "main");
-  EXPECT_EQ(function->return_type, AlohaType::Type::VOID);
+  EXPECT_EQ(function->m_name->m_name, "main");
+  EXPECT_EQ(function->m_return_type, AlohaType::Type::VOID);
 }
 
 /*
@@ -62,14 +62,13 @@ TEST(ParserTest, ParseVariableDeclaration) {
   Parser parser(tokens);
   auto stmt = parser.parse_statement();
   ASSERT_NE(stmt, nullptr);
-  auto declaration = std::dynamic_pointer_cast<Aloha::Declaration>(stmt);
+  auto *declaration = dynamic_cast<aloha::Declaration *>(stmt.get());
   ASSERT_NE(declaration, nullptr);
-  EXPECT_EQ(declaration->variable_name, "foo");
-  auto literal =
-      std::dynamic_pointer_cast<Aloha::Number>(declaration->expression);
-  EXPECT_EQ(literal->value, "3");
-  EXPECT_FALSE(declaration->is_mutable);
-  EXPECT_TRUE(declaration->is_assigned);
+  EXPECT_EQ(declaration->m_variable_name, "foo");
+  auto literal = dynamic_cast<aloha::Number *>(declaration->m_expression.get());
+  EXPECT_EQ(literal->m_value, "3");
+  EXPECT_FALSE(declaration->m_is_mutable);
+  EXPECT_TRUE(declaration->m_is_assigned);
 }
 
 /*
@@ -86,12 +85,11 @@ TEST(ParserTest, ParseVariableAssignment) {
   Parser parser(tokens);
   auto stmt = parser.parse_statement();
   ASSERT_NE(stmt, nullptr);
-  auto assignment = std::dynamic_pointer_cast<Aloha::Assignment>(stmt);
+  auto *assignment = dynamic_cast<aloha::Assignment *>(stmt.get());
   ASSERT_NE(assignment, nullptr);
-  EXPECT_EQ(assignment->variable_name, "foo");
-  auto literal =
-      std::dynamic_pointer_cast<Aloha::Number>(assignment->expression);
-  EXPECT_EQ(literal->value, "7");
+  EXPECT_EQ(assignment->m_variable_name, "foo");
+  auto *literal = dynamic_cast<aloha::Number *>(assignment->m_expression.get());
+  EXPECT_EQ(literal->m_value, "7");
 }
 
 /*
@@ -128,16 +126,15 @@ TEST(ParserTest, ParseIfElseStatement) {
   auto stmt = parser.parse_statement();
 
   ASSERT_NE(stmt, nullptr);
-  auto if_stmt = std::dynamic_pointer_cast<Aloha::IfStatement>(stmt);
+  auto *if_stmt = dynamic_cast<aloha::IfStatement *>(stmt.get());
   ASSERT_NE(if_stmt, nullptr);
-  auto cond_expr =
-      std::dynamic_pointer_cast<Aloha::BinaryExpression>(if_stmt->condition);
+  auto *cond_expr =
+      dynamic_cast<aloha::BinaryExpression *>(if_stmt->m_condition.get());
   ASSERT_NE(cond_expr, nullptr);
-  EXPECT_EQ(cond_expr->op, ">");
-  auto then_branch = if_stmt->then_branch;
-  ASSERT_EQ(then_branch->statements.size(), 1);
-  auto else_branch = if_stmt->else_branch;
-  ASSERT_EQ(else_branch->statements.size(), 1);
+  EXPECT_EQ(cond_expr->m_op, ">");
+  ASSERT_EQ(if_stmt->m_then_branch->m_statements.size(), 1);
+  ASSERT_NE(if_stmt->m_else_branch, nullptr);
+  ASSERT_EQ(if_stmt->m_else_branch->m_statements.size(), 1);
 }
 
 /*
@@ -165,14 +162,13 @@ TEST(ParserTest, ParseWhileStatement) {
   auto stmt = parser.parse_statement();
   ASSERT_NE(stmt, nullptr);
 
-  auto while_stmt = std::dynamic_pointer_cast<Aloha::WhileLoop>(stmt);
+  auto *while_stmt = dynamic_cast<aloha::WhileLoop *>(stmt.get());
   ASSERT_NE(while_stmt, nullptr);
-  auto cond_expr =
-      std::dynamic_pointer_cast<Aloha::BinaryExpression>(while_stmt->condition);
+  auto *cond_expr =
+      dynamic_cast<aloha::BinaryExpression *>(while_stmt->m_condition.get());
   ASSERT_NE(cond_expr, nullptr);
-  EXPECT_EQ(cond_expr->op, "<");
-  auto body = while_stmt->body;
-  ASSERT_EQ(body->statements.size(), 1);
+  EXPECT_EQ(cond_expr->m_op, "<");
+  ASSERT_EQ(while_stmt->m_body->m_statements.size(), 1);
 }
 
 /*
@@ -190,17 +186,17 @@ TEST(ParserTest, ParseSimpleArithmeticExpression) {
   Parser parser(tokens);
   auto expr = parser.parse_expression(0);
 
-  auto binary_expr = std::dynamic_pointer_cast<Aloha::BinaryExpression>(expr);
+  auto *binary_expr = dynamic_cast<aloha::BinaryExpression *>(expr.get());
   ASSERT_NE(binary_expr, nullptr);
-  EXPECT_EQ(binary_expr->op, "-");
+  EXPECT_EQ(binary_expr->m_op, "-");
 
-  auto left = std::dynamic_pointer_cast<Aloha::Identifier>(binary_expr->left);
+  auto *left = dynamic_cast<aloha::Identifier *>(binary_expr->m_left.get());
   ASSERT_NE(left, nullptr);
-  EXPECT_EQ(left->name, "foo");
+  EXPECT_EQ(left->m_name, "foo");
 
-  auto right = std::dynamic_pointer_cast<Aloha::Number>(binary_expr->right);
+  auto *right = dynamic_cast<aloha::Number *>(binary_expr->m_right.get());
   ASSERT_NE(right, nullptr);
-  EXPECT_EQ(right->value, "10");
+  EXPECT_EQ(right->m_value, "10");
 }
 
 /*
@@ -233,35 +229,35 @@ TEST(ParserTest, ParseComplexArithmeticExpression) {
   Parser parser(tokens);
   auto expr = parser.parse_expression(0);
 
-  auto binary_expr = std::dynamic_pointer_cast<Aloha::BinaryExpression>(expr);
+  auto *binary_expr = dynamic_cast<aloha::BinaryExpression *>(expr.get());
   ASSERT_NE(binary_expr, nullptr);
-  EXPECT_EQ(binary_expr->op, "+");
+  EXPECT_EQ(binary_expr->m_op, "+");
 
-  auto left = std::dynamic_pointer_cast<Aloha::Number>(binary_expr->left);
+  auto *left = dynamic_cast<aloha::Number *>(binary_expr->m_left.get());
   ASSERT_NE(left, nullptr);
-  EXPECT_EQ(left->value, "3");
+  EXPECT_EQ(left->m_value, "3");
 
-  auto right =
-      std::dynamic_pointer_cast<Aloha::BinaryExpression>(binary_expr->right);
+  auto *right =
+      dynamic_cast<aloha::BinaryExpression *>(binary_expr->m_right.get());
   ASSERT_NE(right, nullptr);
-  EXPECT_EQ(right->op, "*");
+  EXPECT_EQ(right->m_op, "*");
 
-  auto right_left = std::dynamic_pointer_cast<Aloha::Number>(right->left);
+  auto *right_left = dynamic_cast<aloha::Number *>(right->m_left.get());
   ASSERT_NE(right_left, nullptr);
-  EXPECT_EQ(right_left->value, "5");
+  EXPECT_EQ(right_left->m_value, "5");
 
-  auto right_right =
-      std::dynamic_pointer_cast<Aloha::BinaryExpression>(right->right);
+  auto *right_right =
+      dynamic_cast<aloha::BinaryExpression *>(right->m_right.get());
   ASSERT_NE(right_right, nullptr);
-  EXPECT_EQ(right_right->op, "-");
+  EXPECT_EQ(right_right->m_op, "-");
 
-  auto right_right_left =
-      std::dynamic_pointer_cast<Aloha::Number>(right_right->left);
+  auto *right_right_left =
+      dynamic_cast<aloha::Number *>(right_right->m_left.get());
   ASSERT_NE(right_right_left, nullptr);
-  EXPECT_EQ(right_right_left->value, "10");
+  EXPECT_EQ(right_right_left->m_value, "10");
 
-  auto right_right_right =
-      std::dynamic_pointer_cast<Aloha::Number>(right_right->right);
+  auto *right_right_right =
+      dynamic_cast<aloha::Number *>(right_right->m_right.get());
   ASSERT_NE(right_right_right, nullptr);
-  EXPECT_EQ(right_right_right->value, "2");
+  EXPECT_EQ(right_right_right->m_value, "2");
 }

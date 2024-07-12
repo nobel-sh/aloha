@@ -8,35 +8,35 @@
 
 class SemanticAnalyzer : public ASTVisitor {
 public:
-  void analyze(Aloha::Program *program);
+  void analyze(aloha::Program *program);
 
-  void visit(Aloha::Number *node) override;
-  void visit(Aloha::Boolean *node) override;
-  void visit(Aloha::String *node) override;
-  void visit(Aloha::ExpressionStatement *node) override;
-  void visit(Aloha::UnaryExpression *node) override;
-  void visit(Aloha::BinaryExpression *node) override;
-  void visit(Aloha::Identifier *node) override;
-  void visit(Aloha::Declaration *node) override;
-  void visit(Aloha::Assignment *node) override;
-  void visit(Aloha::FunctionCall *node) override;
-  void visit(Aloha::ReturnStatement *node) override;
-  void visit(Aloha::IfStatement *node) override;
-  void visit(Aloha::WhileLoop *node) override;
-  void visit(Aloha::ForLoop *node) override;
-  void visit(Aloha::Function *node) override;
-  void visit(Aloha::StructDecl *node) override;
-  void visit(Aloha::StructInstantiation *node) override;
-  void visit(Aloha::StructFieldAccess *node) override;
-  void visit(Aloha::StructFieldAssignment *node) override;
-  void visit(Aloha::StatementList *node) override;
-  void visit(Aloha::Program *node) override;
+  void visit(aloha::Number *node) override;
+  void visit(aloha::Boolean *node) override;
+  void visit(aloha::String *node) override;
+  void visit(aloha::ExpressionStatement *node) override;
+  void visit(aloha::UnaryExpression *node) override;
+  void visit(aloha::BinaryExpression *node) override;
+  void visit(aloha::Identifier *node) override;
+  void visit(aloha::Declaration *node) override;
+  void visit(aloha::Assignment *node) override;
+  void visit(aloha::FunctionCall *node) override;
+  void visit(aloha::ReturnStatement *node) override;
+  void visit(aloha::IfStatement *node) override;
+  void visit(aloha::WhileLoop *node) override;
+  void visit(aloha::ForLoop *node) override;
+  void visit(aloha::Function *node) override;
+  void visit(aloha::StructDecl *node) override;
+  void visit(aloha::StructInstantiation *node) override;
+  void visit(aloha::StructFieldAccess *node) override;
+  void visit(aloha::StructFieldAssignment *node) override;
+  void visit(aloha::StatementList *node) override;
+  void visit(aloha::Program *node) override;
 
   void dump_symbol_table() { symbol_table.dump(); }
 
 private:
   SymbolTable symbol_table;
-  Aloha::Function *current_fn = nullptr;
+  aloha::Function *current_fn = nullptr;
   TypeError error;
 };
 

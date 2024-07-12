@@ -1,19 +1,18 @@
-#ifndef AST_H_
-#define AST_H_
+#ifndef ALOHA_AST_H_
+#define ALOHA_AST_H_
 
 #include "ASTVisitor.h"
 #include "type.h"
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <ostream>
 #include <string>
-#include <utility>
 #include <vector>
 
-namespace Aloha {
+namespace aloha {
 
-// Base Node
+using Type = AlohaType::Type;
+
 class Node {
 public:
   virtual ~Node() = default;
@@ -21,130 +20,111 @@ public:
   virtual void accept(ASTVisitor &visitor) = 0;
 };
 
-// Expressions
 class Expression : public Node {
 public:
-  virtual AlohaType::Type get_type() const = 0;
+  virtual Type get_type() const = 0;
 };
 
 class Statement : public Node {};
 
-using ExprPtr = std::shared_ptr<Expression>;
-using StmtPtr = std::shared_ptr<Statement>;
+using NodePtr = std::unique_ptr<Node>;
+using ExprPtr = std::unique_ptr<Expression>;
+using StmtPtr = std::unique_ptr<Statement>;
 
 class StatementList : public Statement {
 public:
-  std::vector<StmtPtr> statements;
+  std::vector<StmtPtr> m_statements;
 
-  StatementList(std::vector<StmtPtr> stmts) : statements(std::move(stmts)) {}
-  StatementList() = default;
-
+  explicit StatementList(std::vector<StmtPtr> stmts = {});
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-
-  bool empty() const { return statements.empty(); }
+  void accept(ASTVisitor &visitor) override;
+  bool is_empty() const;
 };
 
 class ExpressionStatement : public Statement {
 public:
-  ExprPtr expr;
+  ExprPtr m_expr;
 
-  explicit ExpressionStatement(ExprPtr expr) : expr(std::move(expr)) {}
-
+  explicit ExpressionStatement(ExprPtr expr);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  void accept(ASTVisitor &visitor) override;
 };
 
 class Number : public Expression {
 public:
-  std::string value;
+  std::string m_value;
 
-  explicit Number(std::string val) : value(std::move(val)) {}
-
+  explicit Number(std::string val);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const override { return AlohaType::Type::NUMBER; }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const override;
 };
 
 class Boolean : public Expression {
 public:
-  bool value;
+  bool m_value;
 
-  explicit Boolean(bool val) : value(val) {}
-
+  explicit Boolean(bool val);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const override { return AlohaType::Type::BOOL; }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const override;
 };
 
 class String : public Expression {
 public:
-  std::string value;
+  std::string m_value;
 
-  explicit String(std::string val) : value(std::move(val)) {}
-
+  explicit String(std::string val);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const override { return AlohaType::Type::STRING; }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const override;
 };
 
 class UnaryExpression : public Expression {
 public:
-  std::string op;
-  ExprPtr expr;
+  std::string m_op;
+  ExprPtr m_expr;
 
-  UnaryExpression(std::string oper, ExprPtr expr)
-      : op(std::move(oper)), expr(std::move(expr)) {}
-
+  UnaryExpression(std::string oper, ExprPtr expr);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const override { return expr->get_type(); }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const override;
 };
 
 class BinaryExpression : public Expression {
 public:
-  ExprPtr left;
-  std::string op;
-  ExprPtr right;
+  ExprPtr m_left;
+  std::string m_op;
+  ExprPtr m_right;
 
-  BinaryExpression(ExprPtr lhs, std::string oper, ExprPtr rhs)
-      : left(std::move(lhs)), op(std::move(oper)), right(std::move(rhs)) {}
-
+  BinaryExpression(ExprPtr lhs, std::string oper, ExprPtr rhs);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const override { return left->get_type(); }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const override;
 };
 
 class Identifier : public Expression {
 public:
-  std::string name;
-  AlohaType::Type type;
+  std::string m_name;
+  Type m_type;
 
-  explicit Identifier(std::string name, AlohaType::Type t)
-      : name(std::move(name)), type(t) {}
-  explicit Identifier(std::string name)
-      : name(std::move(name)), type(AlohaType::Type::UNKNOWN) {}
-
+  explicit Identifier(std::string name, Type t = Type::UNKNOWN);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const override { return type; }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const override;
 };
 
 class StructFieldAccess : public Expression {
 public:
   ExprPtr m_struct_expr;
   std::string m_field_name;
-  AlohaType::Type m_type;
+  Type m_type;
 
-  StructFieldAccess(ExprPtr t_struct_expr, std::string t_field_name)
-      : m_struct_expr(std::move(t_struct_expr)),
-        m_field_name(std::move(t_field_name)),
-        m_type(AlohaType::Type::UNKNOWN) {}
-
+  StructFieldAccess(ExprPtr struct_expr, std::string field_name);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const override { return m_type; }
-  void set_type(AlohaType::Type t_type) { m_type = t_type; }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const override;
+  void set_type(Type type);
 };
 
 class StructFieldAssignment : public Statement {
@@ -152,196 +132,158 @@ public:
   ExprPtr m_struct_expr;
   std::string m_field_name;
   ExprPtr m_value;
-  AlohaType::Type m_type;
+  Type m_type;
 
-  StructFieldAssignment(ExprPtr t_struct_expr, std::string t_field_name,
-                        ExprPtr t_value)
-      : m_struct_expr(std::move(t_struct_expr)),
-        m_field_name(std::move(t_field_name)), m_value(std::move(t_value)),
-        m_type(AlohaType::Type::UNKNOWN) {}
-
+  StructFieldAssignment(ExprPtr struct_expr, std::string field_name,
+                        ExprPtr value);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const { return m_type; }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const;
 };
 
-// Statements
 class Declaration : public Statement {
 public:
-  std::string variable_name;
-  std::optional<AlohaType::Type> type;
-  ExprPtr expression;
-  bool is_assigned;
-  bool is_mutable;
+  std::string m_variable_name;
+  std::optional<Type> m_type;
+  ExprPtr m_expression;
+  bool m_is_assigned;
+  bool m_is_mutable;
 
-  Declaration(std::string var_name, std::optional<AlohaType::Type> type,
-              ExprPtr expr, bool is_mutable)
-      : variable_name(std::move(var_name)), type(type),
-        expression(std::move(expr)), is_assigned(expression != nullptr),
-        is_mutable(is_mutable) {}
-
+  Declaration(std::string var_name, std::optional<Type> type, ExprPtr expr,
+              bool is_mutable);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  void accept(ASTVisitor &visitor) override;
 };
 
 class Assignment : public Statement {
 public:
-  std::string variable_name;
-  ExprPtr expression;
-  AlohaType::Type type;
+  std::string m_variable_name;
+  ExprPtr m_expression;
+  Type m_type;
 
-  Assignment(std::string var_name, ExprPtr expr)
-      : variable_name(std::move(var_name)), expression(std::move(expr)),
-        type(AlohaType::Type::UNKNOWN) {}
-
+  Assignment(std::string var_name, ExprPtr expr);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  void accept(ASTVisitor &visitor) override;
 };
 
 class FunctionCall : public Expression {
 public:
-  std::shared_ptr<Identifier> funcName;
-  std::vector<ExprPtr> arguments;
-  AlohaType::Type type;
+  std::unique_ptr<Identifier> m_func_name;
+  std::vector<ExprPtr> m_arguments;
+  Type m_type;
 
-  FunctionCall(std::shared_ptr<Identifier> func_name, std::vector<ExprPtr> args)
-      : funcName(std::move(func_name)), arguments(std::move(args)),
-        type(AlohaType::Type::UNKNOWN) {}
-
+  FunctionCall(std::unique_ptr<Identifier> func_name,
+               std::vector<ExprPtr> args);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  AlohaType::Type get_type() const override { return type; }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const override;
 };
 
 class ReturnStatement : public Statement {
 public:
-  ExprPtr expression;
+  ExprPtr m_expression;
 
-  explicit ReturnStatement(ExprPtr expr) : expression(std::move(expr)) {}
-
+  explicit ReturnStatement(ExprPtr expr);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  void accept(ASTVisitor &visitor) override;
 };
 
 class IfStatement : public Statement {
 public:
-  ExprPtr condition;
-  std::shared_ptr<StatementList> then_branch;
-  std::shared_ptr<StatementList> else_branch;
+  ExprPtr m_condition;
+  std::unique_ptr<StatementList> m_then_branch;
+  std::unique_ptr<StatementList> m_else_branch;
 
-  IfStatement(ExprPtr cond, std::shared_ptr<StatementList> then_branch,
-              std::shared_ptr<StatementList> elseBr)
-      : condition(std::move(cond)), then_branch(std::move(then_branch)),
-        else_branch(std::move(elseBr)) {}
-
+  IfStatement(ExprPtr cond, std::unique_ptr<StatementList> then_branch,
+              std::unique_ptr<StatementList> else_branch);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-  bool has_else_branch() const { return else_branch != nullptr; }
+  void accept(ASTVisitor &visitor) override;
+  bool has_else_branch() const;
 };
 
 class WhileLoop : public Statement {
 public:
-  ExprPtr condition;
-  std::shared_ptr<StatementList> body;
+  ExprPtr m_condition;
+  std::unique_ptr<StatementList> m_body;
 
-  WhileLoop(ExprPtr cond, std::shared_ptr<StatementList> b)
-      : condition(std::move(cond)), body(std::move(b)) {}
-
+  WhileLoop(ExprPtr cond, std::unique_ptr<StatementList> body);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  void accept(ASTVisitor &visitor) override;
 };
 
 class ForLoop : public Statement {
 public:
-  std::shared_ptr<Declaration> initializer;
-  ExprPtr condition;
-  std::shared_ptr<Declaration> increment;
-  std::vector<StmtPtr> body;
+  std::unique_ptr<Declaration> m_initializer;
+  ExprPtr m_condition;
+  std::unique_ptr<Declaration> m_increment;
+  std::vector<StmtPtr> m_body;
 
-  ForLoop(std::shared_ptr<Declaration> init, ExprPtr cond,
-          std::shared_ptr<Declaration> inc, std::vector<StmtPtr> b)
-      : initializer(std::move(init)), condition(std::move(cond)),
-        increment(std::move(inc)), body(std::move(b)) {}
-
+  ForLoop(std::unique_ptr<Declaration> init, ExprPtr cond,
+          std::unique_ptr<Declaration> inc, std::vector<StmtPtr> body);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  void accept(ASTVisitor &visitor) override;
 };
 
-// Function
 class Parameter {
 public:
-  std::string name;
-  AlohaType::Type type;
+  std::string m_name;
+  Type m_type;
 
-  Parameter(std::string ident, AlohaType::Type type)
-      : name(std::move(ident)), type(type) {}
+  Parameter(std::string name, Type type);
 };
 
 class Function : public Statement {
 public:
-  std::shared_ptr<Identifier> name;
-  std::vector<Parameter> parameters;
-  AlohaType::Type return_type;
-  std::shared_ptr<StatementList> body;
+  std::unique_ptr<Identifier> m_name;
+  std::vector<Parameter> m_parameters;
+  Type m_return_type;
+  std::unique_ptr<StatementList> m_body;
 
-  Function(std::shared_ptr<Identifier> func_name, std::vector<Parameter> params,
-           AlohaType::Type return_type, std::shared_ptr<StatementList> b)
-      : name(std::move(func_name)), parameters(std::move(params)),
-        return_type(return_type), body(std::move(b)) {}
-
+  Function(std::unique_ptr<Identifier> func_name, std::vector<Parameter> params,
+           Type return_type, std::unique_ptr<StatementList> body);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  void accept(ASTVisitor &visitor) override;
 };
 
 class StructField {
 public:
   std::string m_name;
-  AlohaType::Type m_type;
+  Type m_type;
 
-  StructField(std::string t_name, AlohaType::Type t_type)
-      : m_name(std::move(t_name)), m_type(t_type) {}
+  StructField(std::string name, Type type);
 };
 
 class StructDecl : public Statement {
 public:
-  // std::shared_ptr<Identifier> m_ident;
   std::string m_name;
   std::vector<StructField> m_fields;
 
-  StructDecl(std::string t_name, std::vector<StructField> t_fields)
-      : m_name(std::move(t_name)), m_fields(std::move(t_fields)) {}
-
+  StructDecl(std::string name, std::vector<StructField> fields);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  void accept(ASTVisitor &visitor) override;
 };
 
 class StructInstantiation : public Expression {
 public:
   std::string m_struct_name;
   std::vector<ExprPtr> m_field_values;
-  AlohaType::Type m_type;
+  Type m_type;
 
-  StructInstantiation(std::string t_name, std::vector<ExprPtr> t_values)
-      : m_struct_name(t_name), m_field_values(std::move(t_values)),
-        m_type(AlohaType::Type::UNKNOWN) {}
-
+  StructInstantiation(std::string name, std::vector<ExprPtr> values);
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
-
-  AlohaType::Type get_type() const override { return m_type; }
-
-  void set_type(AlohaType::Type t_type) { m_type = t_type; }
+  void accept(ASTVisitor &visitor) override;
+  Type get_type() const override;
+  void set_type(Type type);
 };
 
-// Program
 class Program : public Node {
 public:
-  std::vector<std::shared_ptr<Node>> nodes;
+  std::vector<NodePtr> m_nodes;
 
   void write(std::ostream &os, unsigned long indent = 0) const override;
-  void accept(ASTVisitor &visitor) override { visitor.visit(this); }
+  void accept(ASTVisitor &visitor) override;
 };
 
-} // namespace Aloha
+} // namespace aloha
 
-#endif // AST_H_
+#endif // ALOHA_AST_H_
