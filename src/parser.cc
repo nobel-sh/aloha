@@ -199,7 +199,7 @@ std::unique_ptr<aloha::Statement> Parser::parse_expression_statement() {
   return std::make_unique<aloha::ExpressionStatement>(std::move(expr));
 }
 
-std::unique_ptr<aloha::StatementList> Parser::parse_statements() {
+std::unique_ptr<aloha::StatementBlock> Parser::parse_statements() {
   std::vector<aloha::StmtPtr> stmts;
   while (peek() && !match(TokenKind::RBRACE) && !is_eof()) {
     auto stmt = parse_statement();
@@ -208,7 +208,7 @@ std::unique_ptr<aloha::StatementList> Parser::parse_statements() {
   if (!is_eof()) {
     consume(TokenKind::RBRACE, "expected '}' at the end of block statement");
   }
-  return std::make_unique<aloha::StatementList>(std::move(stmts));
+  return std::make_unique<aloha::StatementBlock>(std::move(stmts));
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_variable_declaration() {
@@ -267,16 +267,16 @@ std::unique_ptr<aloha::Statement> Parser::parse_if_statement() {
   advance();
   auto condition = parse_expression(0);
   consume(TokenKind::LBRACE, "Expected '{' after condition");
-  std::unique_ptr<aloha::StatementList> then_branch = parse_statements();
-  std::unique_ptr<aloha::StatementList> else_branch = nullptr;
+  std::unique_ptr<aloha::StatementBlock> then_branch = parse_statements();
+  std::unique_ptr<aloha::StatementBlock> else_branch = nullptr;
   if (match("else")) {
     advance();
     if (match("if")) {
       std::vector<aloha::StmtPtr> else_stmts;
       else_stmts.push_back(parse_if_statement());
       else_branch =
-          std::make_unique<aloha::StatementList>(std::move(else_stmts));
-      // else_branch = std::make_unique<aloha::StatementList>();
+          std::make_unique<aloha::StatementBlock>(std::move(else_stmts));
+      // else_branch = std::make_unique<aloha::StatementBlock>();
       // else_branch->statements.push_back(parse_if_statement());
     } else {
       consume(TokenKind::LBRACE, "expected '{' or 'if' after 'else' keyword");

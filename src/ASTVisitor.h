@@ -23,7 +23,7 @@ class StructFieldAccess;
 class StructFieldAssignment;
 class ExpressionStatement;
 class Array;
-class StatementList;
+class StatementBlock;
 class Program;
 }; // namespace aloha
 
@@ -49,7 +49,7 @@ public:
   virtual void visit(aloha::StructFieldAssignment *node) = 0;
   virtual void visit(aloha::Array *node) = 0;
   virtual void visit(aloha::ExpressionStatement *node) = 0;
-  virtual void visit(aloha::StatementList *node) = 0;
+  virtual void visit(aloha::StatementBlock *node) = 0;
   virtual void visit(aloha::Program *node) = 0;
 };
 

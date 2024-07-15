@@ -391,11 +391,13 @@ void CodeGen::visit(aloha::StructFieldAssignment *node) {
   builder.CreateStore(current_val, field_ptr);
 }
 
-void CodeGen::visit(aloha::StatementList *node) {
+void CodeGen::visit(aloha::StatementBlock *node) {
   for (auto &stmt : node->m_statements) {
     stmt->accept(*this);
   }
 }
+
+void CodeGen::visit(aloha::Array *node) {}
 
 void CodeGen::visit(aloha::Program *node) {
   for (auto &n : node->m_nodes) {

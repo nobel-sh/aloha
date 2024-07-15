@@ -32,11 +32,11 @@ using NodePtr = std::unique_ptr<Node>;
 using ExprPtr = std::unique_ptr<Expression>;
 using StmtPtr = std::unique_ptr<Statement>;
 
-class StatementList : public Statement {
+class StatementBlock : public Statement {
 public:
   std::vector<StmtPtr> m_statements;
 
-  explicit StatementList(std::vector<StmtPtr> stmts = {});
+  explicit StatementBlock(std::vector<StmtPtr> stmts = {});
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   bool is_empty() const;
@@ -192,11 +192,11 @@ public:
 class IfStatement : public Statement {
 public:
   ExprPtr m_condition;
-  std::unique_ptr<StatementList> m_then_branch;
-  std::unique_ptr<StatementList> m_else_branch;
+  std::unique_ptr<StatementBlock> m_then_branch;
+  std::unique_ptr<StatementBlock> m_else_branch;
 
-  IfStatement(ExprPtr cond, std::unique_ptr<StatementList> then_branch,
-              std::unique_ptr<StatementList> else_branch);
+  IfStatement(ExprPtr cond, std::unique_ptr<StatementBlock> then_branch,
+              std::unique_ptr<StatementBlock> else_branch);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   bool has_else_branch() const;
@@ -205,9 +205,9 @@ public:
 class WhileLoop : public Statement {
 public:
   ExprPtr m_condition;
-  std::unique_ptr<StatementList> m_body;
+  std::unique_ptr<StatementBlock> m_body;
 
-  WhileLoop(ExprPtr cond, std::unique_ptr<StatementList> body);
+  WhileLoop(ExprPtr cond, std::unique_ptr<StatementBlock> body);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };
@@ -238,10 +238,10 @@ public:
   std::unique_ptr<Identifier> m_name;
   std::vector<Parameter> m_parameters;
   Type m_return_type;
-  std::unique_ptr<StatementList> m_body;
+  std::unique_ptr<StatementBlock> m_body;
 
   Function(std::unique_ptr<Identifier> func_name, std::vector<Parameter> params,
-           Type return_type, std::unique_ptr<StatementList> body);
+           Type return_type, std::unique_ptr<StatementBlock> body);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };

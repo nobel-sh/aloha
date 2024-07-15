@@ -56,7 +56,8 @@ private:
   void visit(aloha::StructInstantiation *node) override;
   void visit(aloha::StructFieldAccess *node) override;
   void visit(aloha::StructFieldAssignment *node) override;
-  void visit(aloha::StatementList *node) override;
+  void visit(aloha::Array *node) override;
+  void visit(aloha::StatementBlock *node) override;
   void visit(aloha::Program *node) override;
 };
 

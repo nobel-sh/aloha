@@ -335,7 +335,9 @@ void SemanticAnalyzer::visit(aloha::StructFieldAssignment *node) {
   node->m_type = field_type;
 }
 
-void SemanticAnalyzer::visit(aloha::StatementList *node) {
+void SemanticAnalyzer::visit(aloha::Array *node) {}
+
+void SemanticAnalyzer::visit(aloha::StatementBlock *node) {
   for (auto &stmt : node->m_statements) {
     stmt->accept(*this);
   }

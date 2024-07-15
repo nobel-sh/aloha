@@ -25,7 +25,7 @@ public:
   const std::vector<std::string> &get_errors() const;
 
   // exposed for testing
-  std::unique_ptr<aloha::StatementList> parse_statements();
+  std::unique_ptr<aloha::StatementBlock> parse_statements();
   std::unique_ptr<aloha::Statement> parse_statement();
   std::unique_ptr<aloha::Expression> parse_expression(int min_precedence);
 
