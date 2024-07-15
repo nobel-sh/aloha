@@ -1,6 +1,8 @@
 #include "ast.h"
+#include "ASTVisitor.h"
 #include <algorithm>
 #include <iostream>
+#include <string>
 
 namespace aloha {
 
@@ -351,6 +353,18 @@ void StructInstantiation::accept(ASTVisitor &visitor) { visitor.visit(this); }
 Type StructInstantiation::get_type() const { return m_type; }
 
 void StructInstantiation::set_type(Type type) { m_type = type; }
+
+Array::Array(std::vector<ExprPtr> members)
+    : m_members(std::move(members)), m_type(members[0]->get_type()),
+      m_size(members.size()) {}
+
+void Array::write(std::ostream &os, unsigned long indent) const {
+  os << std::string(indent, ' ') << "[]" << m_size << std::endl;
+}
+
+Type Array::get_type() const { return m_type; }
+void Array::set_type(Type t) { m_type = t; }
+void Array::accept(ASTVisitor &visitor) { visitor.visit(this); }
 
 // Program implementation
 void Program::write(std::ostream &os, unsigned long indent) const {

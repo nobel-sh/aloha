@@ -3,6 +3,7 @@
 
 #include "ASTVisitor.h"
 #include "type.h"
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -274,6 +275,19 @@ public:
   void accept(ASTVisitor &visitor) override;
   Type get_type() const override;
   void set_type(Type type);
+};
+
+class Array : public Expression {
+public:
+  std::vector<ExprPtr> m_members;
+  Type m_type;
+  uint64_t m_size;
+
+  Array(std::vector<ExprPtr> members);
+  void write(std::ostream &os, unsigned long indent = 0) const override;
+  Type get_type() const override;
+  void set_type(Type type);
+  void accept(ASTVisitor &visitor) override;
 };
 
 class Program : public Node {
