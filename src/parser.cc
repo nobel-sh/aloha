@@ -9,8 +9,7 @@
 #include <utility>
 #include <vector>
 
-Parser::Parser(std::vector<Token> tokens)
-    : tokens(std::move(tokens)), current(0) {}
+Parser::Parser(const std::vector<Token> tokens) : tokens(tokens), current(0) {}
 
 bool Parser::is_eof() const {
   return current >= tokens.size() || peek()->kind == TokenKind::EOF_TOKEN;
@@ -82,12 +81,12 @@ std::unique_ptr<aloha::Function> Parser::parse_function() {
 
   consume("fun", "Expected 'fun' keyword");
   auto identifier = expect_identifier();
-  consume(TokenKind::LPAREN, "Expected '(' after function name");
+  consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
   auto parameters = parse_parameters();
-  consume(TokenKind::RPAREN, "Expected ')' after parameters");
+  consume(TokenKind::RIGHT_PAREN, "Expected ')' after parameters");
   consume(TokenKind::THIN_ARROW, "Expected '->' before return type");
   auto returnType = parse_type();
-  consume(TokenKind::LBRACE, "Expected '{' keyword before function body");
+  consume(TokenKind::LEFT_BRACE, "Expected '{' keyword before function body");
   auto statements = parse_statements();
   return std::make_unique<aloha::Function>(
       std::move(identifier), std::move(parameters), std::move(returnType),
@@ -96,14 +95,14 @@ std::unique_ptr<aloha::Function> Parser::parse_function() {
 
 std::vector<aloha::StructField> Parser::parse_struct_field() {
   std::vector<aloha::StructField> fields;
-  while (!match(TokenKind::RBRACE) && !is_eof()) {
+  while (!match(TokenKind::RIGHT_BRACE) && !is_eof()) {
     auto identifier = expect_identifier();
-    consume(":", "Expected ':' after field name");
+    consume(TokenKind::COLON, "Expected ':' after field name");
     auto type = parse_type();
     aloha::StructField field(identifier->m_name, type);
     fields.push_back(field);
-    if (!match(TokenKind::RBRACE)) {
-      consume(",", "Expected ',' or '}' after field declaration");
+    if (!match(TokenKind::RIGHT_BRACE)) {
+      consume(TokenKind::COMMA, "Expected ',' or '}' after field declaration");
     }
   }
   return fields;
@@ -120,40 +119,41 @@ std::unique_ptr<aloha::Expression> Parser::parse_struct_field_access() {
 std::unique_ptr<aloha::StructDecl> Parser::parse_struct_decl() {
   consume("struct", "Expected 'struct' keyword");
   auto identifier = expect_identifier();
-  consume(TokenKind::LBRACE, "Expected '{' after function name");
+  consume(TokenKind::LEFT_BRACE, "Expected '{' after function name");
   auto fields = parse_struct_field();
-  consume(TokenKind::RBRACE, "Expected '}' after parameters");
+  consume(TokenKind::RIGHT_BRACE, "Expected '}' after parameters");
   return std::make_unique<aloha::StructDecl>(std::move(identifier->m_name),
                                              std::move(fields));
 }
 
 std::unique_ptr<aloha::Expression> Parser::parse_struct_instantiation() {
   auto structName = expect_identifier();
-  consume(TokenKind::LBRACE, "Expected '{' after struct name");
+  consume(TokenKind::LEFT_BRACE, "Expected '{' after struct name");
 
   std::vector<aloha::ExprPtr> fieldValues;
-  while (!match(TokenKind::RBRACE) && !is_eof()) {
+  while (!match(TokenKind::RIGHT_BRACE) && !is_eof()) {
     fieldValues.push_back(parse_expression(0));
-    if (!match(TokenKind::RBRACE)) {
+    if (!match(TokenKind::RIGHT_BRACE)) {
       consume(TokenKind::COMMA, "Expected ',' or '}' after field value");
     }
   }
 
-  consume(TokenKind::RBRACE, "Expected '}' after struct instantiation");
+  consume(TokenKind::RIGHT_BRACE, "Expected '}' after struct instantiation");
   return std::make_unique<aloha::StructInstantiation>(
       std::move(structName->m_name), std::move(fieldValues));
 }
 
 std::vector<aloha::Parameter> Parser::parse_parameters() {
   std::vector<aloha::Parameter> parameters;
-  while (peek() && peek()->lexeme != ")") {
+  while (peek() && !match(TokenKind::RIGHT_PAREN)) {
     auto identifier = expect_identifier();
-    consume(":", "Expected ':' after parameter name");
+    consume(TokenKind::COLON, "Expected ':' after parameter name");
     auto type = parse_type();
     aloha::Parameter param(identifier->m_name, type);
     parameters.push_back(param);
-    if (!match(")")) {
-      consume(",", "Expected ',' or ')' after parameter declaration");
+    if (!match(TokenKind::RIGHT_PAREN)) {
+      consume(TokenKind::COMMA,
+              "Expected ',' or ')' after parameter declaration");
     }
   }
 
@@ -171,9 +171,9 @@ std::unique_ptr<aloha::Statement> Parser::parse_statement() {
     return parse_while_loop();
   } else {
     if (peek()->kind == TokenKind::IDENT) {
-      if (next()->kind == TokenKind::EQUALS) {
+      if (next()->kind == TokenKind::EQUAL) {
         return parse_variable_assignment();
-      } else if (next()->kind == TokenKind::LPAREN) {
+      } else if (next()->kind == TokenKind::LEFT_PAREN) {
         return parse_expression_statement();
       } else if (next()->kind == TokenKind::THIN_ARROW) {
         return parse_struct_field_assignment();
@@ -201,12 +201,13 @@ std::unique_ptr<aloha::Statement> Parser::parse_expression_statement() {
 
 std::unique_ptr<aloha::StatementBlock> Parser::parse_statements() {
   std::vector<aloha::StmtPtr> stmts;
-  while (peek() && !match(TokenKind::RBRACE) && !is_eof()) {
+  while (peek() && !match(TokenKind::RIGHT_BRACE) && !is_eof()) {
     auto stmt = parse_statement();
     stmts.push_back(std::move(stmt));
   }
   if (!is_eof()) {
-    consume(TokenKind::RBRACE, "expected '}' at the end of block statement");
+    consume(TokenKind::RIGHT_BRACE,
+            "expected '}' at the end of block statement");
   }
   return std::make_unique<aloha::StatementBlock>(std::move(stmts));
 }
@@ -226,7 +227,8 @@ std::unique_ptr<aloha::Statement> Parser::parse_variable_declaration() {
   std::unique_ptr<aloha::Expression> expression = nullptr;
   if (match("=")) {
     advance();
-    if (peek()->kind == TokenKind::IDENT && next()->kind == TokenKind::LBRACE) {
+    if (peek()->kind == TokenKind::IDENT &&
+        next()->kind == TokenKind::LEFT_BRACE) {
       expression = parse_struct_instantiation();
     } else {
       expression = parse_expression(0);
@@ -239,7 +241,7 @@ std::unique_ptr<aloha::Statement> Parser::parse_variable_declaration() {
 
 std::unique_ptr<aloha::Statement> Parser::parse_variable_assignment() {
   auto identifier = expect_identifier();
-  consume("=", "Expected '=' after variable declaration");
+  consume(TokenKind::EQUAL, "Expected '=' after variable declaration");
   std::unique_ptr<aloha::Expression> expression = parse_expression(0);
   return std::make_unique<aloha::Assignment>(std::move(identifier->m_name),
                                              std::move(expression));
@@ -251,7 +253,7 @@ std::unique_ptr<aloha::Statement> Parser::parse_struct_field_assignment() {
   peek()->dump();
   consume(TokenKind::THIN_ARROW, "Expected '->' for struct field assignment");
   auto field_name = expect_identifier()->m_name;
-  consume(TokenKind::EQUALS, "Expected '=' in struct field assignment");
+  consume(TokenKind::EQUAL, "Expected '=' in struct field assignment");
   auto value = parse_expression(0);
   return std::make_unique<aloha::StructFieldAssignment>(
       std::move(struct_expr), std::move(field_name), std::move(value));
@@ -266,7 +268,7 @@ std::unique_ptr<aloha::Statement> Parser::parse_return_statement() {
 std::unique_ptr<aloha::Statement> Parser::parse_if_statement() {
   advance();
   auto condition = parse_expression(0);
-  consume(TokenKind::LBRACE, "Expected '{' after condition");
+  consume(TokenKind::LEFT_BRACE, "Expected '{' after condition");
   std::unique_ptr<aloha::StatementBlock> then_branch = parse_statements();
   std::unique_ptr<aloha::StatementBlock> else_branch = nullptr;
   if (match("else")) {
@@ -279,7 +281,8 @@ std::unique_ptr<aloha::Statement> Parser::parse_if_statement() {
       // else_branch = std::make_unique<aloha::StatementBlock>();
       // else_branch->statements.push_back(parse_if_statement());
     } else {
-      consume(TokenKind::LBRACE, "expected '{' or 'if' after 'else' keyword");
+      consume(TokenKind::LEFT_BRACE,
+              "expected '{' or 'if' after 'else' keyword");
       else_branch = parse_statements();
     }
   }
@@ -290,7 +293,7 @@ std::unique_ptr<aloha::Statement> Parser::parse_if_statement() {
 std::unique_ptr<aloha::Statement> Parser::parse_while_loop() {
   advance();
   auto condition = parse_expression(0);
-  consume(TokenKind::LBRACE, "Expected '{' keyword after condition");
+  consume(TokenKind::LEFT_BRACE, "Expected '{' keyword after condition");
   auto body = parse_statements();
   return std::make_unique<aloha::WhileLoop>(std::move(condition),
                                             std::move(body));
@@ -396,7 +399,7 @@ Parser::parse_expression(int parent_precedence) {
     // if (token->kind != TokenKind::OPERATOR) {
     //   break;
     // }
-    auto op = token->lexeme;
+    auto op = token->get_lexeme();
     auto prec = precedence[op];
     if (prec <= parent_precedence) {
       break;
@@ -438,15 +441,15 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary() {
     report_error("Unexpected end of input");
     return nullptr;
   }
-  if (token->kind == TokenKind::LPAREN) {
+  if (token->kind == TokenKind::LEFT_PAREN) {
     advance();
     auto expression = parse_expression(0);
-    consume(TokenKind::RPAREN, "Expected ')' after expression");
+    consume(TokenKind::RIGHT_PAREN, "Expected ')' after expression");
     return expression;
   } else if (token->kind == TokenKind::IDENT) {
-    if (next()->kind == TokenKind::LPAREN) {
+    if (next()->kind == TokenKind::LEFT_PAREN) {
       return parse_function_call();
-    } else if (next()->kind == TokenKind::LBRACE) {
+    } else if (next()->kind == TokenKind::LEFT_BRACE) {
       return parse_struct_instantiation();
     } else if (next()->kind == TokenKind::THIN_ARROW) {
       return parse_struct_field_access();
@@ -460,15 +463,15 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary() {
         return std::make_unique<aloha::Boolean>(value);
       }
     }
-    return std::make_unique<aloha::Identifier>(token->lexeme);
+    return std::make_unique<aloha::Identifier>(token->get_lexeme());
   } else if (token->kind == TokenKind::INT || token->kind == TokenKind::FLOAT) {
     advance();
-    return std::make_unique<aloha::Number>(token->lexeme);
+    return std::make_unique<aloha::Number>(token->get_lexeme());
   } else if (token->kind == TokenKind::STRING) {
     advance();
-    return std::make_unique<aloha::String>(token->lexeme);
+    return std::make_unique<aloha::String>(token->get_lexeme());
   } else if (token->kind == TokenKind::MINUS) {
-    auto prefix = prefix_parsers[token->lexeme];
+    auto prefix = prefix_parsers[token->get_lexeme()];
     if (prefix) {
       return prefix(*this);
     }
@@ -482,9 +485,9 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary() {
 
 std::unique_ptr<aloha::Expression> Parser::parse_function_call() {
   auto name = expect_identifier();
-  consume(TokenKind::LPAREN, "function call must be followed by `(`");
+  consume(TokenKind::LEFT_PAREN, "function call must be followed by `(`");
   std::vector<aloha::ExprPtr> args;
-  if (match(TokenKind::RPAREN)) {
+  if (match(TokenKind::RIGHT_PAREN)) {
     advance();
     return std::make_unique<aloha::FunctionCall>(std::move(name),
                                                  std::move(args));
@@ -495,7 +498,7 @@ std::unique_ptr<aloha::Expression> Parser::parse_function_call() {
     auto arg = parse_expression(0);
     args.push_back(std::move(arg));
   }
-  consume(TokenKind::RPAREN, "function call must be end with `)`");
+  consume(TokenKind::RIGHT_PAREN, "function call must be end with `)`");
   return std::make_unique<aloha::FunctionCall>(std::move(name),
                                                std::move(args));
 }
@@ -504,7 +507,7 @@ std::unique_ptr<aloha::Identifier> Parser::expect_identifier() {
   auto token = peek();
   if (token && token->kind == TokenKind::IDENT) {
     advance();
-    return std::make_unique<aloha::Identifier>(token->lexeme);
+    return std::make_unique<aloha::Identifier>(token->get_lexeme());
   } else {
     report_error("Expected identifier");
     return nullptr;
@@ -515,7 +518,7 @@ AlohaType::Type Parser::parse_type() {
   auto token = peek();
   if (token && token->kind == TokenKind::IDENT) {
     advance();
-    return AlohaType::from_string(token->lexeme);
+    return AlohaType::from_string(token->get_lexeme());
   } else {
     report_error("Expected type");
     return AlohaType::from_string("UNKNOWN");

@@ -1,223 +1,223 @@
 #include "lexer.h"
-#include "location.h"
-#include <string>
+#include <cctype>
+#include <iostream>
+#include <unordered_map>
 
-void Lexer::dump() {
-  for (auto tok : tokens) {
+Lexer::Lexer(std::string_view source)
+    : source(source), current_loc(1, 1), pos(0) {}
+
+void Lexer::dump_errors() const {
+  for (const auto &err : errors) {
+    std::cerr << err << '\n';
+  }
+}
+
+void Lexer::dump_tokens() const {
+  for (const auto &tok : tokens) {
     tok.dump();
   }
 }
 
-void Lexer::dump_error() {
-  for (auto err : errors) {
-    std::cerr << err << std::endl;
-  }
-}
+size_t Lexer::tokens_count() const { return tokens.size(); }
 
-// peek current token
+bool Lexer::is_eof() const { return pos >= source.size(); }
+
 char Lexer::peek_token() const { return peek_token(0); }
 
-// peek nth token
-char Lexer::peek_token(unsigned int nth) const {
+char Lexer::peek_token(size_t nth) const {
   if (pos + nth >= source.size())
-    return 0;
+    return '\0';
   return source[pos + nth];
 }
 
-// consume current token and move to next token
-void Lexer::consume_token() { consume_token(1); }
-
-// consume n tokens
-void Lexer::consume_token(int n) {
-  for (int i = 0; i < n; ++i) {
-    if (pos >= source.size()) {
-      return;
-    }
+void Lexer::consume_token() {
+  if (!is_eof()) {
     if (source[pos] == '\n') {
-      ++line;
-      col = 1;
+      ++current_loc.line;
+      current_loc.col = 1;
     } else {
-      ++col;
+      ++current_loc.col;
     }
     ++pos;
   }
 }
 
-bool Lexer::is_eof() const { return pos >= source.size(); }
+void Lexer::consume_token(size_t n) {
+  for (size_t i = 0; i < n && !is_eof(); ++i) {
+    consume_token();
+  }
+}
 
-// TODO: Remove the lexemes in unecessary cases
-// TODO: Can definitely refactor this code as code is repeated
+void Lexer::add_token(TokenKind kind) {
+  tokens.emplace_back(kind, current_loc);
+}
+
+void Lexer::add_token(TokenKind kind, std::string_view lexeme) {
+  tokens.emplace_back(kind, std::string(lexeme), current_loc);
+}
+
+void Lexer::add_error(const std::string &message) {
+  errors.push_back(message + " at " + current_loc.to_string());
+}
+
 void Lexer::lex() {
-  while (!is_eof()) {
-    auto curr_char = peek_token();
-    Location loc(line, col);
-    switch (curr_char) {
-    case '(':
-      tokens.push_back(Token(TokenKind::LPAREN, "(", loc));
-      break;
-    case ')':
-      tokens.push_back(Token(TokenKind::RPAREN, ")", loc));
-      break;
-    case ' ':
-    case '\n':
-    case '\t':
-    case '\r':
-      while (peek_token() == curr_char)
-        consume_token();
-      continue;
+  static const std::unordered_map<char, TokenKind> single_char_tokens = {
+      {'(', TokenKind::LEFT_PAREN},   {')', TokenKind::RIGHT_PAREN},
+      {'{', TokenKind::LEFT_BRACE},   {'}', TokenKind::RIGHT_BRACE},
+      {'[', TokenKind::LEFT_BRACKET}, {']', TokenKind::RIGHT_BRACKET},
+      {',', TokenKind::COMMA},        {'+', TokenKind::PLUS},
+      {'*', TokenKind::STAR},         {'/', TokenKind::SLASH},
+      {'%', TokenKind::PERCENT},      {';', TokenKind::SEMICOLON},
+      {':', TokenKind::COLON}};
 
-    case '{':
-      tokens.push_back(Token(TokenKind::LBRACE, "{", loc));
-      break;
-    case '}':
-      tokens.push_back(Token(TokenKind::RBRACE, "}", loc));
-      break;
-    case '[':
-      tokens.push_back(Token(TokenKind::LBRACKET, "[", loc));
-      break;
-    case ']':
-      tokens.push_back(Token(TokenKind::RBRACKET, "]", loc));
-      break;
-    case ',':
-      tokens.push_back(Token(TokenKind::COMMA, ",", loc));
-      break;
+  while (!is_eof()) {
+    char curr_char = peek_token();
+
+    if (std::isspace(curr_char)) {
+      consume_token();
+      continue;
+    }
+
+    auto it = single_char_tokens.find(curr_char);
+    if (it != single_char_tokens.end()) {
+      add_token(it->second);
+      consume_token();
+      continue;
+    }
+
+    switch (curr_char) {
     case '=':
       if (peek_token(1) == '=') {
-        tokens.push_back(Token(TokenKind::EQUALEQUAL, "==", loc));
-        consume_token();
+        add_token(TokenKind::EQUAL_EQUAL);
+        consume_token(2);
       } else {
-        tokens.push_back(Token(TokenKind::EQUALS, "=", loc));
+        add_token(TokenKind::EQUAL);
+        consume_token();
       }
       break;
     case '_':
       if (std::isalpha(peek_token(1))) {
         handle_ident();
-        continue;
       } else {
-        tokens.push_back(Token(TokenKind::UNDERSCORE, "_", loc));
+        add_token(TokenKind::UNDERSCORE);
+        consume_token();
       }
-      break;
-    case '+':
-      tokens.push_back(Token(TokenKind::PLUS, "+", loc));
       break;
     case '-':
       if (peek_token(1) == '>') {
-        tokens.push_back(Token(TokenKind::THIN_ARROW, "->", loc));
+        add_token(TokenKind::THIN_ARROW);
+        consume_token(2);
+      } else {
+        add_token(TokenKind::MINUS);
         consume_token();
-      } else
-        tokens.push_back(Token(TokenKind::MINUS, "-", loc));
-      break;
-    case '*':
-      tokens.push_back(Token(TokenKind::STAR, "*", loc));
-      break;
-    case '/':
-      tokens.push_back(Token(TokenKind::SLASH, "/", loc));
-      break;
-    case '%':
-      tokens.push_back(Token(TokenKind::PERCENT, "%", loc));
-      break;
-    case ';':
-      tokens.push_back(Token(TokenKind::SEMICOLON, ";", loc));
+      }
       break;
     case '!':
       if (peek_token(1) == '=') {
-        tokens.push_back(Token(TokenKind::NOTEQUAL, "!=", loc));
-        consume_token();
+        add_token(TokenKind::NOT_EQUAL);
+        consume_token(2);
       } else {
-        tokens.push_back(Token(TokenKind::BANG, "!", loc));
+        add_token(TokenKind::BANG);
+        consume_token();
       }
       break;
     case '<':
       if (peek_token(1) == '=') {
-        tokens.push_back(Token(TokenKind::LESSTHANEQUAL, "<=", loc));
-        consume_token();
+        add_token(TokenKind::LESS_EQUAL);
+        consume_token(2);
       } else {
-        tokens.push_back(Token(TokenKind::LESSTHAN, "<", loc));
+        add_token(TokenKind::LESS_THAN);
+        consume_token();
       }
       break;
     case '>':
       if (peek_token(1) == '=') {
-        tokens.push_back(Token(TokenKind::GREATERTHANEQUAL, ">=", loc));
-        consume_token();
+        add_token(TokenKind::GREATER_EQUAL);
+        consume_token(2);
       } else {
-        tokens.push_back(Token(TokenKind::GREATERTHAN, ">", loc));
+        add_token(TokenKind::GREATER_THAN);
+        consume_token();
       }
-      break;
-    case ':':
-      tokens.push_back(Token(TokenKind::COLON, ":", loc));
-      break;
-    case EOF:
       break;
     case '"':
       handle_string();
-      continue;
+      break;
     default:
-      if (isalpha(curr_char)) {
+      if (std::isalpha(curr_char)) {
         handle_ident();
-        continue;
-      } else if (isdigit(curr_char)) {
+      } else if (std::isdigit(curr_char)) {
         handle_number();
-        continue;
+      } else {
+        add_error("Unexpected character");
+        consume_token();
       }
       break;
     }
-    consume_token();
   }
-  Location loc(line, col);
-  tokens.push_back(Token(TokenKind::EOF_TOKEN, "EOF", loc));
+
+  add_token(TokenKind::EOF_TOKEN);
 }
 
 void Lexer::handle_string() {
+  size_t start_pos = pos;
+  Location start_loc = current_loc;
   consume_token();
-  char curr_char = peek_token();
-  unsigned int start_pos = pos;
-  Location loc(line, col);
-  while (curr_char != '"') {
-    curr_char = peek_token();
-    if (is_eof() || line != loc.line) {
-      std::string err = "Non terminated String at: " + loc.to_string();
-      has_error = true;
-      errors.push_back(err);
+
+  while (peek_token() != '"' && !is_eof()) {
+    if (peek_token() == '\n') {
+      add_error("Unterminated string");
       return;
     }
-    consume_token();
+    if (peek_token() == '\\') {
+      consume_token();
+      if (peek_token() == 'n') {
+        consume_token();
+      } else if (peek_token() == 't') {
+        consume_token();
+      } else if (peek_token() == '"' || peek_token() == '\\') {
+        consume_token();
+      } else {
+        add_error("Invalid escape sequence: \\" + std::string(1, peek_token()));
+        return;
+      }
+    } else {
+      consume_token();
+    }
   }
-  std::string instruction(source.begin() + start_pos, source.begin() + pos - 1);
-  tokens.push_back(Token(TokenKind::STRING, std::move(instruction), loc));
+
+  if (is_eof()) {
+    add_error("Unterminated string");
+    return;
+  }
+
+  consume_token();
+  add_token(TokenKind::STRING,
+            source.substr(start_pos + 1, pos - start_pos - 2));
 }
 
 void Lexer::handle_number() {
-  unsigned int start_pos = pos;
-  Location loc(line, col);
-  while (isdigit(peek_token())) {
+  size_t start_pos = pos;
+  bool is_float = false;
+
+  while (std::isdigit(peek_token())) {
     consume_token();
   }
-  if (peek_token() == '.') {
+
+  if (peek_token() == '.' && std::isdigit(peek_token(1))) {
+    is_float = true;
     consume_token();
-    while (isdigit(peek_token())) {
+    while (std::isdigit(peek_token())) {
       consume_token();
     }
-    tokens.push_back(Token(
-        TokenKind::FLOAT,
-        std::string(source.begin() + start_pos, source.begin() + pos), loc));
-  } else {
-    tokens.push_back(Token(
-        TokenKind::INT,
-        std::string(source.begin() + start_pos, source.begin() + pos), loc));
   }
+  add_token(is_float ? TokenKind::FLOAT : TokenKind::INT,
+            source.substr(start_pos, pos - start_pos));
 }
 
 void Lexer::handle_ident() {
-  unsigned int start_pos = pos;
-  Location loc(line, col);
-  if (isalpha(peek_token()) || peek_token() == '_') {
-    consume_token();
-  } else {
-    return;
-  }
-  while (isalnum(peek_token()) || peek_token() == '_') {
+  size_t start_pos = pos;
+  while (std::isalnum(peek_token()) || peek_token() == '_') {
     consume_token();
   }
-  std::string str(source.begin() + start_pos, source.begin() + pos);
-  tokens.push_back(Token(TokenKind::IDENT, std::move(str), loc));
+  add_token(TokenKind::IDENT, source.substr(start_pos, pos - start_pos));
 }

@@ -3,6 +3,7 @@
 
 #include "ast.h"
 #include "error/parser_error.h"
+#include "lexer.h"
 #include "token.h"
 #include "type.h"
 #include <functional>
@@ -18,7 +19,7 @@ public:
   using infix_parser_func = std::function<std::unique_ptr<aloha::Expression>(
       Parser &, std::unique_ptr<aloha::Expression>)>;
 
-  explicit Parser(std::vector<Token> tokens);
+  explicit Parser(const std::vector<Token> tokens);
 
   std::unique_ptr<aloha::Program> parse();
   void dump(aloha::Program *p) const;

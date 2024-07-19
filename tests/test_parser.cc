@@ -27,12 +27,12 @@ TEST(ParserTest, ParseFunctionDeclaration) {
   std::vector<Token> tokens =
       create_tokens({{TokenKind::IDENT, "fun", 1, 1},
                      {TokenKind::IDENT, "main", 1, 5},
-                     {TokenKind::LPAREN, "(", 1, 9},
-                     {TokenKind::RPAREN, ")", 1, 10},
+                     {TokenKind::LEFT_PAREN, "(", 1, 9},
+                     {TokenKind::RIGHT_PAREN, ")", 1, 10},
                      {TokenKind::THIN_ARROW, "->", 1, 12},
                      {TokenKind::IDENT, "void", 1, 15},
-                     {TokenKind::LBRACE, "{", 2, 1},
-                     {TokenKind::RBRACE, "}", 3, 1},
+                     {TokenKind::LEFT_BRACE, "{", 2, 1},
+                     {TokenKind::RIGHT_BRACE, "}", 3, 1},
                      {TokenKind::EOF_TOKEN, "", 4, 1}});
 
   Parser parser(tokens);
@@ -55,7 +55,7 @@ TEST(ParserTest, ParseVariableDeclaration) {
                                              {TokenKind::IDENT, "foo", 1, 6},
                                              {TokenKind::COLON, ":", 1, 10},
                                              {TokenKind::IDENT, "void", 1, 12},
-                                             {TokenKind::EQUALS, "=", 1, 17},
+                                             {TokenKind::EQUAL, "=", 1, 17},
                                              {TokenKind::INT, "3", 1, 19},
                                              {TokenKind::EOF_TOKEN, "", 2, 1}});
 
@@ -78,7 +78,7 @@ TEST(ParserTest, ParseVariableDeclaration) {
  * */
 TEST(ParserTest, ParseVariableAssignment) {
   std::vector<Token> tokens = create_tokens({{TokenKind::IDENT, "foo", 1, 1},
-                                             {TokenKind::EQUALS, "=", 1, 5},
+                                             {TokenKind::EQUAL, "=", 1, 5},
                                              {TokenKind::INT, "7", 1, 7},
                                              {TokenKind::EOF_TOKEN, "", 2, 1}});
 
@@ -107,19 +107,19 @@ TEST(ParserTest, ParseIfElseStatement) {
   std::vector<Token> tokens =
       create_tokens({{TokenKind::IDENT, "if", 1, 1},
                      {TokenKind::IDENT, "x", 1, 4},
-                     {TokenKind::GREATERTHAN, ">", 1, 6},
+                     {TokenKind::GREATER_THAN, ">", 1, 6},
                      {TokenKind::INT, "10", 1, 8},
-                     {TokenKind::LBRACE, "{", 1, 11},
+                     {TokenKind::LEFT_BRACE, "{", 1, 11},
                      {TokenKind::IDENT, "foo", 2, 3},
-                     {TokenKind::EQUALS, "=", 2, 7},
+                     {TokenKind::EQUAL, "=", 2, 7},
                      {TokenKind::INT, "1", 2, 9},
-                     {TokenKind::RBRACE, "}", 3, 1},
+                     {TokenKind::RIGHT_BRACE, "}", 3, 1},
                      {TokenKind::IDENT, "else", 3, 3},
-                     {TokenKind::LBRACE, "{", 3, 8},
+                     {TokenKind::LEFT_BRACE, "{", 3, 8},
                      {TokenKind::IDENT, "foo", 4, 3},
-                     {TokenKind::EQUALS, "=", 4, 7},
+                     {TokenKind::EQUAL, "=", 4, 7},
                      {TokenKind::INT, "2", 4, 9},
-                     {TokenKind::RBRACE, "}", 5, 1},
+                     {TokenKind::RIGHT_BRACE, "}", 5, 1},
                      {TokenKind::EOF_TOKEN, "", 6, 1}});
 
   Parser parser(tokens);
@@ -145,18 +145,19 @@ TEST(ParserTest, ParseIfElseStatement) {
  * }
  * */
 TEST(ParserTest, ParseWhileStatement) {
-  std::vector<Token> tokens = create_tokens({{TokenKind::IDENT, "while", 1, 1},
-                                             {TokenKind::IDENT, "i", 1, 7},
-                                             {TokenKind::LESSTHAN, "<", 1, 9},
-                                             {TokenKind::INT, "10", 1, 11},
-                                             {TokenKind::LBRACE, "{", 1, 14},
-                                             {TokenKind::IDENT, "i", 2, 3},
-                                             {TokenKind::EQUALS, "=", 2, 5},
-                                             {TokenKind::IDENT, "i", 2, 7},
-                                             {TokenKind::PLUS, "+", 2, 9},
-                                             {TokenKind::INT, "1", 2, 11},
-                                             {TokenKind::RBRACE, "}", 3, 1},
-                                             {TokenKind::EOF_TOKEN, "", 4, 1}});
+  std::vector<Token> tokens =
+      create_tokens({{TokenKind::IDENT, "while", 1, 1},
+                     {TokenKind::IDENT, "i", 1, 7},
+                     {TokenKind::LESS_THAN, "<", 1, 9},
+                     {TokenKind::INT, "10", 1, 11},
+                     {TokenKind::LEFT_BRACE, "{", 1, 14},
+                     {TokenKind::IDENT, "i", 2, 3},
+                     {TokenKind::EQUAL, "=", 2, 5},
+                     {TokenKind::IDENT, "i", 2, 7},
+                     {TokenKind::PLUS, "+", 2, 9},
+                     {TokenKind::INT, "1", 2, 11},
+                     {TokenKind::RIGHT_BRACE, "}", 3, 1},
+                     {TokenKind::EOF_TOKEN, "", 4, 1}});
 
   Parser parser(tokens);
   auto stmt = parser.parse_statement();
@@ -215,16 +216,17 @@ TEST(ParserTest, ParseSimpleArithmeticExpression) {
  * */
 
 TEST(ParserTest, ParseComplexArithmeticExpression) {
-  std::vector<Token> tokens = create_tokens({{TokenKind::INT, "3", 1, 1},
-                                             {TokenKind::PLUS, "+", 1, 3},
-                                             {TokenKind::INT, "5", 1, 5},
-                                             {TokenKind::STAR, "*", 1, 7},
-                                             {TokenKind::LPAREN, "(", 1, 9},
-                                             {TokenKind::INT, "10", 1, 10},
-                                             {TokenKind::MINUS, "-", 1, 13},
-                                             {TokenKind::INT, "2", 1, 15},
-                                             {TokenKind::RPAREN, ")", 1, 16},
-                                             {TokenKind::EOF_TOKEN, "", 2, 1}});
+  std::vector<Token> tokens =
+      create_tokens({{TokenKind::INT, "3", 1, 1},
+                     {TokenKind::PLUS, "+", 1, 3},
+                     {TokenKind::INT, "5", 1, 5},
+                     {TokenKind::STAR, "*", 1, 7},
+                     {TokenKind::LEFT_PAREN, "(", 1, 9},
+                     {TokenKind::INT, "10", 1, 10},
+                     {TokenKind::MINUS, "-", 1, 13},
+                     {TokenKind::INT, "2", 1, 15},
+                     {TokenKind::RIGHT_PAREN, ")", 1, 16},
+                     {TokenKind::EOF_TOKEN, "", 2, 1}});
 
   Parser parser(tokens);
   auto expr = parser.parse_expression(0);

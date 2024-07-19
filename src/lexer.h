@@ -1,39 +1,42 @@
-#ifndef LEXER_H
-#define LEXER_H
+#ifndef LEXER_H_
+#define LEXER_H_
 
 #include "location.h"
 #include "token.h"
-#include <cassert>
+#include <string>
+#include <string_view>
 #include <vector>
 
 class Lexer {
 public:
-  Lexer(std::vector<char> source)
-      : has_error(false), source(std::move(source)), line(1), col(1), pos(0) {}
+  explicit Lexer(std::string_view source);
   void lex();
-  void dump_error();
-  void dump();
+  void dump_errors() const;
+  void dump_tokens() const;
 
-public:
+  const std::vector<std::string> &get_errors() const { return errors; }
+  const std::vector<Token> &get_tokens() const { return tokens; }
+  bool has_error() const { return !errors.empty(); }
+  size_t tokens_count() const;
+
+private:
+  std::string_view source;
   std::vector<std::string> errors;
   std::vector<Token> tokens;
-  bool has_error;
+  Location current_loc;
+  size_t pos;
 
-private:
-  std::vector<char> source;
-  unsigned int line;
-  unsigned int col;
-  unsigned int pos;
-
-private:
   bool is_eof() const;
   void handle_string();
   void handle_number();
   void handle_ident();
   char peek_token() const;
-  char peek_token(unsigned int nth) const;
+  char peek_token(size_t nth) const;
   void consume_token();
-  void consume_token(int n);
+  void consume_token(size_t n);
+  void add_token(TokenKind kind);
+  void add_token(TokenKind kind, std::string_view lexeme);
+  void add_error(const std::string &message);
 };
 
-#endif
+#endif // LEXER_H_

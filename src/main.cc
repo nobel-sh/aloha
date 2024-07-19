@@ -81,20 +81,21 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    auto source = Aloha::FileReader(input_filename.string()).as_bytes();
-    Lexer lexer(source);
+    auto source = Aloha::FileReader(input_filename.string()).as_string();
+    std::string_view source_sv = std::string_view(source);
+    Lexer lexer(source_sv);
     lexer.lex();
-    if (lexer.has_error) {
-      lexer.dump_error();
+    if (lexer.has_error()) {
+      lexer.dump_errors();
       return 1;
     }
     if (dump_flag.value_or(false)) {
       std::cout << "Lexer Dump" << std::endl;
-      lexer.dump();
+      lexer.dump_tokens();
       print_dotted_lines(50);
     }
 
-    Parser parser(lexer.tokens);
+    Parser parser(lexer.get_tokens());
     auto p = parser.parse();
     if (dump_flag.value_or(false)) {
       std::cout << "Untyped AST" << std::endl;
