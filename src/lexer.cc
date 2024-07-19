@@ -72,6 +72,12 @@ void Lexer::lex() {
     case '}':
       tokens.push_back(Token(TokenKind::RBRACE, "}", loc));
       break;
+    case '[':
+      tokens.push_back(Token(TokenKind::LBRACKET, "[", loc));
+      break;
+    case ']':
+      tokens.push_back(Token(TokenKind::RBRACKET, "]", loc));
+      break;
     case ',':
       tokens.push_back(Token(TokenKind::COMMA, ",", loc));
       break;
