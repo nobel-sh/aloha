@@ -9,10 +9,16 @@
 #include <utility>
 #include <vector>
 
-Parser::Parser(const std::vector<Token> tokens) : tokens(tokens), current(0) {}
+Parser::Parser(const std::vector<Token> &tokens) : tokens(tokens), current(0) {}
 
 bool Parser::is_eof() const {
   return current >= tokens.size() || peek()->kind == TokenKind::EOF_TOKEN;
+}
+
+void Parser::panic_parser(const std::string &message) {
+  std::cout << message << std::endl;
+  peek()->dump();
+  exit(1);
 }
 
 void Parser::advance() {
@@ -59,7 +65,8 @@ bool Parser::match(TokenKind value, bool use_next) {
   return token && token->kind == value;
 }
 void Parser::report_error(const std::string &message) {
-  error_collector.add_error(message);
+  const std::string loc_message = message + " at :" + peek()->loc.to_string();
+  error_collector.add_error(loc_message);
 }
 
 const std::vector<std::string> &Parser::get_errors() const {
@@ -78,18 +85,17 @@ std::unique_ptr<aloha::Program> Parser::parse() {
 }
 
 std::unique_ptr<aloha::Function> Parser::parse_function() {
-
   consume("fun", "Expected 'fun' keyword");
   auto identifier = expect_identifier();
   consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
   auto parameters = parse_parameters();
   consume(TokenKind::RIGHT_PAREN, "Expected ')' after parameters");
   consume(TokenKind::THIN_ARROW, "Expected '->' before return type");
-  auto returnType = parse_type();
+  auto return_type = parse_type();
   consume(TokenKind::LEFT_BRACE, "Expected '{' keyword before function body");
   auto statements = parse_statements();
   return std::make_unique<aloha::Function>(
-      std::move(identifier), std::move(parameters), std::move(returnType),
+      std::move(identifier), std::move(parameters), std::move(return_type),
       std::move(statements));
 }
 
@@ -127,12 +133,12 @@ std::unique_ptr<aloha::StructDecl> Parser::parse_struct_decl() {
 }
 
 std::unique_ptr<aloha::Expression> Parser::parse_struct_instantiation() {
-  auto structName = expect_identifier();
+  auto struct_ident = expect_identifier();
   consume(TokenKind::LEFT_BRACE, "Expected '{' after struct name");
 
-  std::vector<aloha::ExprPtr> fieldValues;
+  std::vector<aloha::ExprPtr> field_values;
   while (!match(TokenKind::RIGHT_BRACE) && !is_eof()) {
-    fieldValues.push_back(parse_expression(0));
+    field_values.push_back(parse_expression(0));
     if (!match(TokenKind::RIGHT_BRACE)) {
       consume(TokenKind::COMMA, "Expected ',' or '}' after field value");
     }
@@ -140,7 +146,7 @@ std::unique_ptr<aloha::Expression> Parser::parse_struct_instantiation() {
 
   consume(TokenKind::RIGHT_BRACE, "Expected '}' after struct instantiation");
   return std::make_unique<aloha::StructInstantiation>(
-      std::move(structName->m_name), std::move(fieldValues));
+      std::move(struct_ident->m_name), std::move(field_values));
 }
 
 std::vector<aloha::Parameter> Parser::parse_parameters() {
@@ -163,35 +169,29 @@ std::vector<aloha::Parameter> Parser::parse_parameters() {
 std::unique_ptr<aloha::Statement> Parser::parse_statement() {
   if (match("mut") || match("imut")) {
     return parse_variable_declaration();
-  } else if (match("return")) {
-    return parse_return_statement();
-  } else if (match("if")) {
-    return parse_if_statement();
-  } else if (match("while")) {
-    return parse_while_loop();
-  } else {
-    if (peek()->kind == TokenKind::IDENT) {
-      if (next()->kind == TokenKind::EQUAL) {
-        return parse_variable_assignment();
-      } else if (next()->kind == TokenKind::LEFT_PAREN) {
-        return parse_expression_statement();
-      } else if (next()->kind == TokenKind::THIN_ARROW) {
-        return parse_struct_field_assignment();
-      } else {
-        std::cout << "Unexpected keyword found" << std::endl;
-        peek()->dump();
-        exit(1);
-      }
-    }
-    // TODO: better handle this error
-    //  report_error();
-    // if (is_eof()) {
-    //   return nullptr;
-    // }
-    std::cout << "Unknown or unimplemented statement kind" << std::endl;
-    peek()->dump();
-    exit(1);
   }
+  if (match("return")) {
+    return parse_return_statement();
+  }
+  if (match("if")) {
+    return parse_if_statement();
+  }
+  if (match("while")) {
+    return parse_while_loop();
+  }
+
+  if (match(TokenKind::IDENT)) {
+    if (match(TokenKind::EQUAL, true)) {
+      return parse_variable_assignment();
+    }
+    if (match(TokenKind::LEFT_PAREN, true)) {
+      return parse_expression_statement();
+    }
+    if (match(TokenKind::THIN_ARROW, true)) {
+      return parse_struct_field_assignment();
+    }
+  }
+  return nullptr;
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_expression_statement() {
@@ -200,32 +200,34 @@ std::unique_ptr<aloha::Statement> Parser::parse_expression_statement() {
 }
 
 std::unique_ptr<aloha::StatementBlock> Parser::parse_statements() {
-  std::vector<aloha::StmtPtr> stmts;
-  while (peek() && !match(TokenKind::RIGHT_BRACE) && !is_eof()) {
+  auto statements = std::make_unique<aloha::StatementBlock>();
+  while (!match(TokenKind::RIGHT_BRACE) && !is_eof()) {
     auto stmt = parse_statement();
-    stmts.push_back(std::move(stmt));
+    if (!stmt) {
+      panic_parser("Unknown or unimplemented statement kind");
+    }
+    statements->m_statements.push_back(std::move(stmt));
   }
   if (!is_eof()) {
     consume(TokenKind::RIGHT_BRACE,
             "expected '}' at the end of block statement");
   }
-  return std::make_unique<aloha::StatementBlock>(std::move(stmts));
+  return statements;
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_variable_declaration() {
-  bool is_mutable;
-  if (match("mut")) {
-    is_mutable = true;
+  bool is_mutable = match("mut");
+  if (is_mutable) {
     advance();
   } else {
-    is_mutable = false;
     consume("imut",
             "Expected 'mut' or 'imut' keyword to start variable declaration.");
   }
+
   auto identifier = expect_identifier();
-  auto type = optional_type();
+  std::optional<AlohaType::Type> type = optional_type();
   std::unique_ptr<aloha::Expression> expression = nullptr;
-  if (match("=")) {
+  if (match(TokenKind::EQUAL)) {
     advance();
     if (peek()->kind == TokenKind::IDENT &&
         next()->kind == TokenKind::LEFT_BRACE) {
@@ -260,26 +262,24 @@ std::unique_ptr<aloha::Statement> Parser::parse_struct_field_assignment() {
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_return_statement() {
-  advance();
+  consume("return", "Expected 'return' keyword");
   std::unique_ptr<aloha::Expression> expression = parse_expression(0);
   return std::make_unique<aloha::ReturnStatement>(std::move(expression));
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_if_statement() {
-  advance();
+  consume("if", "Expected 'if' keyword");
   auto condition = parse_expression(0);
   consume(TokenKind::LEFT_BRACE, "Expected '{' after condition");
   std::unique_ptr<aloha::StatementBlock> then_branch = parse_statements();
   std::unique_ptr<aloha::StatementBlock> else_branch = nullptr;
   if (match("else")) {
     advance();
-    if (match("if")) {
+    if (match(TokenKind::IDENT) && match("if")) {
       std::vector<aloha::StmtPtr> else_stmts;
       else_stmts.push_back(parse_if_statement());
       else_branch =
           std::make_unique<aloha::StatementBlock>(std::move(else_stmts));
-      // else_branch = std::make_unique<aloha::StatementBlock>();
-      // else_branch->statements.push_back(parse_if_statement());
     } else {
       consume(TokenKind::LEFT_BRACE,
               "expected '{' or 'if' after 'else' keyword");
@@ -291,7 +291,7 @@ std::unique_ptr<aloha::Statement> Parser::parse_if_statement() {
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_while_loop() {
-  advance();
+  consume("while", "Expected 'while' keyword");
   auto condition = parse_expression(0);
   consume(TokenKind::LEFT_BRACE, "Expected '{' keyword after condition");
   auto body = parse_statements();
@@ -389,51 +389,23 @@ std::map<std::string, Parser::infix_parser_func> Parser::infix_parsers = {
 };
 
 std::unique_ptr<aloha::Expression>
-Parser::parse_expression(int parent_precedence) {
+Parser::parse_expression(int min_precedence) {
   auto left = parse_primary();
   while (!is_eof()) {
-    if (!peek()) {
+    auto operator_literal = peek()->get_lexeme();
+    auto next_precedence = precedence[operator_literal];
+    if (next_precedence <= min_precedence) {
       break;
     }
-    auto token = peek();
-    // if (token->kind != TokenKind::OPERATOR) {
-    //   break;
-    // }
-    auto op = token->get_lexeme();
-    auto prec = precedence[op];
-    if (prec <= parent_precedence) {
-      break;
-    }
-    auto infix = infix_parsers[op];
-    if (!infix) {
+    auto infix_parser = infix_parsers.find(operator_literal);
+    if (infix_parser == infix_parsers.end()) {
       break;
     }
     advance();
-    left = infix(*this, std::move(left));
+    left = infix_parser->second(*this, std::move(left));
   }
   return left;
 }
-
-// std::unique_ptr<aloha::Expression>
-// Parser::parse_infix_expressions(std::unique_ptr<aloha::Expression> left,
-//                                 int min_precedence) {
-//   while (auto token = peek()) {
-//     auto lexeme = token->lexeme;
-//     if (precedence.find(lexeme) == precedence.end() ||
-//         precedence[lexeme] < min_precedence) {
-//       break;
-//     }
-//     if (auto infix_parsers_iter = infix_parsers.find(lexeme);
-//         infix_parsers_iter != infix_parsers.end()) {
-//       advance();
-//       left = infix_parsers_iter->second(*this, left);
-//     } else {
-//       report_error("No infix parser found for operator: " + lexeme);
-//       return nullptr;
-//     }
-//   }
-//   return left;
-// }
 
 std::unique_ptr<aloha::Expression> Parser::parse_primary() {
   std::optional<Token> token = peek();
@@ -441,51 +413,62 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary() {
     report_error("Unexpected end of input");
     return nullptr;
   }
-  if (token->kind == TokenKind::LEFT_PAREN) {
-    advance();
-    auto expression = parse_expression(0);
-    consume(TokenKind::RIGHT_PAREN, "Expected ')' after expression");
-    return expression;
-  } else if (token->kind == TokenKind::IDENT) {
-    if (next()->kind == TokenKind::LEFT_PAREN) {
-      return parse_function_call();
-    } else if (next()->kind == TokenKind::LEFT_BRACE) {
-      return parse_struct_instantiation();
-    } else if (next()->kind == TokenKind::THIN_ARROW) {
-      return parse_struct_field_access();
-    }
-    advance();
-    if (is_reserved_ident(*token)) {
-      if (token->lexeme == "null")
-        return std::make_unique<aloha::Number>("null");
-      else {
-        auto value = token->lexeme == "true" ? true : false;
-        return std::make_unique<aloha::Boolean>(value);
-      }
-    }
-    return std::make_unique<aloha::Identifier>(token->get_lexeme());
-  } else if (token->kind == TokenKind::INT || token->kind == TokenKind::FLOAT) {
+
+  if (match(TokenKind::INT) || match(TokenKind::FLOAT)) {
     advance();
     return std::make_unique<aloha::Number>(token->get_lexeme());
-  } else if (token->kind == TokenKind::STRING) {
+  }
+
+  if (match(TokenKind::STRING)) {
     advance();
     return std::make_unique<aloha::String>(token->get_lexeme());
-  } else if (token->kind == TokenKind::MINUS) {
+  }
+
+  if (match(TokenKind::MINUS)) {
     auto prefix = prefix_parsers[token->get_lexeme()];
     if (prefix) {
       return prefix(*this);
     }
-    report_error("Unexpected expor");
-    return nullptr;
-  } else {
-    report_error("Expected expression");
-    return nullptr;
   }
+
+  if (match(TokenKind::LEFT_PAREN)) {
+    advance();
+    auto expression = parse_expression(0);
+    consume(TokenKind::RIGHT_PAREN, "Expected ')' after expression");
+    return expression;
+  }
+
+  if (match(TokenKind::IDENT)) {
+    if (match(TokenKind::LEFT_PAREN, true)) {
+      return parse_function_call();
+    }
+    if (match(TokenKind::LEFT_BRACE, true)) {
+      return parse_struct_instantiation();
+    }
+    if (match(TokenKind::THIN_ARROW, true)) {
+      return parse_struct_field_access();
+    }
+    advance();
+    if (is_reserved_ident(*token)) {
+      if (token->lexeme == "true" || token->lexeme == "false") {
+        auto value = token->lexeme == "true" ? true : false;
+        return std::make_unique<aloha::Boolean>(value);
+      }
+
+      // TODO: represent null in better structure
+      return std::make_unique<aloha::Number>("null");
+    }
+
+    return std::make_unique<aloha::Identifier>(token->get_lexeme());
+  }
+  report_error("Unexpected token in primary expression");
+  return nullptr;
 }
 
 std::unique_ptr<aloha::Expression> Parser::parse_function_call() {
   auto name = expect_identifier();
   consume(TokenKind::LEFT_PAREN, "function call must be followed by `(`");
+
   std::vector<aloha::ExprPtr> args;
   if (match(TokenKind::RIGHT_PAREN)) {
     advance();
@@ -504,30 +487,28 @@ std::unique_ptr<aloha::Expression> Parser::parse_function_call() {
 }
 
 std::unique_ptr<aloha::Identifier> Parser::expect_identifier() {
-  auto token = peek();
-  if (token && token->kind == TokenKind::IDENT) {
+  if (match(TokenKind::IDENT)) {
+    auto token = peek();
     advance();
     return std::make_unique<aloha::Identifier>(token->get_lexeme());
-  } else {
-    report_error("Expected identifier");
-    return nullptr;
   }
+  report_error("Expected identifier");
+  return nullptr;
 }
 
 AlohaType::Type Parser::parse_type() {
   auto token = peek();
-  if (token && token->kind == TokenKind::IDENT) {
+  if (match(TokenKind::IDENT)) {
     advance();
     return AlohaType::from_string(token->get_lexeme());
-  } else {
-    report_error("Expected type");
-    return AlohaType::from_string("UNKNOWN");
   }
+  report_error("Expected type");
+  return AlohaType::Type::UNKNOWN;
 }
 
 std::optional<AlohaType::Type> Parser::optional_type() {
   auto token = peek();
-  if (token && token->kind == TokenKind::COLON) {
+  if (match(TokenKind::COLON)) {
     advance();
     return parse_type();
   }
@@ -543,7 +524,7 @@ bool Parser::is_reserved_ident(Token t) const {
 }
 
 bool Parser::is_reserved_ident() const {
-  auto lexeme = peek()->lexeme;
+  auto lexeme = peek()->get_lexeme();
   if (lexeme == "true" || lexeme == "false" || lexeme == "null") {
     return true;
   }

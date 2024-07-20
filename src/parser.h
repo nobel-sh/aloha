@@ -19,7 +19,7 @@ public:
   using infix_parser_func = std::function<std::unique_ptr<aloha::Expression>(
       Parser &, std::unique_ptr<aloha::Expression>)>;
 
-  explicit Parser(const std::vector<Token> tokens);
+  explicit Parser(const std::vector<Token> &tokens);
 
   std::unique_ptr<aloha::Program> parse();
   void dump(aloha::Program *p) const;
@@ -50,6 +50,8 @@ private:
   template <typename T> void consume(const T &value, std::string message);
   [[nodiscard]] std::optional<Token> get_token(bool use_next) const;
   [[nodiscard]] std::optional<AlohaType::Type> optional_type();
+
+  void panic_parser(const std::string &message);
 
   std::unique_ptr<aloha::Identifier> expect_identifier();
   AlohaType::Type parse_type();
