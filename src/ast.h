@@ -1,7 +1,8 @@
 #ifndef ALOHA_AST_H_
 #define ALOHA_AST_H_
 
-#include "ASTVisitor.h"
+#include "ast_decl.h"
+#include "ast_visitor.h"
 #include "type.h"
 #include <cstdint>
 #include <memory>

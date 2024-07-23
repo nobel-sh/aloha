@@ -1,8 +1,8 @@
 #ifndef SEMANTIC_ANALYZER_H
 #define SEMANTIC_ANALYZER_H
 
-#include "ASTVisitor.h"
 #include "ast.h"
+#include "ast_visitor.h"
 #include "symbol_table.h"
 #include "type.h"
 

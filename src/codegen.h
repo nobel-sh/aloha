@@ -1,7 +1,8 @@
-#ifndef CODEGEN_H
-#define CODEGEN_H
+#ifndef CODEGEN_H_
+#define CODEGEN_H_
 
 #include "ast.h"
+#include "ast_visitor.h"
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -61,4 +62,4 @@ private:
   void visit(aloha::Program *node) override;
 };
 
-#endif // CODEGEN_H
+#endif // CODEGEN_H_

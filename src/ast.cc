@@ -1,5 +1,4 @@
 #include "ast.h"
-#include "ASTVisitor.h"
 #include <iostream>
 #include <string>
 

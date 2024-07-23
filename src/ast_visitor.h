@@ -1,31 +1,7 @@
 #ifndef ASTVISITOR_H_
 #define ASTVISITOR_H_
 
-namespace aloha {
-// forward decls avoiding dependency cycle
-class Number;
-class Boolean;
-class String;
-class UnaryExpression;
-class BinaryExpression;
-class Identifier;
-class Declaration;
-class Assignment;
-class FunctionCall;
-class ReturnStatement;
-class IfStatement;
-class WhileLoop;
-class ForLoop;
-class Function;
-class StructDecl;
-class StructInstantiation;
-class StructFieldAccess;
-class StructFieldAssignment;
-class ExpressionStatement;
-class Array;
-class StatementBlock;
-class Program;
-}; // namespace aloha
+#include "ast_decl.h"
 
 class ASTVisitor {
 public:
