@@ -50,6 +50,7 @@ private:
   template <typename T> void consume(const T &value, std::string message);
   [[nodiscard]] std::optional<Token> get_token(bool use_next) const;
   [[nodiscard]] std::optional<AlohaType::Type> optional_type();
+  Location current_location() const;
 
   void panic_parser(const std::string &message);
 

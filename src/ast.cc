@@ -27,107 +27,117 @@ void StructInstantiation::accept(ASTVisitor &visitor) { visitor.visit(this); }
 void Array::accept(ASTVisitor &visitor) { visitor.visit(this); }
 void Program::accept(ASTVisitor &visitor) { visitor.visit(this); }
 
-StatementBlock::StatementBlock(std::vector<StmtPtr> stmts)
-    : m_statements(std::move(stmts)) {}
+StatementBlock::StatementBlock(Location loc, std::vector<StmtPtr> stmts)
+    : Statement(loc), m_statements(std::move(stmts)) {}
 
-ExpressionStatement::ExpressionStatement(ExprPtr expr)
-    : m_expr(std::move(expr)) {}
+ExpressionStatement::ExpressionStatement(Location loc, ExprPtr expr)
+    : Statement(loc), m_expr(std::move(expr)) {}
 
-Number::Number(std::string val) : m_value(std::move(val)) {}
+Number::Number(Location loc, std::string val)
+    : Expression(loc), m_value(std::move(val)) {}
 Type Number::get_type() const { return Type::NUMBER; }
 
-Boolean::Boolean(bool val) : m_value(val) {}
+Boolean::Boolean(Location loc, bool val) : Expression(loc), m_value(val) {}
 Type Boolean::get_type() const { return Type::BOOL; }
 
-String::String(std::string val) : m_value(std::move(val)) {}
+String::String(Location loc, std::string val)
+    : Expression(loc), m_value(std::move(val)) {}
 Type String::get_type() const { return Type::STRING; }
 
-UnaryExpression::UnaryExpression(std::string oper, ExprPtr expr)
-    : m_op(std::move(oper)), m_expr(std::move(expr)) {}
+UnaryExpression::UnaryExpression(Location loc, std::string oper, ExprPtr expr)
+    : Expression(loc), m_op(std::move(oper)), m_expr(std::move(expr)) {}
 Type UnaryExpression::get_type() const { return m_expr->get_type(); }
 
-BinaryExpression::BinaryExpression(ExprPtr lhs, std::string oper, ExprPtr rhs)
-    : m_left(std::move(lhs)), m_op(std::move(oper)), m_right(std::move(rhs)) {}
+BinaryExpression::BinaryExpression(Location loc, ExprPtr lhs, std::string oper,
+                                   ExprPtr rhs)
+    : Expression(loc), m_left(std::move(lhs)), m_op(std::move(oper)),
+      m_right(std::move(rhs)) {}
 Type BinaryExpression::get_type() const { return m_left->get_type(); }
 
-Identifier::Identifier(std::string name, Type t)
-    : m_name(std::move(name)), m_type(t) {}
+Identifier::Identifier(Location loc, std::string name, Type t)
+    : Expression(loc), m_name(std::move(name)), m_type(t) {}
 Type Identifier::get_type() const { return m_type; }
 
-StructFieldAccess::StructFieldAccess(ExprPtr struct_expr,
+StructFieldAccess::StructFieldAccess(Location loc, ExprPtr struct_expr,
                                      std::string field_name)
-    : m_struct_expr(std::move(struct_expr)),
+    : Expression(loc), m_struct_expr(std::move(struct_expr)),
       m_field_name(std::move(field_name)), m_type(Type::UNKNOWN) {}
 Type StructFieldAccess::get_type() const { return m_type; }
 void StructFieldAccess::set_type(Type type) { m_type = type; }
 
-StructFieldAssignment::StructFieldAssignment(ExprPtr struct_expr,
+StructFieldAssignment::StructFieldAssignment(Location loc, ExprPtr struct_expr,
                                              std::string field_name,
                                              ExprPtr value)
-    : m_struct_expr(std::move(struct_expr)),
+    : Statement(loc), m_struct_expr(std::move(struct_expr)),
       m_field_name(std::move(field_name)), m_value(std::move(value)),
       m_type(Type::UNKNOWN) {}
 Type StructFieldAssignment::get_type() const { return m_type; }
 
-Declaration::Declaration(std::string var_name, std::optional<Type> type,
-                         ExprPtr expr, bool is_mutable)
-    : m_variable_name(std::move(var_name)), m_type(type),
+Declaration::Declaration(Location loc, std::string var_name,
+                         std::optional<Type> type, ExprPtr expr,
+                         bool is_mutable)
+    : Statement(loc), m_variable_name(std::move(var_name)), m_type(type),
       m_expression(std::move(expr)), m_is_assigned(m_expression != nullptr),
       m_is_mutable(is_mutable) {}
 
-Assignment::Assignment(std::string var_name, ExprPtr expr)
-    : m_variable_name(std::move(var_name)), m_expression(std::move(expr)),
-      m_type(Type::UNKNOWN) {}
+Assignment::Assignment(Location loc, std::string var_name, ExprPtr expr)
+    : Statement(loc), m_variable_name(std::move(var_name)),
+      m_expression(std::move(expr)), m_type(Type::UNKNOWN) {}
 
-FunctionCall::FunctionCall(std::unique_ptr<Identifier> func_name,
+FunctionCall::FunctionCall(Location loc, std::unique_ptr<Identifier> func_name,
                            std::vector<ExprPtr> args)
-    : m_func_name(std::move(func_name)), m_arguments(std::move(args)),
-      m_type(Type::UNKNOWN) {}
+    : Expression(loc), m_func_name(std::move(func_name)),
+      m_arguments(std::move(args)), m_type(Type::UNKNOWN) {}
 Type FunctionCall::get_type() const { return m_type; }
 
-ReturnStatement::ReturnStatement(ExprPtr expr)
-    : m_expression(std::move(expr)) {}
+ReturnStatement::ReturnStatement(Location loc, ExprPtr expr)
+    : Statement(loc), m_expression(std::move(expr)) {}
 
-IfStatement::IfStatement(ExprPtr cond,
+IfStatement::IfStatement(Location loc, ExprPtr cond,
                          std::unique_ptr<StatementBlock> then_branch,
                          std::unique_ptr<StatementBlock> else_branch)
-    : m_condition(std::move(cond)), m_then_branch(std::move(then_branch)),
+    : Statement(loc), m_condition(std::move(cond)),
+      m_then_branch(std::move(then_branch)),
       m_else_branch(std::move(else_branch)) {}
 bool IfStatement::has_else_branch() const { return m_else_branch != nullptr; }
 
-WhileLoop::WhileLoop(ExprPtr cond, std::unique_ptr<StatementBlock> body)
-    : m_condition(std::move(cond)), m_body(std::move(body)) {}
+WhileLoop::WhileLoop(Location loc, ExprPtr cond,
+                     std::unique_ptr<StatementBlock> body)
+    : Statement(loc), m_condition(std::move(cond)), m_body(std::move(body)) {}
 
-ForLoop::ForLoop(std::unique_ptr<Declaration> init, ExprPtr cond,
+ForLoop::ForLoop(Location loc, std::unique_ptr<Declaration> init, ExprPtr cond,
                  std::unique_ptr<Declaration> inc, std::vector<StmtPtr> body)
-    : m_initializer(std::move(init)), m_condition(std::move(cond)),
-      m_increment(std::move(inc)), m_body(std::move(body)) {}
+    : Statement(loc), m_initializer(std::move(init)),
+      m_condition(std::move(cond)), m_increment(std::move(inc)),
+      m_body(std::move(body)) {}
 
 Parameter::Parameter(std::string name, Type type)
     : m_name(std::move(name)), m_type(type) {}
 
-Function::Function(std::unique_ptr<Identifier> func_name,
+Function::Function(Location loc, std::unique_ptr<Identifier> func_name,
                    std::vector<Parameter> params, Type return_type,
                    std::unique_ptr<StatementBlock> body)
-    : m_name(std::move(func_name)), m_parameters(std::move(params)),
-      m_return_type(return_type), m_body(std::move(body)) {}
+    : Statement(loc), m_name(std::move(func_name)),
+      m_parameters(std::move(params)), m_return_type(return_type),
+      m_body(std::move(body)) {}
 
 StructField::StructField(std::string name, Type type)
     : m_name(std::move(name)), m_type(type) {}
 
-StructDecl::StructDecl(std::string name, std::vector<StructField> fields)
-    : m_name(std::move(name)), m_fields(std::move(fields)) {}
+StructDecl::StructDecl(Location loc, std::string name,
+                       std::vector<StructField> fields)
+    : Statement(loc), m_name(std::move(name)), m_fields(std::move(fields)) {}
 
-StructInstantiation::StructInstantiation(std::string name,
+StructInstantiation::StructInstantiation(Location loc, std::string name,
                                          std::vector<ExprPtr> values)
-    : m_struct_name(std::move(name)), m_field_values(std::move(values)),
-      m_type(Type::UNKNOWN) {}
+    : Expression(loc), m_struct_name(std::move(name)),
+      m_field_values(std::move(values)), m_type(Type::UNKNOWN) {}
 Type StructInstantiation::get_type() const { return m_type; }
 void StructInstantiation::set_type(Type type) { m_type = type; }
 
-Array::Array(std::vector<ExprPtr> members)
-    : m_members(std::move(members)), m_type(members[0]->get_type()),
-      m_size(members.size()) {}
+Array::Array(Location loc, std::vector<ExprPtr> members)
+    : Expression(loc), m_members(std::move(members)),
+      m_type(members[0]->get_type()), m_size(members.size()) {}
 Type Array::get_type() const { return m_type; }
 void Array::set_type(Type t) { m_type = t; }
 

@@ -21,6 +21,8 @@ void Parser::panic_parser(const std::string &message) {
   exit(1);
 }
 
+Location Parser::current_location() const { return peek()->loc; }
+
 void Parser::advance() {
   if (!is_eof() && next()) {
     ++current;
@@ -74,7 +76,7 @@ const std::vector<std::string> &Parser::get_errors() const {
 }
 
 std::unique_ptr<aloha::Program> Parser::parse() {
-  auto program = std::make_unique<aloha::Program>();
+  auto program = std::make_unique<aloha::Program>(current_location());
   while (!is_eof()) {
     if (match("struct")) {
       program->m_nodes.push_back(parse_struct_decl());
@@ -85,6 +87,7 @@ std::unique_ptr<aloha::Program> Parser::parse() {
 }
 
 std::unique_ptr<aloha::Function> Parser::parse_function() {
+  Location loc = current_location();
   consume("fun", "Expected 'fun' keyword");
   auto identifier = expect_identifier();
   consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
@@ -95,7 +98,7 @@ std::unique_ptr<aloha::Function> Parser::parse_function() {
   consume(TokenKind::LEFT_BRACE, "Expected '{' keyword before function body");
   auto statements = parse_statements();
   return std::make_unique<aloha::Function>(
-      std::move(identifier), std::move(parameters), std::move(return_type),
+      loc, std::move(identifier), std::move(parameters), std::move(return_type),
       std::move(statements));
 }
 
@@ -115,24 +118,27 @@ std::vector<aloha::StructField> Parser::parse_struct_field() {
 }
 
 std::unique_ptr<aloha::Expression> Parser::parse_struct_field_access() {
+  Location loc = current_location();
   auto struct_name = expect_identifier();
   consume(TokenKind::THIN_ARROW, "Expected '->' for a struct field access");
   auto field_name = expect_identifier()->m_name;
-  return std::make_unique<aloha::StructFieldAccess>(std::move(struct_name),
+  return std::make_unique<aloha::StructFieldAccess>(loc, std::move(struct_name),
                                                     std::move(field_name));
 }
 
 std::unique_ptr<aloha::StructDecl> Parser::parse_struct_decl() {
+  Location loc = current_location();
   consume("struct", "Expected 'struct' keyword");
   auto identifier = expect_identifier();
   consume(TokenKind::LEFT_BRACE, "Expected '{' after function name");
   auto fields = parse_struct_field();
   consume(TokenKind::RIGHT_BRACE, "Expected '}' after parameters");
-  return std::make_unique<aloha::StructDecl>(std::move(identifier->m_name),
+  return std::make_unique<aloha::StructDecl>(loc, std::move(identifier->m_name),
                                              std::move(fields));
 }
 
 std::unique_ptr<aloha::Expression> Parser::parse_struct_instantiation() {
+  Location loc = current_location();
   auto struct_ident = expect_identifier();
   consume(TokenKind::LEFT_BRACE, "Expected '{' after struct name");
 
@@ -146,7 +152,7 @@ std::unique_ptr<aloha::Expression> Parser::parse_struct_instantiation() {
 
   consume(TokenKind::RIGHT_BRACE, "Expected '}' after struct instantiation");
   return std::make_unique<aloha::StructInstantiation>(
-      std::move(struct_ident->m_name), std::move(field_values));
+      loc, std::move(struct_ident->m_name), std::move(field_values));
 }
 
 std::vector<aloha::Parameter> Parser::parse_parameters() {
@@ -195,12 +201,14 @@ std::unique_ptr<aloha::Statement> Parser::parse_statement() {
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_expression_statement() {
+  Location loc = current_location();
   auto expr = parse_expression(0);
-  return std::make_unique<aloha::ExpressionStatement>(std::move(expr));
+  return std::make_unique<aloha::ExpressionStatement>(loc, std::move(expr));
 }
 
 std::unique_ptr<aloha::StatementBlock> Parser::parse_statements() {
-  auto statements = std::make_unique<aloha::StatementBlock>();
+  Location loc = current_location();
+  auto statements = std::make_unique<aloha::StatementBlock>(loc);
   while (!match(TokenKind::RIGHT_BRACE) && !is_eof()) {
     auto stmt = parse_statement();
     if (!stmt) {
@@ -216,6 +224,7 @@ std::unique_ptr<aloha::StatementBlock> Parser::parse_statements() {
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_variable_declaration() {
+  Location loc = current_location();
   bool is_mutable = match("mut");
   if (is_mutable) {
     advance();
@@ -237,19 +246,21 @@ std::unique_ptr<aloha::Statement> Parser::parse_variable_declaration() {
     }
   }
   return std::make_unique<aloha::Declaration>(
-      std::move(identifier->m_name), std::move(type), std::move(expression),
-      std::move(is_mutable));
+      loc, std::move(identifier->m_name), std::move(type),
+      std::move(expression), std::move(is_mutable));
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_variable_assignment() {
+  Location loc = current_location();
   auto identifier = expect_identifier();
   consume(TokenKind::EQUAL, "Expected '=' after variable declaration");
   std::unique_ptr<aloha::Expression> expression = parse_expression(0);
-  return std::make_unique<aloha::Assignment>(std::move(identifier->m_name),
+  return std::make_unique<aloha::Assignment>(loc, std::move(identifier->m_name),
                                              std::move(expression));
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_struct_field_assignment() {
+  Location loc = current_location();
   peek()->dump();
   auto struct_expr = expect_identifier();
   peek()->dump();
@@ -258,16 +269,18 @@ std::unique_ptr<aloha::Statement> Parser::parse_struct_field_assignment() {
   consume(TokenKind::EQUAL, "Expected '=' in struct field assignment");
   auto value = parse_expression(0);
   return std::make_unique<aloha::StructFieldAssignment>(
-      std::move(struct_expr), std::move(field_name), std::move(value));
+      loc, std::move(struct_expr), std::move(field_name), std::move(value));
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_return_statement() {
+  Location loc = current_location();
   consume("return", "Expected 'return' keyword");
   std::unique_ptr<aloha::Expression> expression = parse_expression(0);
-  return std::make_unique<aloha::ReturnStatement>(std::move(expression));
+  return std::make_unique<aloha::ReturnStatement>(loc, std::move(expression));
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_if_statement() {
+  Location loc = current_location();
   consume("if", "Expected 'if' keyword");
   auto condition = parse_expression(0);
   consume(TokenKind::LEFT_BRACE, "Expected '{' after condition");
@@ -277,25 +290,28 @@ std::unique_ptr<aloha::Statement> Parser::parse_if_statement() {
     advance();
     if (match(TokenKind::IDENT) && match("if")) {
       std::vector<aloha::StmtPtr> else_stmts;
+      loc = current_location();
       else_stmts.push_back(parse_if_statement());
       else_branch =
-          std::make_unique<aloha::StatementBlock>(std::move(else_stmts));
+          std::make_unique<aloha::StatementBlock>(loc, std::move(else_stmts));
     } else {
       consume(TokenKind::LEFT_BRACE,
               "expected '{' or 'if' after 'else' keyword");
       else_branch = parse_statements();
     }
   }
-  return std::make_unique<aloha::IfStatement>(
-      std::move(condition), std::move(then_branch), std::move(else_branch));
+  return std::make_unique<aloha::IfStatement>(loc, std::move(condition),
+                                              std::move(then_branch),
+                                              std::move(else_branch));
 }
 
 std::unique_ptr<aloha::Statement> Parser::parse_while_loop() {
+  Location loc = current_location();
   consume("while", "Expected 'while' keyword");
   auto condition = parse_expression(0);
   consume(TokenKind::LEFT_BRACE, "Expected '{' keyword after condition");
   auto body = parse_statements();
-  return std::make_unique<aloha::WhileLoop>(std::move(condition),
+  return std::make_unique<aloha::WhileLoop>(loc, std::move(condition),
                                             std::move(body));
 }
 
@@ -322,7 +338,8 @@ std::map<std::string, Parser::prefix_parser_func> Parser::prefix_parsers = {
      [](Parser &parser) {
        parser.advance();
        return std::make_unique<aloha::UnaryExpression>(
-           "-", parser.parse_expression(PREC_PREFIX));
+           parser.current_location(), "-",
+           parser.parse_expression(PREC_PREFIX));
      }},
 };
 
@@ -330,59 +347,61 @@ std::map<std::string, Parser::infix_parser_func> Parser::infix_parsers = {
     {"+",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left), "+", std::move(parser.parse_expression(PREC_SUM)));
+           parser.current_location(), std::move(left), "+",
+           std::move(parser.parse_expression(PREC_SUM)));
      }},
     {"-",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left), "-", std::move(parser.parse_expression(PREC_SUM)));
+           parser.current_location(), std::move(left), "-",
+           std::move(parser.parse_expression(PREC_SUM)));
      }},
     {"*",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left), "*",
+           parser.current_location(), std::move(left), "*",
            std::move(parser.parse_expression(PREC_PRODUCT)));
      }},
     {"/",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left), "/",
+           parser.current_location(), std::move(left), "/",
            std::move(parser.parse_expression(PREC_PRODUCT)));
      }},
     {"<",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left), "<",
+           parser.current_location(), std::move(left), "<",
            std::move(parser.parse_expression(PREC_COMPARISON)));
      }},
     {">",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left), ">",
+           parser.current_location(), std::move(left), ">",
            std::move(parser.parse_expression(PREC_COMPARISON)));
      }},
     {"==",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left),
+           parser.current_location(), std::move(left),
            "==", std::move(parser.parse_expression(PREC_COMPARISON)));
      }},
     {"<=",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left),
+           parser.current_location(), std::move(left),
            "<=", std::move(parser.parse_expression(PREC_COMPARISON)));
      }},
     {">=",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left),
+           parser.current_location(), std::move(left),
            ">=", std::move(parser.parse_expression(PREC_COMPARISON)));
      }},
     {"!=",
      [](Parser &parser, auto left) {
        return std::make_unique<aloha::BinaryExpression>(
-           std::move(left),
+           parser.current_location(), std::move(left),
            "!=", std::move(parser.parse_expression(PREC_COMPARISON)));
      }},
 
@@ -408,6 +427,7 @@ Parser::parse_expression(int min_precedence) {
 }
 
 std::unique_ptr<aloha::Expression> Parser::parse_primary() {
+  Location loc = current_location();
   std::optional<Token> token = peek();
   if (!token) {
     report_error("Unexpected end of input");
@@ -416,12 +436,12 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary() {
 
   if (match(TokenKind::INT) || match(TokenKind::FLOAT)) {
     advance();
-    return std::make_unique<aloha::Number>(token->get_lexeme());
+    return std::make_unique<aloha::Number>(loc, token->get_lexeme());
   }
 
   if (match(TokenKind::STRING)) {
     advance();
-    return std::make_unique<aloha::String>(token->get_lexeme());
+    return std::make_unique<aloha::String>(loc, token->get_lexeme());
   }
 
   if (match(TokenKind::MINUS)) {
@@ -452,27 +472,28 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary() {
     if (is_reserved_ident(*token)) {
       if (token->lexeme == "true" || token->lexeme == "false") {
         auto value = token->lexeme == "true" ? true : false;
-        return std::make_unique<aloha::Boolean>(value);
+        return std::make_unique<aloha::Boolean>(loc, value);
       }
 
       // TODO: represent null in better structure
-      return std::make_unique<aloha::Number>("null");
+      return std::make_unique<aloha::Number>(loc, "null");
     }
 
-    return std::make_unique<aloha::Identifier>(token->get_lexeme());
+    return std::make_unique<aloha::Identifier>(loc, token->get_lexeme());
   }
   report_error("Unexpected token in primary expression");
   return nullptr;
 }
 
 std::unique_ptr<aloha::Expression> Parser::parse_function_call() {
+  Location loc = current_location();
   auto name = expect_identifier();
   consume(TokenKind::LEFT_PAREN, "function call must be followed by `(`");
 
   std::vector<aloha::ExprPtr> args;
   if (match(TokenKind::RIGHT_PAREN)) {
     advance();
-    return std::make_unique<aloha::FunctionCall>(std::move(name),
+    return std::make_unique<aloha::FunctionCall>(loc, std::move(name),
                                                  std::move(args));
   }
   args.push_back(parse_expression(0));
@@ -482,15 +503,16 @@ std::unique_ptr<aloha::Expression> Parser::parse_function_call() {
     args.push_back(std::move(arg));
   }
   consume(TokenKind::RIGHT_PAREN, "function call must be end with `)`");
-  return std::make_unique<aloha::FunctionCall>(std::move(name),
+  return std::make_unique<aloha::FunctionCall>(loc, std::move(name),
                                                std::move(args));
 }
 
 std::unique_ptr<aloha::Identifier> Parser::expect_identifier() {
+  Location loc = current_location();
   if (match(TokenKind::IDENT)) {
     auto token = peek();
     advance();
-    return std::make_unique<aloha::Identifier>(token->get_lexeme());
+    return std::make_unique<aloha::Identifier>(loc, token->get_lexeme());
   }
   report_error("Expected identifier");
   return nullptr;

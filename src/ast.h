@@ -3,6 +3,7 @@
 
 #include "ast_decl.h"
 #include "ast_visitor.h"
+#include "location.h"
 #include "type.h"
 #include <cstdint>
 #include <memory>
@@ -17,17 +18,26 @@ using Type = AlohaType::Type;
 
 class Node {
 public:
+  explicit Node(Location loc) : m_loc(loc) {}
   virtual ~Node() = default;
   virtual void write(std::ostream &os, unsigned long indent = 0) const = 0;
   virtual void accept(ASTVisitor &visitor) = 0;
+  virtual Location get_location() const { return m_loc; }
+
+public:
+  Location m_loc;
 };
 
 class Expression : public Node {
 public:
+  explicit Expression(Location loc) : Node(loc) {}
   virtual Type get_type() const = 0;
 };
 
-class Statement : public Node {};
+class Statement : public Node {
+public:
+  explicit Statement(Location loc) : Node(loc) {}
+};
 
 using NodePtr = std::unique_ptr<Node>;
 using ExprPtr = std::unique_ptr<Expression>;
@@ -37,7 +47,7 @@ class StatementBlock : public Statement {
 public:
   std::vector<StmtPtr> m_statements;
 
-  explicit StatementBlock(std::vector<StmtPtr> stmts = {});
+  explicit StatementBlock(Location loc, std::vector<StmtPtr> stmts = {});
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   bool is_empty() const;
@@ -47,7 +57,7 @@ class ExpressionStatement : public Statement {
 public:
   ExprPtr m_expr;
 
-  explicit ExpressionStatement(ExprPtr expr);
+  explicit ExpressionStatement(Location loc, ExprPtr expr);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };
@@ -56,7 +66,7 @@ class Number : public Expression {
 public:
   std::string m_value;
 
-  explicit Number(std::string val);
+  explicit Number(Location loc, std::string val);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   Type get_type() const override;
@@ -66,7 +76,7 @@ class Boolean : public Expression {
 public:
   bool m_value;
 
-  explicit Boolean(bool val);
+  explicit Boolean(Location loc, bool val);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   Type get_type() const override;
@@ -76,7 +86,7 @@ class String : public Expression {
 public:
   std::string m_value;
 
-  explicit String(std::string val);
+  explicit String(Location loc, std::string val);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   Type get_type() const override;
@@ -87,7 +97,7 @@ public:
   std::string m_op;
   ExprPtr m_expr;
 
-  UnaryExpression(std::string oper, ExprPtr expr);
+  UnaryExpression(Location loc, std::string oper, ExprPtr expr);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   Type get_type() const override;
@@ -99,7 +109,7 @@ public:
   std::string m_op;
   ExprPtr m_right;
 
-  BinaryExpression(ExprPtr lhs, std::string oper, ExprPtr rhs);
+  BinaryExpression(Location loc, ExprPtr lhs, std::string oper, ExprPtr rhs);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   Type get_type() const override;
@@ -110,7 +120,7 @@ public:
   std::string m_name;
   Type m_type;
 
-  explicit Identifier(std::string name, Type t = Type::UNKNOWN);
+  explicit Identifier(Location loc, std::string name, Type t = Type::UNKNOWN);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   Type get_type() const override;
@@ -122,7 +132,7 @@ public:
   std::string m_field_name;
   Type m_type;
 
-  StructFieldAccess(ExprPtr struct_expr, std::string field_name);
+  StructFieldAccess(Location loc, ExprPtr struct_expr, std::string field_name);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   Type get_type() const override;
@@ -136,8 +146,8 @@ public:
   ExprPtr m_value;
   Type m_type;
 
-  StructFieldAssignment(ExprPtr struct_expr, std::string field_name,
-                        ExprPtr value);
+  StructFieldAssignment(Location loc, ExprPtr struct_expr,
+                        std::string field_name, ExprPtr value);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   Type get_type() const;
@@ -151,8 +161,8 @@ public:
   bool m_is_assigned;
   bool m_is_mutable;
 
-  Declaration(std::string var_name, std::optional<Type> type, ExprPtr expr,
-              bool is_mutable);
+  Declaration(Location loc, std::string var_name, std::optional<Type> type,
+              ExprPtr expr, bool is_mutable);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };
@@ -163,7 +173,7 @@ public:
   ExprPtr m_expression;
   Type m_type;
 
-  Assignment(std::string var_name, ExprPtr expr);
+  Assignment(Location loc, std::string var_name, ExprPtr expr);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };
@@ -174,7 +184,7 @@ public:
   std::vector<ExprPtr> m_arguments;
   Type m_type;
 
-  FunctionCall(std::unique_ptr<Identifier> func_name,
+  FunctionCall(Location loc, std::unique_ptr<Identifier> func_name,
                std::vector<ExprPtr> args);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
@@ -185,7 +195,7 @@ class ReturnStatement : public Statement {
 public:
   ExprPtr m_expression;
 
-  explicit ReturnStatement(ExprPtr expr);
+  explicit ReturnStatement(Location loc, ExprPtr expr);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };
@@ -196,7 +206,8 @@ public:
   std::unique_ptr<StatementBlock> m_then_branch;
   std::unique_ptr<StatementBlock> m_else_branch;
 
-  IfStatement(ExprPtr cond, std::unique_ptr<StatementBlock> then_branch,
+  IfStatement(Location loc, ExprPtr cond,
+              std::unique_ptr<StatementBlock> then_branch,
               std::unique_ptr<StatementBlock> else_branch);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
@@ -208,7 +219,7 @@ public:
   ExprPtr m_condition;
   std::unique_ptr<StatementBlock> m_body;
 
-  WhileLoop(ExprPtr cond, std::unique_ptr<StatementBlock> body);
+  WhileLoop(Location loc, ExprPtr cond, std::unique_ptr<StatementBlock> body);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };
@@ -220,7 +231,7 @@ public:
   std::unique_ptr<Declaration> m_increment;
   std::vector<StmtPtr> m_body;
 
-  ForLoop(std::unique_ptr<Declaration> init, ExprPtr cond,
+  ForLoop(Location loc, std::unique_ptr<Declaration> init, ExprPtr cond,
           std::unique_ptr<Declaration> inc, std::vector<StmtPtr> body);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
@@ -241,8 +252,9 @@ public:
   Type m_return_type;
   std::unique_ptr<StatementBlock> m_body;
 
-  Function(std::unique_ptr<Identifier> func_name, std::vector<Parameter> params,
-           Type return_type, std::unique_ptr<StatementBlock> body);
+  Function(Location loc, std::unique_ptr<Identifier> func_name,
+           std::vector<Parameter> params, Type return_type,
+           std::unique_ptr<StatementBlock> body);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };
@@ -260,7 +272,7 @@ public:
   std::string m_name;
   std::vector<StructField> m_fields;
 
-  StructDecl(std::string name, std::vector<StructField> fields);
+  StructDecl(Location loc, std::string name, std::vector<StructField> fields);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };
@@ -271,7 +283,8 @@ public:
   std::vector<ExprPtr> m_field_values;
   Type m_type;
 
-  StructInstantiation(std::string name, std::vector<ExprPtr> values);
+  StructInstantiation(Location loc, std::string name,
+                      std::vector<ExprPtr> values);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
   Type get_type() const override;
@@ -284,7 +297,7 @@ public:
   Type m_type;
   uint64_t m_size;
 
-  Array(std::vector<ExprPtr> members);
+  Array(Location loc, std::vector<ExprPtr> members);
   void write(std::ostream &os, unsigned long indent = 0) const override;
   Type get_type() const override;
   void set_type(Type type);
@@ -295,6 +308,7 @@ class Program : public Node {
 public:
   std::vector<NodePtr> m_nodes;
 
+  explicit Program(Location loc) : Node(loc) {}
   void write(std::ostream &os, unsigned long indent = 0) const override;
   void accept(ASTVisitor &visitor) override;
 };
