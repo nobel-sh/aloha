@@ -37,6 +37,8 @@ private:
   void add_token(TokenKind kind);
   void add_token(TokenKind kind, std::string_view lexeme);
   void add_error(const std::string &message);
+  void handle_single_line_comment();
+  void handle_multi_line_comment();
 };
 
 #endif // LEXER_H_

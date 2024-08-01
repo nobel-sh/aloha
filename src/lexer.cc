@@ -66,9 +66,8 @@ void Lexer::lex() {
       {'{', TokenKind::LEFT_BRACE},   {'}', TokenKind::RIGHT_BRACE},
       {'[', TokenKind::LEFT_BRACKET}, {']', TokenKind::RIGHT_BRACKET},
       {',', TokenKind::COMMA},        {'+', TokenKind::PLUS},
-      {'*', TokenKind::STAR},         {'/', TokenKind::SLASH},
-      {'%', TokenKind::PERCENT},      {';', TokenKind::SEMICOLON},
-      {':', TokenKind::COLON}};
+      {'*', TokenKind::STAR},         {'%', TokenKind::PERCENT},
+      {';', TokenKind::SEMICOLON},    {':', TokenKind::COLON}};
 
   while (!is_eof()) {
     char curr_char = peek_token();
@@ -86,6 +85,19 @@ void Lexer::lex() {
     }
 
     switch (curr_char) {
+    case '/':
+      std::cout << "hola" << std::endl;
+      if (peek_token(1) == '/') {
+        std::cout << "pola" << std::endl;
+        handle_single_line_comment();
+      } else if (peek_token(1) == '*') {
+        consume_token(2); // Consume '/*'
+        handle_multi_line_comment();
+      } else {
+        add_token(TokenKind::SLASH);
+        consume_token();
+      }
+      break;
     case '=':
       if (peek_token(1) == '=') {
         add_token(TokenKind::EQUAL_EQUAL);
@@ -220,4 +232,23 @@ void Lexer::handle_ident() {
     consume_token();
   }
   add_token(TokenKind::IDENT, source.substr(start_pos, pos - start_pos));
+}
+
+void Lexer::handle_single_line_comment() {
+  while (peek_token() != '\n' && !is_eof()) {
+    consume_token();
+  }
+}
+
+void Lexer::handle_multi_line_comment() {
+  while (!is_eof()) {
+    if (peek_token() == '*' && peek_token(1) == '/') {
+      consume_token(2);
+      return;
+    }
+    consume_token();
+  }
+  if (is_eof()) {
+    add_error("Unterminated multi-line comment");
+  }
 }
