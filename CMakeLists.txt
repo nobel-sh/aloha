@@ -9,6 +9,10 @@ if (NOT DEFINED CMAKE_CXX_STANDARD)
 endif()
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
 # Required packages
 find_package(LLVM REQUIRED CONFIG)
 find_package(ZLIB REQUIRED)
@@ -70,9 +74,9 @@ endif()
 
 target_link_libraries(aloha aloha_core aloha_stdlib)
 
-# optimization flags
+# Optimization and Debugging Flags
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g3 -ggdb")
 
 # Installation setup
 install(TARGETS aloha
@@ -82,3 +86,10 @@ install(TARGETS aloha
 # For Testing
 enable_testing()
 add_subdirectory(tests)
+
+# debug target
+add_custom_target(debug
+  COMMAND gdb ${CMAKE_BINARY_DIR}/aloha
+  DEPENDS aloha
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
