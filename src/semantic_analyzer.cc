@@ -17,6 +17,33 @@ void SemanticAnalyzer::visit(aloha::Boolean *node) {}
 
 void SemanticAnalyzer::visit(aloha::String *node) {}
 
+void SemanticAnalyzer::visit(aloha::Array *node) {
+
+  if (node->get_type() == AlohaType::Type::UNKNOWN) {
+    if (!node->m_members.empty()) {
+      node->set_type(node->m_members[0]->get_type());
+    }
+  }
+  AlohaType::Type arrayType = AlohaType::Type::UNKNOWN;
+  for (size_t i = 0; i < node->m_members.size(); ++i) {
+    node->m_members[i]->accept(*this);
+    AlohaType::Type memberType = node->m_members[i]->get_type();
+
+    if (i == 0) {
+      arrayType = memberType;
+    } else if (memberType != arrayType) {
+      error.add_error("Array elements must have the same type");
+      return;
+    }
+  }
+  if (node->m_size != node->m_members.size()) {
+    error.add_error("Array size mismatch: declared size " +
+                    std::to_string(node->m_size) +
+                    " doesn't match number of elements " +
+                    std::to_string(node->m_members.size()));
+  }
+}
+
 void SemanticAnalyzer::visit(aloha::ExpressionStatement *node) {
   node->m_expr->accept(*this);
 }
@@ -334,8 +361,6 @@ void SemanticAnalyzer::visit(aloha::StructFieldAssignment *node) {
   }
   node->m_type = field_type;
 }
-
-void SemanticAnalyzer::visit(aloha::Array *node) {}
 
 void SemanticAnalyzer::visit(aloha::StatementBlock *node) {
   for (auto &stmt : node->m_statements) {

@@ -60,17 +60,21 @@ private:
   bool is_reserved_ident(Token t) const;
 
   std::unique_ptr<aloha::Function> parse_function();
+
   std::vector<aloha::Parameter> parse_parameters();
-  std::unique_ptr<aloha::StructDecl> parse_struct_decl();
   std::vector<aloha::StructField> parse_struct_field();
-  std::unique_ptr<aloha::Expression> parse_struct_field_access();
+
+  std::unique_ptr<aloha::Statement> parse_struct_decl();
   std::unique_ptr<aloha::Statement> parse_struct_field_assignment();
-  std::unique_ptr<aloha::Expression> parse_struct_instantiation();
   std::unique_ptr<aloha::Statement> parse_variable_declaration();
   std::unique_ptr<aloha::Statement> parse_variable_assignment();
   std::unique_ptr<aloha::Statement> parse_return_statement();
   std::unique_ptr<aloha::Statement> parse_if_statement();
   std::unique_ptr<aloha::Statement> parse_while_loop();
+
+  std::unique_ptr<aloha::Expression> parse_struct_field_access();
+  std::unique_ptr<aloha::Expression> parse_struct_instantiation();
+  std::unique_ptr<aloha::Expression> parse_array();
 
   std::unique_ptr<aloha::Expression>
   parse_infix_expressions(std::unique_ptr<aloha::Expression> left,

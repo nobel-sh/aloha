@@ -126,7 +126,7 @@ std::unique_ptr<aloha::Expression> Parser::parse_struct_field_access() {
                                                     std::move(field_name));
 }
 
-std::unique_ptr<aloha::StructDecl> Parser::parse_struct_decl() {
+std::unique_ptr<aloha::Statement> Parser::parse_struct_decl() {
   Location loc = current_location();
   consume("struct", "Expected 'struct' keyword");
   auto identifier = expect_identifier();
@@ -236,10 +236,13 @@ std::unique_ptr<aloha::Statement> Parser::parse_variable_declaration() {
   auto identifier = expect_identifier();
   std::optional<AlohaType::Type> type = optional_type();
   std::unique_ptr<aloha::Expression> expression = nullptr;
+
   if (match(TokenKind::EQUAL)) {
     advance();
-    if (peek()->kind == TokenKind::IDENT &&
-        next()->kind == TokenKind::LEFT_BRACE) {
+    if (match(TokenKind::LEFT_BRACKET)) {
+      expression = parse_array();
+    } else if (peek()->kind == TokenKind::IDENT &&
+               next()->kind == TokenKind::LEFT_BRACE) {
       expression = parse_struct_instantiation();
     } else {
       expression = parse_expression(0);
@@ -505,6 +508,23 @@ std::unique_ptr<aloha::Expression> Parser::parse_function_call() {
   consume(TokenKind::RIGHT_PAREN, "function call must be end with `)`");
   return std::make_unique<aloha::FunctionCall>(loc, std::move(name),
                                                std::move(args));
+}
+
+std::unique_ptr<aloha::Expression> Parser::parse_array() {
+  Location loc = current_location();
+  consume(TokenKind::LEFT_BRACKET, "Expected '[' at the start of array");
+
+  std::vector<aloha::ExprPtr> members;
+  while (!match(TokenKind::RIGHT_BRACKET) && !is_eof()) {
+    members.push_back(parse_expression(0));
+    if (!match(TokenKind::RIGHT_BRACKET)) {
+      consume(TokenKind::COMMA, "Expected ',' or ']' after array element");
+    }
+  }
+
+  consume(TokenKind::RIGHT_BRACKET, "Expected ']' at the end of array");
+
+  return std::make_unique<aloha::Array>(loc, std::move(members));
 }
 
 std::unique_ptr<aloha::Identifier> Parser::expect_identifier() {

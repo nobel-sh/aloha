@@ -136,8 +136,12 @@ Type StructInstantiation::get_type() const { return m_type; }
 void StructInstantiation::set_type(Type type) { m_type = type; }
 
 Array::Array(Location loc, std::vector<ExprPtr> members)
-    : Expression(loc), m_members(std::move(members)),
-      m_type(members[0]->get_type()), m_size(members.size()) {}
+    : Expression(loc), m_members(std::move(members)) {
+  if (m_members.size() > 0) {
+    m_type = m_members[0]->get_type();
+    m_size = m_members.size();
+  }
+}
 Type Array::get_type() const { return m_type; }
 void Array::set_type(Type t) { m_type = t; }
 

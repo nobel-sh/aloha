@@ -397,7 +397,24 @@ void CodeGen::visit(aloha::StatementBlock *node) {
   }
 }
 
-void CodeGen::visit(aloha::Array *node) {}
+void CodeGen::visit(aloha::Array *node) {
+  llvm::Type *elementType = get_llvm_type(node->m_type);
+  llvm::ArrayType *arrayType = llvm::ArrayType::get(elementType, node->m_size);
+  llvm::AllocaInst *arrayAlloca =
+      builder.CreateAlloca(arrayType, nullptr, "array");
+  for (size_t i = 0; i < node->m_members.size(); ++i) {
+    node->m_members[i]->accept(*this);
+    llvm::Value *memberValue = current_val;
+
+    std::vector<llvm::Value *> indices = {
+        llvm::ConstantInt::get(context, llvm::APInt(32, 0)),
+        llvm::ConstantInt::get(context, llvm::APInt(32, i))};
+    llvm::Value *elementPtr = builder.CreateInBoundsGEP(
+        arrayType, arrayAlloca, indices, "array_element_ptr");
+    builder.CreateStore(memberValue, elementPtr);
+  }
+  current_val = arrayAlloca;
+}
 
 void CodeGen::visit(aloha::Program *node) {
   for (auto &n : node->m_nodes) {
