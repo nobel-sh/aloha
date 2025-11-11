@@ -1,7 +1,7 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
-#include "ast.h"
+#include "ast/ast.h"
 #include "error/parser_error.h"
 #include "lexer.h"
 #include "token.h"
@@ -12,7 +12,8 @@
 #include <optional>
 #include <vector>
 
-class Parser {
+class Parser
+{
 public:
   using prefix_parser_func =
       std::function<std::unique_ptr<aloha::Expression>(Parser &)>;
@@ -48,7 +49,8 @@ private:
   // [[nodiscard]] bool match(const T &value, bool use_next = false);
   [[nodiscard]] bool match(std::string value, bool use_next = false);
   [[nodiscard]] bool match(TokenKind value, bool use_next = false);
-  template <typename T> void consume(const T &value, std::string message);
+  template <typename T>
+  void consume(const T &value, std::string message);
   [[nodiscard]] std::optional<Token> get_token(bool use_next) const;
   [[nodiscard]] std::optional<AlohaType::Type> optional_type();
   Location current_location() const;

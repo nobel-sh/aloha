@@ -1,9 +1,10 @@
 #ifndef ASTVISITOR_H_
 #define ASTVISITOR_H_
 
-#include "ast_decl.h"
+#include "decl.h"
 
-class ASTVisitor {
+class ASTVisitor
+{
 public:
   virtual void visit(aloha::Number *node) = 0;
   virtual void visit(aloha::Boolean *node) = 0;

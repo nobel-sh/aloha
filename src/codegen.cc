@@ -1,5 +1,5 @@
 #include "codegen.h"
-#include "ast.h"
+#include "ast/ast.h"
 #include "type.h"
 #include <llvm/ADT/APFloat.h>
 #include <llvm/IR/BasicBlock.h>
@@ -16,122 +16,162 @@
 #include <string>
 
 CodeGen::CodeGen()
-    : builder(context), current_val(nullptr), current_fn(nullptr) {
+    : builder(context), current_val(nullptr), current_fn(nullptr)
+{
   module = std::make_unique<llvm::Module>("my_module", context);
 }
 
-bool CodeGen::generate_code(aloha::Program *program) {
+bool CodeGen::generate_code(aloha::Program *program)
+{
   add_builtin_fns();
   program->accept(*this);
   auto status = llvm::verifyModule(*module, &llvm::errs());
   return status;
 }
 
-void CodeGen::visit(aloha::Number *node) {
+void CodeGen::visit(aloha::Number *node)
+{
   auto num = std::stod(node->m_value);
   current_val = llvm::ConstantFP::get(context, llvm::APFloat(num));
 }
 
-void CodeGen::visit(aloha::Boolean *node) {
+void CodeGen::visit(aloha::Boolean *node)
+{
   auto value = node->m_value;
   current_val = llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
 }
 
-void CodeGen::visit(aloha::String *node) {
+void CodeGen::visit(aloha::String *node)
+{
   auto const &str = node->m_value;
   current_val = builder.CreateGlobalStringPtr(str, "str");
 }
 
-void CodeGen::visit(aloha::ExpressionStatement *node) {
+void CodeGen::visit(aloha::ExpressionStatement *node)
+{
   node->m_expr->accept(*this);
 }
 
-void CodeGen::visit(aloha::UnaryExpression *node) {
+void CodeGen::visit(aloha::UnaryExpression *node)
+{
   node->m_expr->accept(*this);
-  if (node->m_op == "-") {
+  if (node->m_op == "-")
+  {
     current_val = builder.CreateFNeg(current_val, "negtmp");
   }
 }
 
-void CodeGen::visit(aloha::BinaryExpression *node) {
+void CodeGen::visit(aloha::BinaryExpression *node)
+{
   node->m_left->accept(*this);
   llvm::Value *left = current_val;
   node->m_right->accept(*this);
   llvm::Value *right = current_val;
 
-  if (node->m_op == "+") {
+  if (node->m_op == "+")
+  {
     current_val = builder.CreateFAdd(left, right, "addtmp");
-  } else if (node->m_op == "-") {
+  }
+  else if (node->m_op == "-")
+  {
     current_val = builder.CreateFSub(left, right, "subtmp");
-  } else if (node->m_op == "*") {
+  }
+  else if (node->m_op == "*")
+  {
     current_val = builder.CreateFMul(left, right, "multmp");
-  } else if (node->m_op == "/") {
+  }
+  else if (node->m_op == "/")
+  {
     current_val = builder.CreateFDiv(left, right, "divtmp");
-  } else if (node->m_op == ">=") {
+  }
+  else if (node->m_op == ">=")
+  {
     current_val = builder.CreateFCmpOGE(left, right, "gtetmpe");
-  } else if (node->m_op == "<=") {
+  }
+  else if (node->m_op == "<=")
+  {
     current_val = builder.CreateFCmpOLE(left, right, "ltetmp");
-  } else if (node->m_op == "<") {
+  }
+  else if (node->m_op == "<")
+  {
     current_val = builder.CreateFCmpOLT(left, right, "lttmp");
-  } else if (node->m_op == ">") {
+  }
+  else if (node->m_op == ">")
+  {
     current_val = builder.CreateFCmpOGT(left, right, "gttmp");
-  } else if (node->m_op == "==") {
+  }
+  else if (node->m_op == "==")
+  {
     current_val = builder.CreateFCmpOEQ(left, right, "eqtmp");
-  } else if (node->m_op == "!=") {
+  }
+  else if (node->m_op == "!=")
+  {
     current_val = builder.CreateFCmpONE(left, right, "netmp");
   }
 }
 
-void CodeGen::visit(aloha::Identifier *node) {
+void CodeGen::visit(aloha::Identifier *node)
+{
   auto itr = named_values.find(node->m_name);
-  if (itr == named_values.end()) {
+  if (itr == named_values.end())
+  {
     throw std::runtime_error("Unknown variable name: " + node->m_name);
   }
 
   auto *alloca = itr->second;
 
-  if (!alloca) {
+  if (!alloca)
+  {
     throw std::runtime_error("Variable has no value: " + node->m_name);
   }
   current_val =
       builder.CreateLoad(alloca->getAllocatedType(), alloca, node->m_name);
 }
 
-void CodeGen::visit(aloha::Declaration *node) {
+void CodeGen::visit(aloha::Declaration *node)
+{
   llvm::Type *type = get_llvm_type(node->m_type.value());
   llvm::AllocaInst *alloca =
       builder.CreateAlloca(type, nullptr, node->m_variable_name);
   named_values[node->m_variable_name] = alloca;
 
-  if (node->m_expression) {
+  if (node->m_expression)
+  {
     node->m_expression->accept(*this);
     builder.CreateStore(current_val, alloca);
   }
 }
 
-void CodeGen::visit(aloha::Assignment *node) {
+void CodeGen::visit(aloha::Assignment *node)
+{
   auto alloca = named_values[node->m_variable_name];
   node->m_expression->accept(*this);
   builder.CreateStore(current_val, alloca);
 }
-void CodeGen::visit(aloha::FunctionCall *node) {
+void CodeGen::visit(aloha::FunctionCall *node)
+{
   llvm::Function *callee_fn = module->getFunction(node->m_func_name->m_name);
-  if (!callee_fn) {
+  if (!callee_fn)
+  {
     throw std::runtime_error("Unknown function referenced: " +
                              node->m_func_name->m_name);
   }
   std::vector<llvm::Value *> args;
-  for (unsigned long i = 0, e = node->m_arguments.size(); i != e; ++i) {
+  for (unsigned long i = 0, e = node->m_arguments.size(); i != e; ++i)
+  {
     node->m_arguments[i]->accept(*this);
     args.push_back(current_val);
   }
-  if (callee_fn->getReturnType()->isVoidTy()) {
+  if (callee_fn->getReturnType()->isVoidTy())
+  {
     current_val = builder.CreateCall(callee_fn, args);
-  } else
+  }
+  else
     current_val = builder.CreateCall(callee_fn, args, "calltmp");
 }
 
-void CodeGen::visit(aloha::ReturnStatement *node) {
+void CodeGen::visit(aloha::ReturnStatement *node)
+{
   node->m_expression->accept(*this);
   builder.CreateRet(current_val);
 
@@ -141,7 +181,8 @@ void CodeGen::visit(aloha::ReturnStatement *node) {
   builder.SetInsertPoint(unreachable_block);
 }
 
-void CodeGen::visit(aloha::IfStatement *node) {
+void CodeGen::visit(aloha::IfStatement *node)
+{
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
   llvm::BasicBlock *then_bb =
@@ -155,16 +196,19 @@ void CodeGen::visit(aloha::IfStatement *node) {
 
   builder.SetInsertPoint(then_bb);
   node->m_then_branch->accept(*this);
-  if (!builder.GetInsertBlock()->getTerminator()) {
+  if (!builder.GetInsertBlock()->getTerminator())
+  {
     builder.CreateBr(merge_bb);
   }
 
   function->insert(function->end(), else_bb);
   builder.SetInsertPoint(else_bb);
-  if (node->m_else_branch) {
+  if (node->m_else_branch)
+  {
     node->m_else_branch->accept(*this);
   }
-  if (!builder.GetInsertBlock()->getTerminator()) {
+  if (!builder.GetInsertBlock()->getTerminator())
+  {
     builder.CreateBr(merge_bb);
   }
 
@@ -172,7 +216,8 @@ void CodeGen::visit(aloha::IfStatement *node) {
   builder.SetInsertPoint(merge_bb);
 }
 
-void CodeGen::visit(aloha::WhileLoop *node) {
+void CodeGen::visit(aloha::WhileLoop *node)
+{
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
   llvm::BasicBlock *cond_bb =
@@ -198,7 +243,8 @@ void CodeGen::visit(aloha::WhileLoop *node) {
   builder.SetInsertPoint(after_bb);
 }
 
-void CodeGen::visit(aloha::ForLoop *node) {
+void CodeGen::visit(aloha::ForLoop *node)
+{
   llvm::Function *function = builder.GetInsertBlock()->getParent();
 
   llvm::BasicBlock *preheader_bb = builder.GetInsertBlock();
@@ -214,7 +260,8 @@ void CodeGen::visit(aloha::ForLoop *node) {
   llvm::Value *condValue = current_val;
   builder.CreateCondBr(condValue, loop_bb, after_bb);
 
-  for (auto &stmt : node->m_body) {
+  for (auto &stmt : node->m_body)
+  {
     stmt->accept(*this);
   }
   node->m_increment->accept(*this);
@@ -224,9 +271,11 @@ void CodeGen::visit(aloha::ForLoop *node) {
   builder.SetInsertPoint(after_bb);
 }
 
-void CodeGen::visit(aloha::Function *node) {
+void CodeGen::visit(aloha::Function *node)
+{
   std::vector<llvm::Type *> param_types;
-  for (const auto &param : node->m_parameters) {
+  for (const auto &param : node->m_parameters)
+  {
     param_types.push_back(get_llvm_type(param.m_type));
   }
 
@@ -237,7 +286,8 @@ void CodeGen::visit(aloha::Function *node) {
                              node->m_name->m_name, module.get());
 
   unsigned idx = 0;
-  for (auto &arg : function->args()) {
+  for (auto &arg : function->args())
+  {
     arg.setName(node->m_parameters[idx++].m_name);
   }
 
@@ -246,7 +296,8 @@ void CodeGen::visit(aloha::Function *node) {
   builder.SetInsertPoint(basic_block);
 
   named_values.clear();
-  for (auto &arg : function->args()) {
+  for (auto &arg : function->args())
+  {
     llvm::AllocaInst *alloca =
         builder.CreateAlloca(arg.getType(), nullptr, arg.getName());
     builder.CreateStore(&arg, alloca);
@@ -255,9 +306,12 @@ void CodeGen::visit(aloha::Function *node) {
 
   current_fn = function;
   node->m_body->accept(*this);
-  if (node->m_return_type == AlohaType::Type::VOID) {
+  if (node->m_return_type == AlohaType::Type::VOID)
+  {
     builder.CreateRetVoid();
-  } else if (!builder.GetInsertBlock()->getTerminator()) {
+  }
+  else if (!builder.GetInsertBlock()->getTerminator())
+  {
     builder.CreateRet(
         llvm::Constant::getNullValue(get_llvm_type(node->m_return_type)));
   }
@@ -265,20 +319,23 @@ void CodeGen::visit(aloha::Function *node) {
   llvm::verifyFunction(*function);
 }
 
-void CodeGen::visit(aloha::StructDecl *node) {
+void CodeGen::visit(aloha::StructDecl *node)
+{
   std::string struct_name = node->m_name;
   AlohaType::Type struct_type = AlohaType::create_struct_type(
       (int)struct_types.size() /
       2); // divide by 2 because we are inserting twice in struct_types
 
   type_to_struct[struct_type] = struct_name;
-  if (llvm::StructType::getTypeByName(context, struct_name)) {
+  if (llvm::StructType::getTypeByName(context, struct_name))
+  {
     throw std::runtime_error("Struct with name " + struct_name +
                              " already exists");
   }
 
   std::vector<llvm::Type *> field_types;
-  for (const auto &field : node->m_fields) {
+  for (const auto &field : node->m_fields)
+  {
     field_types.push_back(get_llvm_type(field.m_type));
   }
 
@@ -306,7 +363,8 @@ void CodeGen::visit(aloha::StructDecl *node) {
       builder.CreateAlloca(llvm_struct_type, nullptr, "struct_instance");
 
   auto arg_it = ctor_fn->arg_begin();
-  for (unsigned i = 0; i < node->m_fields.size(); ++i, ++arg_it) {
+  for (unsigned i = 0; i < node->m_fields.size(); ++i, ++arg_it)
+  {
     llvm::Value *field_ptr =
         builder.CreateStructGEP(llvm_struct_type, struct_alloca, i);
     builder.CreateStore(arg_it, field_ptr);
@@ -316,12 +374,14 @@ void CodeGen::visit(aloha::StructDecl *node) {
   std::cout << "passed struct" << std::endl;
 }
 
-void CodeGen::visit(aloha::StructInstantiation *node) {
+void CodeGen::visit(aloha::StructInstantiation *node)
+{
   AlohaType::Type struct_type = node->m_type;
   std::string struct_name = type_to_struct[struct_type];
 
   auto struct_type_it = struct_types.find(struct_name);
-  if (struct_type_it == struct_types.end()) {
+  if (struct_type_it == struct_types.end())
+  {
     throw std::runtime_error("Unknown struct type: " + node->m_struct_name);
   }
 
@@ -329,14 +389,16 @@ void CodeGen::visit(aloha::StructInstantiation *node) {
 
   // Prepare arguments for the constructor call
   std::vector<llvm::Value *> ctor_args;
-  for (const auto &arg : node->m_field_values) {
+  for (const auto &arg : node->m_field_values)
+  {
     arg->accept(*this);
     ctor_args.push_back(current_val);
   }
 
   // Call the constructor function
   llvm::Function *ctor_function = module->getFunction("create_" + struct_name);
-  if (!ctor_function) {
+  if (!ctor_function)
+  {
     throw std::runtime_error("Constructor function not found for struct: " +
                              struct_name);
   }
@@ -344,7 +406,8 @@ void CodeGen::visit(aloha::StructInstantiation *node) {
   current_val = builder.CreateCall(ctor_function, ctor_args, "struct_instance");
 }
 
-void CodeGen::visit(aloha::StructFieldAccess *node) {
+void CodeGen::visit(aloha::StructFieldAccess *node)
+{
   node->m_struct_expr->accept(*this);
   llvm::Value *struct_ptr = current_val;
 
@@ -352,7 +415,8 @@ void CodeGen::visit(aloha::StructFieldAccess *node) {
   std::string struct_name = type_to_struct[struct_type];
 
   auto struct_type_it = struct_types.find(struct_name);
-  if (struct_type_it == struct_types.end()) {
+  if (struct_type_it == struct_types.end())
+  {
     throw std::runtime_error("Unknown struct type: " + struct_name);
   }
 
@@ -366,7 +430,8 @@ void CodeGen::visit(aloha::StructFieldAccess *node) {
                                    "fieldptr");
 }
 
-void CodeGen::visit(aloha::StructFieldAssignment *node) {
+void CodeGen::visit(aloha::StructFieldAssignment *node)
+{
   node->m_struct_expr->accept(*this);
   llvm::Value *struct_ptr = current_val;
 
@@ -374,12 +439,14 @@ void CodeGen::visit(aloha::StructFieldAssignment *node) {
   std::string struct_name = type_to_struct[struct_type];
 
   auto struct_type_it = struct_types.find(struct_name);
-  if (struct_type_it == struct_types.end()) {
+  if (struct_type_it == struct_types.end())
+  {
     throw std::runtime_error("Unknown struct type: " + struct_name);
   }
 
   node->m_value->accept(*this);
-  if (!current_val) {
+  if (!current_val)
+  {
     std::runtime_error("Cannot codegen rvalue of struct");
   }
 
@@ -391,18 +458,22 @@ void CodeGen::visit(aloha::StructFieldAssignment *node) {
   builder.CreateStore(current_val, field_ptr);
 }
 
-void CodeGen::visit(aloha::StatementBlock *node) {
-  for (auto &stmt : node->m_statements) {
+void CodeGen::visit(aloha::StatementBlock *node)
+{
+  for (auto &stmt : node->m_statements)
+  {
     stmt->accept(*this);
   }
 }
 
-void CodeGen::visit(aloha::Array *node) {
+void CodeGen::visit(aloha::Array *node)
+{
   llvm::Type *elementType = get_llvm_type(node->m_type);
   llvm::ArrayType *arrayType = llvm::ArrayType::get(elementType, node->m_size);
   llvm::AllocaInst *arrayAlloca =
       builder.CreateAlloca(arrayType, nullptr, "array");
-  for (size_t i = 0; i < node->m_members.size(); ++i) {
+  for (size_t i = 0; i < node->m_members.size(); ++i)
+  {
     node->m_members[i]->accept(*this);
     llvm::Value *memberValue = current_val;
 
@@ -416,14 +487,18 @@ void CodeGen::visit(aloha::Array *node) {
   current_val = arrayAlloca;
 }
 
-void CodeGen::visit(aloha::Program *node) {
-  for (auto &n : node->m_nodes) {
+void CodeGen::visit(aloha::Program *node)
+{
+  for (auto &n : node->m_nodes)
+  {
     n->accept(*this);
   }
 }
 
-llvm::Type *CodeGen::get_llvm_type(AlohaType::Type type) {
-  switch (type) {
+llvm::Type *CodeGen::get_llvm_type(AlohaType::Type type)
+{
+  switch (type)
+  {
   case AlohaType::Type::NUMBER:
     return llvm::Type::getDoubleTy(context);
   case AlohaType::Type::VOID:
@@ -433,12 +508,15 @@ llvm::Type *CodeGen::get_llvm_type(AlohaType::Type type) {
   case AlohaType::Type::STRING:
     return llvm::PointerType::get(llvm::Type::getInt8Ty(context), 0);
   default:
-    if (AlohaType::is_struct_type(type)) {
+    if (AlohaType::is_struct_type(type))
+    {
       auto it = type_to_struct.find(type);
-      if (it != type_to_struct.end()) {
+      if (it != type_to_struct.end())
+      {
         std::string struct_name = it->second;
         auto struct_it = struct_types.find(struct_name);
-        if (struct_it != struct_types.end()) {
+        if (struct_it != struct_types.end())
+        {
           return struct_it->second;
         }
       }
@@ -450,29 +528,34 @@ llvm::Type *CodeGen::get_llvm_type(AlohaType::Type type) {
   }
 }
 
-void CodeGen::dump_ir() const {
+void CodeGen::dump_ir() const
+{
   module->print(llvm::outs(), nullptr);
   // dumpNamedValues();
 }
 
 void CodeGen::print_value() const { print_value(current_val); }
 
-void CodeGen::print_value(llvm::Value *value) const {
+void CodeGen::print_value(llvm::Value *value) const
+{
   std::string value_str;
   llvm::raw_string_ostream rso(value_str);
   value->print(rso);
   std::cout << rso.str() << std::endl;
 }
-void CodeGen::print_llvm_type(llvm::Type *type) const {
+void CodeGen::print_llvm_type(llvm::Type *type) const
+{
   std::string type_str;
   llvm::raw_string_ostream rso(type_str);
   type->print(rso);
   std::cout << rso.str() << std::endl;
 }
 
-void CodeGen::dump_struct_types() const {
+void CodeGen::dump_struct_types() const
+{
   std::cout << "DUMPING STRUCT TYPES" << std::endl;
-  for (const auto &pair : struct_types) {
+  for (const auto &pair : struct_types)
+  {
     std::string name = pair.first;
     std::cout << "Struct: " << name << std::endl;
     std::cout << "Type: ";
@@ -481,9 +564,11 @@ void CodeGen::dump_struct_types() const {
   }
 }
 
-void CodeGen::dump_named_values() const {
+void CodeGen::dump_named_values() const
+{
   std::cout << "DUMPING NAMED VALUES" << std::endl;
-  for (const auto &pair : named_values) {
+  for (const auto &pair : named_values)
+  {
     std::string name = pair.first;
     std::cout << "Variable: " << name << std::endl;
     std::cout << "Value: " << std::endl;
@@ -495,7 +580,8 @@ void CodeGen::dump_named_values() const {
   }
 }
 
-void CodeGen::add_builtin_fns() {
+void CodeGen::add_builtin_fns()
+{
   llvm::FunctionType *print_type =
       llvm::FunctionType::get(llvm::Type::getVoidTy(context),
                               {llvm::PointerType::getUnqual(context)}, false);

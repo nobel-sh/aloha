@@ -1,12 +1,13 @@
 #ifndef SEMANTIC_ANALYZER_H
 #define SEMANTIC_ANALYZER_H
 
-#include "ast.h"
-#include "ast_visitor.h"
+#include "ast/ast.h"
+#include "ast/visitor.h"
 #include "symbol_table.h"
 #include "type.h"
 
-class SemanticAnalyzer : public ASTVisitor {
+class SemanticAnalyzer : public ASTVisitor
+{
 public:
   void analyze(aloha::Program *program);
 
