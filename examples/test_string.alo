@@ -8,8 +8,9 @@ fun greet(name:string) -> void {
     println("!");
 }
 
-fun main()->void {
+fun main() -> number {
     hello_world();
     imut name = "John Doe";
     greet(name);
+    return 0;
 }

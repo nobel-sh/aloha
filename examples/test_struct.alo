@@ -7,7 +7,7 @@ struct Bar{
     test: number
 }
 
-fun main()->void {
+fun main() -> number {
     imut foo_struct = Foo{12, "hello"};
     imut bar_struct = Bar{34};
 
@@ -28,4 +28,5 @@ fun main()->void {
     printlnNum(new_bar_field);
 
 
+    return 0;
 }

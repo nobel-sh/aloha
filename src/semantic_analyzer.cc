@@ -299,6 +299,15 @@ void SemanticAnalyzer::visit(aloha::ForLoop *node)
 
 void SemanticAnalyzer::visit(aloha::Function *node)
 {
+  // Special validation for main function
+  if (node->m_name->m_name == "main")
+  {
+    if (node->m_return_type != AlohaType::Type::NUMBER)
+    {
+      error.add_error("main function must return numeric value");
+    }
+  }
+
   std::vector<AlohaType::Type> parameterType;
   for (const auto &param : node->m_parameters)
   {

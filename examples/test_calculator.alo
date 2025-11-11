@@ -12,7 +12,8 @@ fun calculator(left:number, right:number, op:number) -> number {
     return result;
 }
 
-fun main() -> void {
+fun main() -> number {
     mut result  : number = calculator(10,20,0);
     printlnNum(result);
+    return 0;
 }

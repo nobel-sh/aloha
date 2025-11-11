@@ -1,4 +1,5 @@
-fun main() -> void{
+fun main() -> number {
   imut tt = -10;
   printlnNum(tt);
+  return 0;
 }

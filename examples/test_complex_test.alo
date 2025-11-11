@@ -87,7 +87,7 @@ fun countdown(n: number) -> void {
     countdown(n - 1);
 }
 
-fun main() -> void {
+fun main() -> number {
     println("=== Aloha Complex Test Suite ===");
     println("");
     
@@ -178,4 +178,5 @@ fun main() -> void {
     println("");
     
     println("=== All Tests Completed Successfully ===");
+    return 0;
 }

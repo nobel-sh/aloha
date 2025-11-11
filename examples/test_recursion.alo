@@ -41,7 +41,7 @@ fun power(base: number, exp: number) -> number {
     return base * power(base, exp - 1);
 }
 
-fun main() -> void {
+fun main() -> number {
     println("=== Aloha Complex Test ===");
     println("");
     
@@ -84,4 +84,5 @@ fun main() -> void {
     println("");
     
     println("=== All Tests Passed ===");
+    return 0;
 }

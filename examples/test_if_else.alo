@@ -5,7 +5,7 @@ fun can_vote(age:number)-> bool {
     return true;
 }
 
-fun main()-> void {
+fun main() -> number {
     imut age:number = 16;
     if (can_vote(age)) {
        println("Can vote");
@@ -13,4 +13,5 @@ fun main()-> void {
     else {
         println("Can not vote");
     }
+    return 0;
 }

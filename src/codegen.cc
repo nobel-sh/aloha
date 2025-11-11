@@ -176,6 +176,8 @@ void CodeGen::visit(aloha::FunctionCall *node)
 
 void CodeGen::visit(aloha::ReturnStatement *node)
 {
+  bool is_main = current_fn->getName() == "main";
+
   // Handle void return
   if (!node->m_expression)
   {
@@ -184,7 +186,20 @@ void CodeGen::visit(aloha::ReturnStatement *node)
   else
   {
     node->m_expression->accept(*this);
-    builder.CreateRet(current_val);
+
+    if (is_main && node->m_expression->get_type() == AlohaType::Type::NUMBER)
+    {
+      // Convert number to int32 for main's exit code
+      llvm::Value *exit_code = builder.CreateFPToSI(
+          current_val,
+          llvm::Type::getInt32Ty(context),
+          "exit_code");
+      builder.CreateRet(exit_code);
+    }
+    else
+    {
+      builder.CreateRet(current_val);
+    }
   }
 
   // Ensure no more code is added to the function after a return statement.
@@ -291,8 +306,21 @@ void CodeGen::visit(aloha::Function *node)
     param_types.push_back(get_llvm_type(param.m_type));
   }
 
+  // Special handling for main: always return int32
+  bool is_main = node->m_name->m_name == "main";
+  llvm::Type *return_type;
+
+  if (is_main)
+  {
+    return_type = llvm::Type::getInt32Ty(context);
+  }
+  else
+  {
+    return_type = get_llvm_type(node->m_return_type);
+  }
+
   llvm::FunctionType *func_type = llvm::FunctionType::get(
-      get_llvm_type(node->m_return_type), param_types, false);
+      return_type, param_types, false);
   llvm::Function *function =
       llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
                              node->m_name->m_name, module.get());
@@ -318,14 +346,25 @@ void CodeGen::visit(aloha::Function *node)
 
   current_fn = function;
   node->m_body->accept(*this);
-  if (node->m_return_type == AlohaType::Type::VOID)
+
+  // Add default return if function doesn't have a terminator
+  if (!builder.GetInsertBlock()->getTerminator())
   {
-    builder.CreateRetVoid();
-  }
-  else if (!builder.GetInsertBlock()->getTerminator())
-  {
-    builder.CreateRet(
-        llvm::Constant::getNullValue(get_llvm_type(node->m_return_type)));
+    if (is_main)
+    {
+      // Main function returns 0 by default
+      llvm::Value *zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0);
+      builder.CreateRet(zero);
+    }
+    else if (node->m_return_type == AlohaType::Type::VOID)
+    {
+      builder.CreateRetVoid();
+    }
+    else
+    {
+      builder.CreateRet(
+          llvm::Constant::getNullValue(get_llvm_type(node->m_return_type)));
+    }
   }
 
   llvm::verifyFunction(*function);
