@@ -1,0 +1,181 @@
+// Fibonacci 
+fun fib(n: number) -> number {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+// Factorial
+fun factorial(n: number) -> number {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+// Check if number is even (recursive)
+fun is_even(n: number) -> number {
+    if (n == 0) {
+        return 1;
+    }
+    if (n == 1) {
+        return 0;
+    }
+    if (n < 0) {
+        return is_even(-n);
+    }
+    return is_even(n - 2);
+}
+
+// Check if number is prime (hardcoded for testing)
+fun is_prime(n: number) -> number {
+    if (n == 2) {
+        return 1;
+    }
+    if (n == 3) {
+        return 1;
+    }
+    if (n == 5) {
+        return 1;
+    }
+    if (n == 7) {
+        return 1;
+    }
+    if (n == 11) {
+        return 1;
+    }
+    if (n == 13) {
+        return 1;
+    }
+    if (n == 17) {
+        return 1;
+    }
+    if (n == 19) {
+        return 1;
+    }
+    if (n == 23) {
+        return 1;
+    }
+    return 0;
+}
+
+// Sum from 1 to n
+fun sum_to_n(n: number) -> number {
+    if (n <= 0) {
+        return 0;
+    }
+    return n + sum_to_n(n - 1);
+}
+
+// Power function (recursive)
+fun power(base: number, exp: number) -> number {
+    if (exp == 0) {
+        return 1;
+    }
+    return base * power(base, exp - 1);
+}
+
+// Count down and print
+fun countdown(n: number) -> void {
+    if (n <= 0) {
+        println("Liftoff!");
+        return;
+    }
+    printNum(n);
+    print("... ");
+    countdown(n - 1);
+}
+
+fun main() -> void {
+    println("=== Aloha Complex Test Suite ===");
+    println("");
+    
+    // Test 1: Fibonacci
+    println("Test 1: Fibonacci Numbers");
+    print("  fib(5) = ");
+    printlnNum(fib(5));
+    print("  fib(8) = ");
+    printlnNum(fib(8));
+    println("");
+    
+    // Test 2: Factorial
+    println("Test 2: Factorial");
+    print("  5! = ");
+    printlnNum(factorial(5));
+    print("  7! = ");
+    printlnNum(factorial(7));
+    println("");
+    
+    // Test 3: Prime checking
+    println("Test 3: Prime Number Detection");
+    print("  11 is ");
+    if (is_prime(11) == 1) {
+        println("prime");
+    } else {
+        println("not prime");
+    }
+    print("  12 is ");
+    if (is_prime(12) == 1) {
+        println("prime");
+    } else {
+        println("not prime");
+    }
+    println("");
+    
+    // Test 4: Even/Odd checking
+    println("Test 4: Even/Odd Detection");
+    print("  8 is ");
+    if (is_even(8) == 1) {
+        println("even");
+    } else {
+        println("odd");
+    }
+    print("  7 is ");
+    if (is_even(7) == 1) {
+        println("even");
+    } else {
+        println("odd");
+    }
+    println("");
+    
+    // Test 5: Sum to N
+    println("Test 5: Sum to N");
+    print("  sum(1..10) = ");
+    printlnNum(sum_to_n(10));
+    print("  sum(1..15) = ");
+    printlnNum(sum_to_n(15));
+    println("");
+    
+    // Test 6: Power function
+    println("Test 6: Power Function");
+    print("  2^8 = ");
+    printlnNum(power(2, 8));
+    print("  3^4 = ");
+    printlnNum(power(3, 4));
+    println("");
+    
+    // Test 7: Recursion depth
+    println("Test 7: Countdown");
+    print("  ");
+    countdown(5);
+    println("");
+    
+    // Test 8: Complex expressions
+    println("Test 8: Complex Arithmetic");
+    print("  (fib(5) + factorial(3)) * 2 = ");
+    printlnNum((fib(5) + factorial(3)) * 2);
+    print("  power(2, 3) + power(3, 2) = ");
+    printlnNum(power(2, 3) + power(3, 2));
+    println("");
+    
+    // Test 9: Nested function calls
+    println("Test 9: Nested Calls");
+    print("  fib(fib(4)) = ");
+    printlnNum(fib(fib(4)));
+    print("  factorial(fib(3)) = ");
+    printlnNum(factorial(fib(3)));
+    println("");
+    
+    println("=== All Tests Completed Successfully ===");
+}

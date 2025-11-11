@@ -84,6 +84,10 @@ void CodeGen::visit(aloha::BinaryExpression *node)
   {
     current_val = builder.CreateFDiv(left, right, "divtmp");
   }
+  else if (node->m_op == "%")
+  {
+    current_val = builder.CreateFRem(left, right, "modtmp");
+  }
   else if (node->m_op == ">=")
   {
     current_val = builder.CreateFCmpOGE(left, right, "gtetmpe");
@@ -172,8 +176,16 @@ void CodeGen::visit(aloha::FunctionCall *node)
 
 void CodeGen::visit(aloha::ReturnStatement *node)
 {
-  node->m_expression->accept(*this);
-  builder.CreateRet(current_val);
+  // Handle void return
+  if (!node->m_expression)
+  {
+    builder.CreateRetVoid();
+  }
+  else
+  {
+    node->m_expression->accept(*this);
+    builder.CreateRet(current_val);
+  }
 
   // Ensure no more code is added to the function after a return statement.
   llvm::BasicBlock *unreachable_block =

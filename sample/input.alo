@@ -1,6 +1,6 @@
 fun main()-> void {
-    print("What's your name: ")
-    imut name:string = input()
-    print("Hello, ")
-    println(name)
+    print("What's your name: ");
+    imut name:string = input();
+    print("Hello, ");
+    println(name);
 }

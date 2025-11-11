@@ -1,0 +1,9 @@
+fun main() -> void {
+    // Test type inference
+    imut x = 42;          // should infer int;
+    imut y = 3.14;        // should infer float;
+    imut z = x + 10;      // should infer int;
+ 
+    printlnNum(z);
+    println("No errors. Type inference works!");
+}

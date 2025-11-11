@@ -236,6 +236,16 @@ void SemanticAnalyzer::visit(aloha::FunctionCall *node)
 
 void SemanticAnalyzer::visit(aloha::ReturnStatement *node)
 {
+  // Handle void returns (no expression)
+  if (!node->m_expression)
+  {
+    if (current_fn && current_fn->m_return_type != AlohaType::Type::VOID)
+    {
+      error.add_error("Non-void function must return a value");
+    }
+    return;
+  }
+
   node->m_expression->accept(*this);
 
   if (current_fn &&

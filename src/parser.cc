@@ -263,7 +263,18 @@ std::unique_ptr<aloha::StatementBlock> Parser::parse_statements()
     {
       panic_parser("Unknown or unimplemented statement kind");
     }
+
+    // Check if it's a block statement before moving the pointer
+    bool is_block_stmt = dynamic_cast<aloha::IfStatement *>(stmt.get()) != nullptr ||
+                         dynamic_cast<aloha::WhileLoop *>(stmt.get()) != nullptr;
+
     statements->m_statements.push_back(std::move(stmt));
+
+    // Consume semicolon after statement if it's not a block statement
+    if (!is_block_stmt)
+    {
+      consume(TokenKind::SEMICOLON, "Expected ';' after statement");
+    }
   }
   if (!is_eof())
   {
@@ -297,11 +308,6 @@ std::unique_ptr<aloha::Statement> Parser::parse_variable_declaration()
     if (match(TokenKind::LEFT_BRACKET))
     {
       expression = parse_array();
-    }
-    else if (peek()->kind == TokenKind::IDENT &&
-             next()->kind == TokenKind::LEFT_BRACE)
-    {
-      expression = parse_struct_instantiation();
     }
     else
     {
@@ -341,7 +347,13 @@ std::unique_ptr<aloha::Statement> Parser::parse_return_statement()
 {
   Location loc = current_location();
   consume("return", "Expected 'return' keyword");
-  std::unique_ptr<aloha::Expression> expression = parse_expression(0);
+
+  std::unique_ptr<aloha::Expression> expression = nullptr;
+  if (!match(TokenKind::RIGHT_BRACE))
+  {
+    expression = parse_expression(0);
+  }
+
   return std::make_unique<aloha::ReturnStatement>(loc, std::move(expression));
 }
 
@@ -349,14 +361,16 @@ std::unique_ptr<aloha::Statement> Parser::parse_if_statement()
 {
   Location loc = current_location();
   consume("if", "Expected 'if' keyword");
+  consume(TokenKind::LEFT_PAREN, "Expected '(' after 'if'");
   auto condition = parse_expression(0);
+  consume(TokenKind::RIGHT_PAREN, "Expected ')' after condition");
   consume(TokenKind::LEFT_BRACE, "Expected '{' after condition");
   std::unique_ptr<aloha::StatementBlock> then_branch = parse_statements();
   std::unique_ptr<aloha::StatementBlock> else_branch = nullptr;
   if (match("else"))
   {
     advance();
-    if (match(TokenKind::IDENT) && match("if"))
+    if (match("if"))
     {
       std::vector<aloha::StmtPtr> else_stmts;
       loc = current_location();
@@ -380,7 +394,9 @@ std::unique_ptr<aloha::Statement> Parser::parse_while_loop()
 {
   Location loc = current_location();
   consume("while", "Expected 'while' keyword");
+  consume(TokenKind::LEFT_PAREN, "Expected '(' after 'while'");
   auto condition = parse_expression(0);
+  consume(TokenKind::RIGHT_PAREN, "Expected ')' after condition");
   consume(TokenKind::LEFT_BRACE, "Expected '{' keyword after condition");
   auto body = parse_statements();
   return std::make_unique<aloha::WhileLoop>(loc, std::move(condition),
@@ -391,10 +407,10 @@ enum Precedence
 {
   PREC_ASSIGNMENT = 1,
   PREC_CONDITIONAL,
+  PREC_COMPARISON,
   PREC_SUM,
   PREC_PRODUCT,
   PREC_PREFIX,
-  PREC_COMPARISON,
   PREC_POSTFIX,
   PREC_CALL
 };
@@ -404,6 +420,7 @@ std::map<std::string, Precedence> precedence = {
     {"-", PREC_SUM},
     {"*", PREC_PRODUCT},
     {"/", PREC_PRODUCT},
+    {"%", PREC_PRODUCT},
     {"<", PREC_COMPARISON},
     {">", PREC_COMPARISON},
     {"==", PREC_COMPARISON},
@@ -450,6 +467,13 @@ std::map<std::string, Parser::infix_parser_func> Parser::infix_parsers = {
      {
        return std::make_unique<aloha::BinaryExpression>(
            parser.current_location(), std::move(left), "/",
+           std::move(parser.parse_expression(PREC_PRODUCT)));
+     }},
+    {"%",
+     [](Parser &parser, auto left)
+     {
+       return std::make_unique<aloha::BinaryExpression>(
+           parser.current_location(), std::move(left), "%",
            std::move(parser.parse_expression(PREC_PRODUCT)));
      }},
     {"<",
