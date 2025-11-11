@@ -19,7 +19,7 @@ public:
   using infix_parser_func = std::function<std::unique_ptr<aloha::Expression>(
       Parser &, std::unique_ptr<aloha::Expression>)>;
 
-  explicit Parser(const std::vector<Token> &tokens);
+  explicit Parser(Lexer &lexer);
 
   std::unique_ptr<aloha::Program> parse();
   void dump(aloha::Program *p) const;
@@ -31,8 +31,9 @@ public:
   std::unique_ptr<aloha::Expression> parse_expression(int min_precedence);
 
 private:
-  const std::vector<Token> tokens;
-  size_t current;
+  Lexer *lexer;
+  Token current_token;
+  Token next_token;
   ErrorCollector error_collector;
   void report_error(const std::string &message);
   static std::map<std::string, prefix_parser_func> prefix_parsers;

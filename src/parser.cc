@@ -9,10 +9,17 @@
 #include <utility>
 #include <vector>
 
-Parser::Parser(const std::vector<Token> &tokens) : tokens(tokens), current(0) {}
+Parser::Parser(Lexer &lexer) 
+    : lexer(&lexer),
+      current_token(TokenKind::EOF_TOKEN, Location(1, 1)),
+      next_token(TokenKind::EOF_TOKEN, Location(1, 1)) {
+  // Initialize with first two tokens
+  current_token = lexer.next_token();
+  next_token = lexer.next_token();
+}
 
 bool Parser::is_eof() const {
-  return current >= tokens.size() || peek()->kind == TokenKind::EOF_TOKEN;
+  return current_token.kind == TokenKind::EOF_TOKEN;
 }
 
 void Parser::panic_parser(const std::string &message) {
@@ -24,8 +31,9 @@ void Parser::panic_parser(const std::string &message) {
 Location Parser::current_location() const { return peek()->loc; }
 
 void Parser::advance() {
-  if (!is_eof() && next()) {
-    ++current;
+  if (!is_eof()) {
+    current_token = next_token;
+    next_token = lexer->next_token();
   }
 }
 
@@ -50,11 +58,7 @@ std::optional<Token> Parser::peek() const { return get_token(false); }
 std::optional<Token> Parser::next() const { return get_token(true); }
 
 std::optional<Token> Parser::get_token(bool use_next) const {
-  size_t index = current + (use_next ? 1 : 0);
-  if (index < tokens.size()) {
-    return tokens[index];
-  }
-  return std::nullopt;
+  return use_next ? next_token : current_token;
 }
 
 bool Parser::match(std::string value, bool use_next) {
