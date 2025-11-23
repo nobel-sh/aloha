@@ -1,5 +1,5 @@
-#include "cli.h"
-#include "driver.h"
+#include "compiler/cli.h"
+#include "compiler/driver.h"
 #include <iostream>
 
 int main(int argc, char *argv[])

@@ -1,4 +1,4 @@
-#include "semantic_analyzer.h"
+#include "sema.h"
 #include "ast/ast.h"
 #include "type.h"
 #include <memory>

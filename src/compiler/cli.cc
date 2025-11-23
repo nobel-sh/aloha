@@ -8,15 +8,13 @@ void CommandLineParser::print_help()
     std::cout << "\nUsage: aloha [filepath] [options]\n"
               << "Options:\n"
               << "  --help, -h        Show this help message\n"
-              << "  --version, -v     Show program version\n"
               << "  --dump            Dump extra debug information\n"
               << "  --no-optimize     Turn off optimization\n";
 }
 
 void CommandLineParser::print_version()
 {
-    std::cout << "Aloha Programming Language Compiler\n"
-              << "Version: 0.1.0\n";
+    std::cout << "Aloha Programming Language Compiler\n";
 }
 
 static std::vector<std::string> split_on(const std::string &str, char delimiter)

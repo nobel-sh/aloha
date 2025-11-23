@@ -1,10 +1,10 @@
 #ifndef DRIVER_H_
 #define DRIVER_H_
 
-#include "codegen.h"
-#include "lexer.h"
-#include "parser.h"
-#include "semantic_analyzer.h"
+#include "../codegen.h"
+#include "../lexer.h"
+#include "../parser.h"
+#include "../sema.h"
 #include <memory>
 #include <string>
 

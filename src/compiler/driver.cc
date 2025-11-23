@@ -1,7 +1,7 @@
 #include "driver.h"
-#include "objgen.h"
-#include "reader.h"
-#include "type.h"
+#include "../objgen.h"
+#include "../utils/reader.h"
+#include "../type.h"
 #include <cstdlib>
 #include <iostream>
 
