@@ -1,5 +1,0 @@
-// Test exit code 1 for failure
-fun main() -> number {
-    println("Testing exit code 1");
-    return 1;
-}

@@ -1,0 +1,9 @@
+fun add(num: number, to_add: number) -> number {
+    return num+to_add;
+}
+
+fun main() -> number {
+    imut k = add(10, 111110);
+    printlnNum(k);
+    return 0;
+}

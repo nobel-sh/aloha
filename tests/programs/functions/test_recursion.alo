@@ -1,5 +1,3 @@
-// Complex Test: Multiple Features Demo
-
 fun fib(n: number) -> number {
     if (n <= 1) {
         return n;

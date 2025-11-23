@@ -1,5 +1,8 @@
 fun main() -> number {
-  imut tt = -10;
-  printlnNum(tt);
+  imut foo = -10;
+  printlnNum(foo);
+
+  imut bar = foo + 10;
+  printlnNum(bar);
   return 0;
 }
