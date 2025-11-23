@@ -1,0 +1,16 @@
+struct Point {
+  x: number,
+  y: number
+}
+
+fun main() -> number {
+    imut point = Point{5, 10};
+
+    printlnNum(point->x);
+    printlnNum(point->y);
+
+    // This should cause a type error - cannot modify immutable struct
+    point->x = 15;
+
+    return 0;
+}

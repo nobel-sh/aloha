@@ -17,16 +17,5 @@ fun main() -> number {
     printlnNum(foo_field);
     printlnNum(bar_field);
 
-
-    foo_struct->bar = 24;
-    bar_struct->test = 68;
-
-    imut new_foo_field = foo_struct->bar;
-    imut new_bar_field = bar_struct->test;
-
-    printlnNum(new_foo_field);
-    printlnNum(new_bar_field);
-
-
     return 0;
 }

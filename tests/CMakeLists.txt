@@ -9,7 +9,7 @@ FetchContent_MakeAvailable(googletest)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 file(GLOB_RECURSE TEST_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/unit_tests/*.cc"
 )
 
 add_executable(run_aloha_tests ${TEST_SOURCES})

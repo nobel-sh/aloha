@@ -1,0 +1,19 @@
+struct Triple {
+  first: number,
+  second: number,
+  third: number
+}
+
+fun main() -> number {
+    imut triple = Triple{100, 200, 300};
+
+    imut a = triple->first;
+    imut b = triple->second;
+    imut c = triple->third;
+
+    printlnNum(a);
+    printlnNum(b);
+    printlnNum(c);
+
+    return 0;
+}

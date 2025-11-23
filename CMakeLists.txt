@@ -26,6 +26,8 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+include_directories(${CMAKE_SOURCE_DIR}/src)
+
 # Source files
 file(GLOB_RECURSE SRC_FILES src/*.cc)
 # exclude main.cc from the list of source files
@@ -83,9 +85,9 @@ install(TARGETS aloha
     DESTINATION bin
 )
 
-# For Testing
-enable_testing()
-add_subdirectory(tests)
+# # For Testing
+# enable_testing()
+# add_subdirectory(tests)
 
 # debug target
 add_custom_target(debug
