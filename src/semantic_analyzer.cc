@@ -427,6 +427,18 @@ void SemanticAnalyzer::visit(aloha::StructFieldAssignment *node)
     return;
   }
 
+  aloha::Identifier *ident = dynamic_cast<aloha::Identifier *>(node->m_struct_expr.get());
+  if (ident)
+  {
+    VariableInfo *var_info = symbol_table.get_variable(ident->m_name);
+    if (var_info && !var_info->is_mutable)
+    {
+      error.add_error("Cannot assign to field of immutable struct variable: " +
+                      ident->m_name);
+      return;
+    }
+  }
+
   StructInfo *struct_info = symbol_table.get_struct_by_type(struct_type);
   if (!struct_info)
   {
