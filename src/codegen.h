@@ -33,6 +33,7 @@ private:
   void add_builtin_fns();
   std::unordered_map<std::string, llvm::AllocaInst *> named_values;
   std::unordered_map<std::string, llvm::StructType *> struct_types;
+  std::unordered_map<std::string, std::vector<std::string>> struct_field_names;
   std::unordered_map<AlohaType::Type, std::string> type_to_struct;
   llvm::Value *current_val;   // Current value during traversal
   llvm::Function *current_fn; // current function

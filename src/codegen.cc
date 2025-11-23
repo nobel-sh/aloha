@@ -385,9 +385,11 @@ void CodeGen::visit(aloha::StructDecl *node)
   }
 
   std::vector<llvm::Type *> field_types;
+  std::vector<std::string> field_names;
   for (const auto &field : node->m_fields)
   {
     field_types.push_back(get_llvm_type(field.m_type));
+    field_names.push_back(field.m_name);
   }
 
   llvm::StructType *llvm_struct_type =
@@ -395,9 +397,7 @@ void CodeGen::visit(aloha::StructDecl *node)
 
   struct_types[struct_name] = llvm_struct_type;
   struct_types[AlohaType::to_string(struct_type)] = llvm_struct_type;
-
-  // The struct is valid
-  // now, create a constructor function for structs
+  struct_field_names[struct_name] = field_names;
 
   std::vector<llvm::Type *> ctor_param_types = field_types;
   llvm::FunctionType *ctor_type = llvm::FunctionType::get(
@@ -472,9 +472,33 @@ void CodeGen::visit(aloha::StructFieldAccess *node)
   }
 
   llvm::StructType *llvm_struct_type = struct_type_it->second;
-  // for ()
-  unsigned int field_idx = 0; // TODO: (hardcoded) CHANGE THIS QUICK CURRENTLY
-                              // NO WAY TO IDENTIFY FIELD
+
+  // Find the field index by name
+  auto field_names_it = struct_field_names.find(struct_name);
+  if (field_names_it == struct_field_names.end())
+  {
+    throw std::runtime_error("Struct field names not found for: " + struct_name);
+  }
+
+  const auto &field_names = field_names_it->second;
+  unsigned int field_idx = 0;
+  bool found = false;
+  for (unsigned int i = 0; i < field_names.size(); ++i)
+  {
+    if (field_names[i] == node->m_field_name)
+    {
+      field_idx = i;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found)
+  {
+    throw std::runtime_error("Field '" + node->m_field_name +
+                             "' not found in struct " + struct_name);
+  }
+
   llvm::Value *field_ptr =
       builder.CreateStructGEP(llvm_struct_type, struct_ptr, field_idx);
   current_val = builder.CreateLoad(get_llvm_type(node->get_type()), field_ptr,
@@ -502,8 +526,33 @@ void CodeGen::visit(aloha::StructFieldAssignment *node)
   }
 
   llvm::StructType *llvm_struct_type = struct_type_it->second;
-  unsigned int field_idx = 0; // TODO: (hardcoded) CHANGE THIS QUICK CURRENTLY
-                              // NO WAY TO IDENTIFY FIELD
+
+  // Find the field index by name
+  auto field_names_it = struct_field_names.find(struct_name);
+  if (field_names_it == struct_field_names.end())
+  {
+    throw std::runtime_error("Struct field names not found for: " + struct_name);
+  }
+
+  const auto &field_names = field_names_it->second;
+  unsigned int field_idx = 0;
+  bool found = false;
+  for (unsigned int i = 0; i < field_names.size(); ++i)
+  {
+    if (field_names[i] == node->m_field_name)
+    {
+      field_idx = i;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found)
+  {
+    throw std::runtime_error("Field '" + node->m_field_name +
+                             "' not found in struct " + struct_name);
+  }
+
   llvm::Value *field_ptr = builder.CreateStructGEP(llvm_struct_type, struct_ptr,
                                                    field_idx, "fieldptr");
   builder.CreateStore(current_val, field_ptr);
