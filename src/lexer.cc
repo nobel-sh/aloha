@@ -2,6 +2,44 @@
 #include <cctype>
 #include <iostream>
 #include <unordered_map>
+#include <sstream>
+
+// Helper function to process escape sequences in strings
+static std::string process_escape_sequences(const std::string &raw_str)
+{
+  std::ostringstream result;
+  for (size_t i = 0; i < raw_str.size(); ++i)
+  {
+    if (raw_str[i] == '\\' && i + 1 < raw_str.size())
+    {
+      char next = raw_str[i + 1];
+      switch (next)
+      {
+      case 'n':
+        result << '\n';
+        break;
+      case 't':
+        result << '\t';
+        break;
+      case '"':
+        result << '"';
+        break;
+      case '\\':
+        result << '\\';
+        break;
+      default:
+        result << '\\' << next;
+        break; // Shouldn't happen if lexer validates
+      }
+      ++i; // Skip the next character
+    }
+    else
+    {
+      result << raw_str[i];
+    }
+  }
+  return result.str();
+}
 
 Lexer::Lexer(std::string_view source)
     : source(source), current_loc(1, 1), pos(0),
@@ -207,7 +245,7 @@ Token Lexer::lex_single_token()
     {
       if (peek_token() == '\n')
       {
-        add_error("Unterminated string");
+        add_error("Unterminated string (newline in string)");
         return Token(TokenKind::EOF_TOKEN, token_loc);
       }
       if (peek_token() == '\\')
@@ -230,14 +268,17 @@ Token Lexer::lex_single_token()
       }
     }
 
+    // If we exited the loop due to EOF instead of closing quote
     if (is_eof())
     {
-      add_error("Unterminated string");
+      add_error("Unterminated string (unexpected end of file)");
       return Token(TokenKind::EOF_TOKEN, token_loc);
     }
 
     consume_token();
-    return Token(TokenKind::STRING, std::string(source.substr(start_pos + 1, pos - start_pos - 2)), token_loc);
+    std::string raw_str = std::string(source.substr(start_pos + 1, pos - start_pos - 2));
+    std::string processed_str = process_escape_sequences(raw_str);
+    return Token(TokenKind::STRING, processed_str, token_loc);
   }
 
   default:

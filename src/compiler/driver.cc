@@ -4,6 +4,8 @@
 #include "../type.h"
 #include <cstdlib>
 #include <iostream>
+#include <unistd.h>
+#include <linux/limits.h>
 
 CompilerDriver::CompilerDriver(const CompilerConfig &config)
     : config(config), lexer(nullptr), parser(nullptr) {}
@@ -219,8 +221,27 @@ bool CompilerDriver::link_executable()
     {
         std::string object_name = config.file_name + ".o";
         std::string executable_name = config.file_name + ".out";
-        std::string object_files = object_name + " stdlib.o";
-        std::string command = "clang++ " + object_files + " -o " + executable_name;
+
+        // HACK: just hardcode the path to the standard library archive for now
+        // TODO: fix this
+        char exe_path[PATH_MAX];
+        ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1); // symlink to the current executable
+        if (len == -1)
+        {
+            std::cerr << "Error: Could not determine compiler executable path" << std::endl;
+            return false;
+        }
+        exe_path[len] = '\0';
+
+        std::string exe_dir(exe_path);
+        size_t last_slash = exe_dir.find_last_of('/');
+        if (last_slash != std::string::npos)
+        {
+            exe_dir = exe_dir.substr(0, last_slash);
+        }
+
+        std::string stdlib_path = exe_dir + "/libaloha_stdlib.a";
+        std::string command = "clang++ " + object_name + " " + stdlib_path + " -o " + executable_name;
 
         int result = std::system(command.c_str());
         if (result == 0)

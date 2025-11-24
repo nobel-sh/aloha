@@ -63,6 +63,7 @@ private:
   bool is_reserved_ident(Token t) const;
 
   std::unique_ptr<aloha::Function> parse_function();
+  std::unique_ptr<aloha::Function> parse_extern_function();
 
   std::vector<aloha::Parameter> parse_parameters();
   std::vector<aloha::StructField> parse_struct_field();

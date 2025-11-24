@@ -331,6 +331,12 @@ void CodeGen::visit(aloha::Function *node)
     arg.setName(node->m_parameters[idx++].m_name);
   }
 
+  // For extern functions, we don't generate a body
+  if (node->m_is_extern)
+  {
+    return;
+  }
+
   llvm::BasicBlock *basic_block =
       llvm::BasicBlock::Create(context, "entry", function);
   builder.SetInsertPoint(basic_block);

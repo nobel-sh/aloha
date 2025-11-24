@@ -104,6 +104,10 @@ std::unique_ptr<aloha::Program> Parser::parse()
     {
       program->m_nodes.push_back(parse_struct_decl());
     }
+    else if (match("extern"))
+    {
+      program->m_nodes.push_back(parse_extern_function());
+    }
     else
       program->m_nodes.push_back(parse_function());
   }
@@ -124,7 +128,24 @@ std::unique_ptr<aloha::Function> Parser::parse_function()
   auto statements = parse_statements();
   return std::make_unique<aloha::Function>(
       loc, std::move(identifier), std::move(parameters), std::move(return_type),
-      std::move(statements));
+      std::move(statements), false);
+}
+
+std::unique_ptr<aloha::Function> Parser::parse_extern_function()
+{
+  Location loc = current_location();
+  consume("extern", "Expected 'extern' keyword");
+  consume("fun", "Expected 'fun' keyword after 'extern'");
+  auto identifier = expect_identifier();
+  consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
+  auto parameters = parse_parameters();
+  consume(TokenKind::RIGHT_PAREN, "Expected ')' after parameters");
+  consume(TokenKind::THIN_ARROW, "Expected '->' before return type");
+  auto return_type = parse_type();
+  consume(TokenKind::SEMICOLON, "Expected ';' after extern function declaration");
+  return std::make_unique<aloha::Function>(
+      loc, std::move(identifier), std::move(parameters), std::move(return_type),
+      nullptr, true);
 }
 
 std::vector<aloha::StructField> Parser::parse_struct_field()

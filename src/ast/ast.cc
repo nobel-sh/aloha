@@ -116,10 +116,10 @@ namespace aloha
 
   Function::Function(Location loc, std::unique_ptr<Identifier> func_name,
                      std::vector<Parameter> params, Type return_type,
-                     std::unique_ptr<StatementBlock> body)
+                     std::unique_ptr<StatementBlock> body, bool is_extern)
       : Statement(loc), m_name(std::move(func_name)),
         m_parameters(std::move(params)), m_return_type(return_type),
-        m_body(std::move(body)) {}
+        m_body(std::move(body)), m_is_extern(is_extern) {}
 
   StructField::StructField(std::string name, Type type)
       : m_name(std::move(name)), m_type(type) {}

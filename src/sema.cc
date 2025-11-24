@@ -319,6 +319,12 @@ void SemanticAnalyzer::visit(aloha::Function *node)
     error.add_error("Function redeclaration: " + node->m_name->m_name);
   }
 
+  // For extern functions, we don't need to analyze the body
+  if (node->m_is_extern)
+  {
+    return;
+  }
+
   symbol_table.enter_scope();
   current_fn = node;
 

@@ -1,0 +1,41 @@
+extern fun runtime_write(fd: number, buf: string, count: number) -> number;
+extern fun runtime_strlen(s: string) -> number;
+extern fun runtime_flush(fd: number) -> void;
+extern fun runtime_exit(code: number) -> void;
+
+fun write_str(s: string) -> void {
+    imut len: number = runtime_strlen(s);
+    runtime_write(1, s, len);
+}
+
+fun writeln(s: string) -> void {
+    write_str(s);
+    runtime_write(1, "\n", 1);
+}
+
+fun demonstrate_extern() -> void {
+    writeln("=== Extern Keyword Test ===");
+    writeln("");
+    writeln("This program uses external C functions:");
+    writeln("  - runtime_write: Write bytes to file descriptor");
+    writeln("  - runtime_strlen: Get string length");
+    writeln("  - runtime_flush: Flush output buffer");
+    writeln("  - runtime_exit: Exit with code");
+    writeln("");
+    
+    write_str("String length test: ");
+    imut test_str: string = "Hello, World!";
+    imut len: number = runtime_strlen(test_str);
+    printlnNum(len);
+    
+    writeln("");
+    writeln("Flushing output...");
+    runtime_flush(1);
+    
+    writeln("Test complete!");
+}
+
+fun main() -> number {
+    demonstrate_extern();
+    return 0;
+}

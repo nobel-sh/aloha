@@ -274,10 +274,11 @@ namespace aloha
     std::vector<Parameter> m_parameters;
     Type m_return_type;
     std::unique_ptr<StatementBlock> m_body;
+    bool m_is_extern;
 
     Function(Location loc, std::unique_ptr<Identifier> func_name,
              std::vector<Parameter> params, Type return_type,
-             std::unique_ptr<StatementBlock> body);
+             std::unique_ptr<StatementBlock> body, bool is_extern = false);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
   };

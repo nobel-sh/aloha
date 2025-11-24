@@ -34,7 +34,7 @@ file(GLOB_RECURSE SRC_FILES src/*.cc)
 list(FILTER SRC_FILES EXCLUDE REGEX ".*main.cc$")
 
 # Standard library files
-file(GLOB_RECURSE STDLIB_FILES stdlib/*.cc)
+file(GLOB_RECURSE STDLIB_FILES stdlib/*.c stdlib/*.cc)
 
 add_library(aloha_core STATIC ${SRC_FILES})
 add_library(aloha_stdlib STATIC ${STDLIB_FILES})
