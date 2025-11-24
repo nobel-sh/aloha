@@ -7,6 +7,24 @@
 
 set -e
 
+BUILD_COMPILER=false
+for arg in "$@"; do
+    case $arg in
+        --build|-b)
+            BUILD_COMPILER=true
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  -b, --build   Build the compiler before running tests"
+            echo "  -h, --help    Show this help message"
+            exit 0
+            ;;
+    esac
+done
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPILER="$SCRIPT_DIR/build/aloha"
 EXAMPLES_DIR="$SCRIPT_DIR/tests/programs"
@@ -24,6 +42,16 @@ echo "  Aloha Test Runner"
 echo "================================================"
 echo "Temporary directory: $TEMP_DIR"
 echo ""
+
+if [ "$BUILD_COMPILER" = true ]; then
+    echo "Building compiler..."
+    if ! cmake --build "$SCRIPT_DIR/build" --target aloha > /dev/null 2>&1; then
+        echo -e "${RED}Error: Build failed${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Build successful${NC}"
+    echo ""
+fi
 
 cleanup() {
     echo ""
