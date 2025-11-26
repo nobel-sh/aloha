@@ -5,6 +5,7 @@
 #include "../lexer.h"
 #include "../parser.h"
 #include "../sema.h"
+#include "../resolver/import.h"
 #include <memory>
 #include <string>
 
@@ -42,12 +43,11 @@ private:
     Parser *parser;
     SemanticAnalyzer analyzer;
     CodeGen codegen;
+    Aloha::ImportResolver import_resolver;
 
-    std::string source_code;
     std::unique_ptr<aloha::Program> ast;
 
-    bool read_source();
-    bool lex_and_parse();
+    bool parse_and_resolve_imports();
     bool analyze_semantics();
     bool generate_code();
     bool optimize_code();

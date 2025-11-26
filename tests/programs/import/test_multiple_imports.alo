@@ -1,0 +1,16 @@
+import "stdlib/io.alo";
+import "stdlib/math_helpers.alo";
+
+fun main() -> number {
+    println("Testing imports!");
+    
+    imut result: number = add(5, 3);
+    print("5 + 3 = ");
+    printlnNum(result);
+    
+    imut product: number = multiply(4, 7);
+    print("4 * 7 = ");
+    printlnNum(product);
+    
+    return 0;
+}

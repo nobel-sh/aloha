@@ -25,6 +25,7 @@ namespace aloha
   void StructInstantiation::accept(ASTVisitor &visitor) { visitor.visit(this); }
   void Array::accept(ASTVisitor &visitor) { visitor.visit(this); }
   void Program::accept(ASTVisitor &visitor) { visitor.visit(this); }
+  void Import::accept(ASTVisitor &visitor) { visitor.visit(this); }
 
   // Constructors
   StatementBlock::StatementBlock(Location loc, std::vector<StmtPtr> stmts)

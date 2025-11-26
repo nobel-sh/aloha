@@ -62,6 +62,7 @@ private:
   void visit(aloha::Array *node) override;
   void visit(aloha::StatementBlock *node) override;
   void visit(aloha::Program *node) override;
+  void visit(aloha::Import *node) override;
 };
 
 #endif // CODEGEN_H_

@@ -1,0 +1,8 @@
+import "stdlib/greetings.alo";
+
+fun main() -> number {
+    println("=== Nested Import Test ===");
+    greet("Alice");
+    farewell("Bob");
+    return 0;
+}

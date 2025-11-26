@@ -1,0 +1,5 @@
+import "error_circular_a.alo";
+
+fun main() -> number {
+    return funcA();
+}

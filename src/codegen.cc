@@ -601,6 +601,10 @@ void CodeGen::visit(aloha::Program *node)
   }
 }
 
+void CodeGen::visit(aloha::Import *node)
+{
+}
+
 llvm::Type *CodeGen::get_llvm_type(AlohaType::Type type)
 {
   switch (type)

@@ -64,6 +64,7 @@ private:
 
   std::unique_ptr<aloha::Function> parse_function();
   std::unique_ptr<aloha::Function> parse_extern_function();
+  std::unique_ptr<aloha::Import> parse_import();
 
   std::vector<aloha::Parameter> parse_parameters();
   std::vector<aloha::StructField> parse_struct_field();

@@ -496,3 +496,7 @@ void SemanticAnalyzer::visit(aloha::Program *node)
     n->accept(*this);
   }
 }
+
+void SemanticAnalyzer::visit(aloha::Import *node)
+{
+}

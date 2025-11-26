@@ -28,6 +28,7 @@ public:
   virtual void visit(aloha::ExpressionStatement *node) = 0;
   virtual void visit(aloha::StatementBlock *node) = 0;
   virtual void visit(aloha::Program *node) = 0;
+  virtual void visit(aloha::Import *node) = 0;
 };
 
 #endif // ASTVISITOR_H_

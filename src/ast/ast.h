@@ -342,6 +342,17 @@ namespace aloha
     void accept(ASTVisitor &visitor) override;
   };
 
+  class Import : public Node
+  {
+  public:
+    std::string m_path;
+
+    explicit Import(Location loc, std::string path)
+        : Node(loc), m_path(path) {}
+    void write(std::ostream &os, unsigned long indent = 0) const override;
+    void accept(ASTVisitor &visitor) override;
+  };
+
 } // namespace aloha
 
 #endif // ALOHA_AST_H_

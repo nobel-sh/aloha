@@ -265,4 +265,9 @@ namespace aloha
         os << std::string(indent, ' ') << "}\n";
     }
 
+    void Import::write(std::ostream &os, unsigned long indent) const
+    {
+        os << std::string(indent, ' ') << "Import: \"" << m_path << "\"\n";
+    }
+
 } // namespace aloha

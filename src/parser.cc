@@ -100,7 +100,11 @@ std::unique_ptr<aloha::Program> Parser::parse()
   auto program = std::make_unique<aloha::Program>(current_location());
   while (!is_eof())
   {
-    if (match("struct"))
+    if (match("import"))
+    {
+      program->m_nodes.push_back(parse_import());
+    }
+    else if (match("struct"))
     {
       program->m_nodes.push_back(parse_struct_decl());
     }
@@ -146,6 +150,24 @@ std::unique_ptr<aloha::Function> Parser::parse_extern_function()
   return std::make_unique<aloha::Function>(
       loc, std::move(identifier), std::move(parameters), std::move(return_type),
       nullptr, true);
+}
+
+std::unique_ptr<aloha::Import> Parser::parse_import()
+{
+  Location loc = current_location();
+  consume("import", "Expected 'import' keyword");
+
+  if (!match(TokenKind::STRING))
+  {
+    report_error("Expected string literal after 'import'");
+    return nullptr;
+  }
+
+  std::string path = peek()->get_lexeme();
+  advance();
+  consume(TokenKind::SEMICOLON, "Expected ';' after import path");
+
+  return std::make_unique<aloha::Import>(loc, path);
 }
 
 std::vector<aloha::StructField> Parser::parse_struct_field()

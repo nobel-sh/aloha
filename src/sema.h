@@ -33,6 +33,7 @@ public:
   void visit(aloha::Array *node) override;
   void visit(aloha::StatementBlock *node) override;
   void visit(aloha::Program *node) override;
+  void visit(aloha::Import *node) override;
 
   void dump_symbol_table() { symbol_table.dump(); }
 

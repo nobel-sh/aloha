@@ -74,38 +74,15 @@ void CompilerDriver::dump_optimized_ir() const
     codegen.dump_ir();
 }
 
-bool CompilerDriver::read_source()
+bool CompilerDriver::parse_and_resolve_imports()
 {
     try
     {
-        source_code = Aloha::SrcReader(config.input_file).as_string();
-        return true;
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "ERROR: Failed to read source file: " << e.what() << std::endl;
-        return false;
-    }
-}
+        // Parse main file and resolve all imports in one step
+        ast = import_resolver.process_imports(config.input_file);
 
-bool CompilerDriver::lex_and_parse()
-{
-    try
-    {
-        // Create lexer and parser
-        std::string_view source_view(source_code);
-        delete lexer; // Clean up if re-parsing
-        delete parser;
-        lexer = new Lexer(source_view);
-        parser = new Parser(*lexer);
-
-        // Parse the source
-        ast = parser->parse();
-
-        // Check for lexer errors
-        if (lexer->has_error())
+        if (!ast)
         {
-            lexer->dump_errors();
             return false;
         }
 
@@ -114,7 +91,7 @@ bool CompilerDriver::lex_and_parse()
     }
     catch (const std::exception &e)
     {
-        std::cerr << "ERROR: Parsing failed: " << e.what() << std::endl;
+        std::cerr << "ERROR: Parsing and import resolution failed: " << e.what() << std::endl;
         return false;
     }
 }
@@ -266,24 +243,16 @@ bool CompilerDriver::link_executable()
 int CompilerDriver::compile()
 {
     // Execute compilation pipeline
-    if (!read_source())
+    if (!parse_and_resolve_imports())
         return 1;
-
-    if (!lex_and_parse())
-        return 1;
-
     if (!analyze_semantics())
         return 1;
-
     if (!generate_code())
         return 1;
-
     if (!optimize_code())
         return 1;
-
     if (!emit_object_file())
         return 1;
-
     if (!link_executable())
         return 1;
 
