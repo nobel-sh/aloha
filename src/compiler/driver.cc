@@ -140,8 +140,6 @@ std::string CompilerDriver::get_stdlib_path() const
 
     // try to find relative to executable
     char exe_path[PATH_MAX];
-
-#ifdef __linux__
     ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
     if (len != -1)
     {
@@ -153,23 +151,11 @@ std::string CompilerDriver::get_stdlib_path() const
             return stdlib_path.string();
         }
     }
-#elif __APPLE__
-    uint32_t size = sizeof(exe_path);
-    if (_NSGetExecutablePath(exe_path, &size) == 0)
-    {
-        std::filesystem::path exe_dir = std::filesystem::path(exe_path).parent_path();
-        std::filesystem::path stdlib_path = exe_dir / "libaloha_stdlib.a";
-        if (std::filesystem::exists(stdlib_path))
-        {
-            return stdlib_path.string();
-        }
-    }
-#endif
-
     // Fallback: look in build directory
     return "../build/libaloha_stdlib.a";
 }
 
+// link against libc and libaloha_stdlib.a
 bool CompilerDriver::link_executable()
 {
     try
@@ -178,18 +164,42 @@ bool CompilerDriver::link_executable()
         std::string executable_name = config.file_name + ".out";
         std::string stdlib_path = get_stdlib_path();
 
-        std::cout << "Linking with: " << stdlib_path << std::endl;
+        std::string linker;
+        const char *candidates[] = {"lld", "ld.lld", "ld"};
+        for (const char *candidate : candidates)
+        {
+            if (auto linker_path = llvm::sys::findProgramByName(candidate))
+            {
+                linker = linker_path.get();
+                break;
+            }
+        }
+
+        if (linker.empty())
+        {
+            std::cerr << "ERROR: No linker found (tried: lld, ld.lld, ld)" << std::endl;
+            return false;
+        }
+
+        std::cout << "Linking with: " << linker << std::endl;
 
         std::vector<llvm::StringRef> args = {
-            "clang++",
+            linker,
+            "-o",
+            executable_name,
+            "/usr/lib/x86_64-linux-gnu/crt1.o", // C runtime 1 startup
+            "/usr/lib/x86_64-linux-gnu/crti.o", // C runtime initialization
             object_name,
             stdlib_path,
-            "-o",
-            executable_name};
+            "/usr/lib/x86_64-linux-gnu/crtn.o", // C runtime termination
+            "-lc",                              // C standard library
+            "-dynamic-linker",
+            "/lib64/ld-linux-x86-64.so.2" // Dynamic linker for x86_64 Linux
+        };
 
         std::string error_msg;
         int result = llvm::sys::ExecuteAndWait(
-            llvm::sys::findProgramByName("clang++").get(),
+            linker,
             args,
             std::nullopt,
             {},
