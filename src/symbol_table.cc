@@ -5,9 +5,11 @@
 SymbolTable::SymbolTable() : struct_id_counter(0) { enter_scope(); }
 
 bool SymbolTable::add_variable(const std::string &name, AlohaType::Type type,
-                               bool is_assigned, bool is_mutable) {
+                               bool is_assigned, bool is_mutable)
+{
   auto &currentScope = variable_table_stack.back();
-  if (currentScope.find(name) != currentScope.end()) {
+  if (currentScope.find(name) != currentScope.end())
+  {
     return false;
   }
   // variableTableStack.back()[name] = {type, true};
@@ -17,8 +19,10 @@ bool SymbolTable::add_variable(const std::string &name, AlohaType::Type type,
 
 bool SymbolTable::add_function(
     const std::string &name, AlohaType::Type returnType,
-    const std::vector<AlohaType::Type> &parameterTypes) {
-  if (function_table.find(name) != function_table.end()) {
+    const std::vector<AlohaType::Type> &parameterTypes)
+{
+  if (function_table.find(name) != function_table.end())
+  {
     return false;
   }
   function_table[name] = {returnType, parameterTypes, true};
@@ -27,8 +31,10 @@ bool SymbolTable::add_function(
 
 AlohaType::Type
 SymbolTable::add_struct(const std::string &name,
-                        const std::vector<StructField> &fields) {
-  if (struct_table.find(name) != struct_table.end()) {
+                        const std::vector<StructField> &fields)
+{
+  if (struct_table.find(name) != struct_table.end())
+  {
     return AlohaType::Type::UNKNOWN;
   }
   AlohaType::Type new_type = AlohaType::create_struct_type(struct_id_counter++);
@@ -37,36 +43,45 @@ SymbolTable::add_struct(const std::string &name,
   return new_type;
 }
 
-VariableInfo *SymbolTable::get_variable(const std::string &name) {
+VariableInfo *SymbolTable::get_variable(const std::string &name)
+{
   for (auto it = variable_table_stack.rbegin();
-       it != variable_table_stack.rend(); ++it) {
+       it != variable_table_stack.rend(); ++it)
+  {
     auto found = it->find(name);
-    if (found != it->end()) {
+    if (found != it->end())
+    {
       return &found->second;
     }
   }
   return nullptr;
 }
 
-FunctionInfo *SymbolTable::get_function(const std::string &name) {
+FunctionInfo *SymbolTable::get_function(const std::string &name)
+{
   auto it = function_table.find(name);
-  if (it != function_table.end()) {
+  if (it != function_table.end())
+  {
     return &it->second;
   }
   return nullptr;
 }
 
-StructInfo *SymbolTable::get_struct(const std::string &name) {
+StructInfo *SymbolTable::get_struct(const std::string &name)
+{
   auto it = struct_table.find(name);
   return it != struct_table.end() ? &it->second : nullptr;
 }
 
-StructInfo *SymbolTable::get_struct_by_type(const AlohaType::Type &type) {
-  if (!AlohaType::is_struct_type(type)) {
+StructInfo *SymbolTable::get_struct_by_type(const AlohaType::Type &type)
+{
+  if (!AlohaType::is_struct_type(type))
+  {
     throw std::invalid_argument("Not a struct type");
   }
   auto it = struct_name.find(type);
-  if (it != struct_name.end()) {
+  if (it != struct_name.end())
+  {
     return get_struct(it->second);
   }
   return nullptr;
@@ -74,26 +89,32 @@ StructInfo *SymbolTable::get_struct_by_type(const AlohaType::Type &type) {
 
 void SymbolTable::enter_scope() { variable_table_stack.push_back({}); }
 
-void SymbolTable::leave_scope() {
-  if (!variable_table_stack.empty()) {
+void SymbolTable::leave_scope()
+{
+  if (!variable_table_stack.empty())
+  {
     variable_table_stack.pop_back();
   }
 }
 
-bool SymbolTable::is_builtin_function(std::string name) const {
+bool SymbolTable::is_builtin_function(std::string name) const
+{
   auto it =
       std::find(predefined_functions.begin(), predefined_functions.end(), name);
   return it != predefined_functions.end();
 }
 
-void SymbolTable::dump() const {
+void SymbolTable::dump() const
+{
   std::cout << "Symbol Table Dump:" << std::endl;
   std::cout << "Functions:" << std::endl;
-  for (const auto &[name, info] : function_table) {
+  for (const auto &[name, info] : function_table)
+  {
     std::cout << "  Function: " << name
               << " -> Return Type: " << AlohaType::to_string(info.return_type)
               << ", Parameters: ";
-    for (const auto &paramType : info.param_types) {
+    for (const auto &paramType : info.param_types)
+    {
       std::cout << AlohaType::to_string(paramType) << " ";
     }
     std::cout << std::endl;
@@ -101,24 +122,67 @@ void SymbolTable::dump() const {
 
   std::cout << "Variables:" << std::endl;
   int scopeLevel = 0;
-  for (const auto &scope : variable_table_stack) {
+  for (const auto &scope : variable_table_stack)
+  {
     std::cout << "  Scope Level " << scopeLevel++ << ":" << std::endl;
-    for (const auto &[name, info] : scope) {
+    for (const auto &[name, info] : scope)
+    {
       std::cout << "    Variable: " << name
                 << " -> Type: " << AlohaType::to_string(info.type) << std::endl;
     }
   }
 
   std::cout << "Structs:" << std::endl;
-  for (const auto &struct_info : struct_table) {
+  for (const auto &struct_info : struct_table)
+  {
     std::cout << "  " << struct_info.first << ": "
               << AlohaType::to_string(struct_info.second.type) << " {";
-    for (size_t i = 0; i < struct_info.second.fields.size(); ++i) {
+    for (size_t i = 0; i < struct_info.second.fields.size(); ++i)
+    {
       if (i > 0)
         std::cout << ", ";
       std::cout << struct_info.second.fields[i].name << ": "
                 << AlohaType::to_string(struct_info.second.fields[i].type);
     }
     std::cout << "}" << std::endl;
+  }
+}
+
+void SymbolTable::export_symbols(
+    std::unordered_map<std::string, FunctionInfo> &functions,
+    std::unordered_map<std::string, StructInfo> &structs) const
+{
+  for (const auto &[name, info] : function_table)
+  {
+    if (!is_builtin_function(name))
+    {
+      functions[name] = info;
+    }
+  }
+
+  for (const auto &[name, info] : struct_table)
+  {
+    structs[name] = info;
+  }
+}
+
+void SymbolTable::import_symbols(
+    const std::unordered_map<std::string, FunctionInfo> &functions,
+    const std::unordered_map<std::string, StructInfo> &structs)
+{
+  for (const auto &[name, info] : functions)
+  {
+    if (function_table.find(name) == function_table.end())
+    {
+      function_table[name] = info;
+    }
+  }
+
+  for (const auto &[name, info] : structs)
+  {
+    if (struct_table.find(name) == struct_table.end())
+    {
+      struct_table[name] = info;
+    }
   }
 }

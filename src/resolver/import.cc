@@ -20,7 +20,7 @@ namespace Aloha
             return std::filesystem::canonical(p).string();
         };
 
-        // try relative to current file directory first
+        // First try relative to current file directory
         std::filesystem::path current_dir = std::filesystem::path(current_file).parent_path();
         std::filesystem::path resolved = current_dir / import_path;
 
@@ -47,137 +47,91 @@ namespace Aloha
         return "";
     }
 
-    bool ImportResolver::process_file(aloha::Program *program,
-                                      const std::string &current_file,
+    bool ImportResolver::process_file(const std::string &file_path,
+                                      ModuleContext &context,
                                       std::vector<std::string> &import_stack)
     {
-        std::vector<std::string> imports_to_process;
-        std::vector<aloha::NodePtr> non_import_nodes;
+        std::string normalized_path = std::filesystem::canonical(file_path).string();
 
-        for (auto &node : program->m_nodes)
+        // check if this module was already processed
+        if (context.get_module(normalized_path) != nullptr)
         {
-            if (auto *import = dynamic_cast<aloha::Import *>(node.get()))
-            {
-                imports_to_process.push_back(import->m_path);
-            }
-            else
-            {
-                non_import_nodes.push_back(std::move(node));
-            }
+            return true;
         }
 
-        std::vector<aloha::NodePtr> all_nodes;
+        SrcReader reader(normalized_path);
+        std::string source = reader.as_string();
+        std::string_view source_view(source);
 
-        for (const auto &import_path : imports_to_process)
+        Lexer lexer(source_view);
+        Parser parser(lexer);
+        auto ast = parser.parse();
+
+        if (lexer.has_error())
         {
-            std::string resolved_path = resolve_import_path(import_path, current_file);
+            std::cerr << "ERROR: Lexer errors in: " << normalized_path << std::endl;
+            lexer.dump_errors();
+            return false;
+        }
 
-            if (resolved_path.empty())
-            {
-                std::cerr << "ERROR: Could not find import: " << import_path
-                          << "\n  imported from: " << current_file << std::endl;
-                return false;
-            }
+        std::string module_name = std::filesystem::path(normalized_path).stem().string();
+        auto mod = std::make_unique<Module>(normalized_path, module_name);
+        mod->ast = std::move(ast);
 
-            // Cycle detection
-            if (std::find(import_stack.begin(), import_stack.end(), resolved_path) != import_stack.end())
+        // extract import nodes
+        for (auto &node : mod->ast->m_nodes)
+        {
+            if (auto *import_node = dynamic_cast<aloha::Import *>(node.get()))
             {
-                std::cerr << "ERROR: Circular import detected:\n";
-                for (const auto &f : import_stack)
+                std::string resolved_import = resolve_import_path(import_node->m_path, normalized_path);
+
+                if (resolved_import.empty())
                 {
-                    std::cerr << "  " << f << " ->\n";
+                    std::cerr << "ERROR: Could not resolve import: " << import_node->m_path << std::endl;
+                    return false;
                 }
-                std::cerr << "  " << resolved_path << std::endl;
-                return false;
-            }
 
-            if (imported_files.count(resolved_path) > 0)
-            {
-                continue;
-            }
+                // cycle detection
+                if (std::find(import_stack.begin(), import_stack.end(), resolved_import) != import_stack.end())
+                {
+                    std::cerr << "ERROR: Circular import detected:\n";
+                    for (const auto &f : import_stack)
+                    {
+                        std::cerr << "  " << f << " ->\n";
+                    }
+                    std::cerr << "  " << resolved_import << std::endl;
+                    return false;
+                }
 
-            imported_files.insert(resolved_path);
-            import_stack.push_back(resolved_path);
+                mod->dependencies.push_back(resolved_import);
 
-            SrcReader reader(resolved_path);
-            std::string import_source = reader.as_string();
-            std::string_view import_view(import_source);
-
-            Lexer import_lexer(import_view);
-            Parser import_parser(import_lexer);
-            auto import_ast = import_parser.parse();
-
-            if (import_lexer.has_error())
-            {
-                std::cerr << "ERROR: Lexer errors in imported file: " << resolved_path
-                          << "\n  imported from: " << current_file << std::endl;
-                import_lexer.dump_errors();
+                // recursively process import
+                import_stack.push_back(resolved_import);
+                if (!process_file(resolved_import, context, import_stack))
+                {
+                    return false;
+                }
                 import_stack.pop_back();
-                return false;
             }
-
-            // recursively process imports in the imported file
-            if (!process_file(import_ast.get(), resolved_path, import_stack))
-            {
-                import_stack.pop_back();
-                return false;
-            }
-
-            for (auto &node : import_ast->m_nodes)
-            {
-                all_nodes.push_back(std::move(node));
-            }
-
-            import_stack.pop_back();
         }
 
-        for (auto &node : non_import_nodes)
-        {
-            all_nodes.push_back(std::move(node));
-        }
-
-        program->m_nodes = std::move(all_nodes);
-
+        context.add_module(std::move(mod));
+        imported_files.insert(normalized_path);
         return true;
     }
 
-    std::unique_ptr<aloha::Program> ImportResolver::process_imports(const std::string &main_file)
+    bool ImportResolver::process_imports(const std::string &main_file, ModuleContext &context)
     {
         try
         {
-            // Parse the main file first
-            std::string normalized_main = std::filesystem::canonical(main_file).string();
-
-            SrcReader reader(normalized_main);
-            std::string main_source = reader.as_string();
-            std::string_view main_view(main_source);
-
-            Lexer lexer(main_view);
-            Parser parser(lexer);
-            auto ast = parser.parse();
-
-            if (lexer.has_error())
-            {
-                std::cerr << "ERROR: Lexer errors in main file: " << normalized_main << std::endl;
-                lexer.dump_errors();
-                return nullptr;
-            }
-
+            imported_files.clear();
             std::vector<std::string> import_stack;
-            import_stack.push_back(normalized_main);
-            imported_files.insert(normalized_main);
-
-            if (!process_file(ast.get(), normalized_main, import_stack))
-            {
-                return nullptr;
-            }
-
-            return ast;
+            return process_file(main_file, context, import_stack);
         }
         catch (const std::exception &e)
         {
             std::cerr << "ERROR: Import processing failed: " << e.what() << std::endl;
-            return nullptr;
+            return false;
         }
     }
 

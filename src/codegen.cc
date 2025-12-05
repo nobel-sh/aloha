@@ -690,6 +690,30 @@ void CodeGen::dump_named_values() const
   }
 }
 
+void CodeGen::declare_fn_external(const std::string &name,
+                                  const FunctionInfo &info)
+{
+  // dont redeclare if already declared
+  if (module->getFunction(name))
+  {
+    return;
+  }
+
+  std::vector<llvm::Type *> param_types;
+  for (const auto &param_type : info.param_types)
+  {
+    param_types.push_back(get_llvm_type(param_type));
+  }
+
+  llvm::Type *return_type = get_llvm_type(info.return_type);
+  llvm::FunctionType *fn_type = llvm::FunctionType::get(
+      return_type, param_types, false);
+
+  // declare as external
+  llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
+                         name, module.get());
+}
+
 void CodeGen::add_builtin_fns()
 {
   llvm::FunctionType *print_type =

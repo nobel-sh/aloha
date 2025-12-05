@@ -11,6 +11,18 @@ class SemanticAnalyzer : public ASTVisitor
 public:
   void analyze(aloha::Program *program);
 
+  void import_symbols(const std::unordered_map<std::string, FunctionInfo> &functions,
+                      const std::unordered_map<std::string, StructInfo> &structs)
+  {
+    symbol_table.import_symbols(functions, structs);
+  }
+
+  void export_symbols(std::unordered_map<std::string, FunctionInfo> &functions,
+                      std::unordered_map<std::string, StructInfo> &structs) const
+  {
+    symbol_table.export_symbols(functions, structs);
+  }
+
   void visit(aloha::Number *node) override;
   void visit(aloha::Boolean *node) override;
   void visit(aloha::String *node) override;

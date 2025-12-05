@@ -3,6 +3,7 @@
 
 #include "ast/ast.h"
 #include "ast/visitor.h"
+#include "symbol_table.h"
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -17,6 +18,9 @@ public:
   CodeGen();
 
   bool generate_code(aloha::Program *program);
+
+  void declare_fn_external(const std::string &name,
+                           const FunctionInfo &info);
 
   void dump_ir() const;
   void print_value() const;

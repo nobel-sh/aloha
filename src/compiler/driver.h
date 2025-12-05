@@ -6,6 +6,7 @@
 #include "../parser.h"
 #include "../sema.h"
 #include "../resolver/import.h"
+#include "module.h"
 #include <memory>
 #include <string>
 
@@ -44,15 +45,20 @@ private:
     SemanticAnalyzer analyzer;
     CodeGen codegen;
     Aloha::ImportResolver import_resolver;
+    Aloha::ModuleContext module_context;
 
     std::unique_ptr<aloha::Program> ast;
+    std::unique_ptr<llvm::Module> module;
 
+    // compilation pipeline
     bool parse_and_resolve_imports();
-    bool analyze_semantics();
-    bool generate_code();
+    bool compile_modules();
+    bool link_modules();
     bool optimize_code();
     bool emit_object_file();
     bool link_executable();
+
+    std::string get_stdlib_path() const;
 
     void print_separator() const;
     void dump_untyped_ast() const;

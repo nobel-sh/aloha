@@ -2,6 +2,7 @@
 #define IMPORT_RESOLVER_H_
 
 #include "../ast/ast.h"
+#include "../compiler/module.h"
 #include <memory>
 #include <set>
 #include <string>
@@ -15,8 +16,8 @@ namespace Aloha
     public:
         ImportResolver() = default;
 
-        // parse the main file and resolve all imports, returning complete AST
-        std::unique_ptr<aloha::Program> process_imports(const std::string &main_file);
+        // parse the main file and all imports into modules
+        bool process_imports(const std::string &main_file, ModuleContext &context);
 
         const std::set<std::string> &get_imported_files() const { return imported_files; }
 
@@ -26,8 +27,8 @@ namespace Aloha
         std::string resolve_import_path(const std::string &import_path,
                                         const std::string &current_file);
 
-        bool process_file(aloha::Program *program,
-                          const std::string &current_file,
+        bool process_file(const std::string &file_path,
+                          ModuleContext &context,
                           std::vector<std::string> &import_stack);
     };
 

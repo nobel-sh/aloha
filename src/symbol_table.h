@@ -9,29 +9,34 @@
 #include <unordered_map>
 #include <vector>
 
-struct VariableInfo {
+struct VariableInfo
+{
   AlohaType::Type type;
   bool is_assigned;
   bool is_mutable;
 };
 
-struct FunctionInfo {
+struct FunctionInfo
+{
   AlohaType::Type return_type;
   std::vector<AlohaType::Type> param_types;
   bool is_declared;
 };
 
-struct StructField {
+struct StructField
+{
   std::string name;
   AlohaType::Type type;
 };
 
-struct StructInfo {
+struct StructInfo
+{
   AlohaType::Type type;
   std::vector<StructField> fields;
 };
 
-class SymbolTable {
+class SymbolTable
+{
 public:
   SymbolTable();
   bool add_variable(const std::string &name, AlohaType::Type type,
@@ -48,6 +53,11 @@ public:
   void leave_scope();
   bool is_builtin_function(std::string name) const;
   void dump() const;
+
+  void export_symbols(std::unordered_map<std::string, FunctionInfo> &functions,
+                      std::unordered_map<std::string, StructInfo> &structs) const;
+  void import_symbols(const std::unordered_map<std::string, FunctionInfo> &functions,
+                      const std::unordered_map<std::string, StructInfo> &structs);
 
 private:
   std::vector<std::unordered_map<std::string, VariableInfo>>
