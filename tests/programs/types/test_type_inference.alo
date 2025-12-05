@@ -1,3 +1,5 @@
+import "stdlib/io.alo";
+
 fun main() -> number {
     // Test type inference
     imut x = 42;          // should infer int;

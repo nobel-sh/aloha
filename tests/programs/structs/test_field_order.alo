@@ -1,3 +1,5 @@
+import "stdlib/io.alo";
+
 struct Triple {
   first: number,
   second: number,

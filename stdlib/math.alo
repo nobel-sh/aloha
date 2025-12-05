@@ -1,0 +1,7 @@
+fun add(a: number, b: number) -> number {
+    return a + b;
+}
+
+fun multiply(a: number, b: number) -> number {
+    return a * b;
+}

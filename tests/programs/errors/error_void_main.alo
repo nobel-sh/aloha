@@ -1,3 +1,5 @@
+import "stdlib/io.alo";
+
 // This should fail - main must return number
 fun main() -> void {
     println("This should not compile");

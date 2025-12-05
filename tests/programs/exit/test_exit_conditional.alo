@@ -1,3 +1,5 @@
+import "stdlib/io.alo";
+
 fun is_valid(n: number) -> number {
     if (n == 42) {
         return 1;

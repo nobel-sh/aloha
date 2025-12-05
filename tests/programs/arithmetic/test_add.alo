@@ -1,3 +1,5 @@
+import "stdlib/io.alo";
+
 fun add(num: number, to_add: number) -> number {
     return num+to_add;
 }

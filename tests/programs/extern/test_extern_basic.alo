@@ -1,15 +1,14 @@
-extern fun runtime_write(fd: number, buf: string, count: number) -> number;
-extern fun runtime_strlen(s: string) -> number;
+import "stdlib/io.alo";
 
 fun hello() -> void {
     imut msg: string = "Hello from extern test!";
-    imut len: number = runtime_strlen(msg);
-    runtime_write(1, msg, len);
-    runtime_write(1, "\n", 1);
+    imut len: number = aloha_sys_strlen(msg);
+    aloha_sys_write(1, msg, len);
+    aloha_sys_write(1, "\n", 1);
 }
 
 fun main() -> number {
     hello();
-    println("This uses the old C++ function");
+    println("Now using stdlib function!");
     return 0;
 }

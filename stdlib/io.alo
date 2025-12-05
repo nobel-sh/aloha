@@ -1,0 +1,33 @@
+
+extern fun aloha_sys_write(fd: number, buf: string, count: number) -> number;
+extern fun aloha_sys_read(fd: number, buf: string, count: number) -> number;
+extern fun aloha_sys_strlen(s: string) -> number;
+extern fun aloha_sys_num_to_str(value: number, buf: string, buf_size: number) -> number;
+extern fun aloha_sys_input() -> string;
+
+fun print(s: string) -> void {
+    imut len: number = aloha_sys_strlen(s);
+    aloha_sys_write(1, s, len);
+}
+
+fun println(s: string) -> void {
+    print(s);
+    aloha_sys_write(1, "\n", 1);
+}
+
+// FIXME: These need proper number-to-string conversion in Aloha
+// For now, using a fixed buffer size
+fun printNum(value: number) -> void {
+    imut buf: string = "                                "; // 32 spaces as buffer
+    imut len: number = aloha_sys_num_to_str(value, buf, 32);
+    aloha_sys_write(1, buf, len);
+}
+
+fun printlnNum(value: number) -> void {
+    printNum(value);
+    aloha_sys_write(1, "\n", 1);
+}
+
+fun input() -> string {
+    return aloha_sys_input();
+}
