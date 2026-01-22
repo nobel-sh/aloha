@@ -1,0 +1,20 @@
+import "stdlib/io.alo";
+
+extern fun aloha_sys_abort() -> void;
+
+fun assert(pred: bool) -> void {
+    if (pred == false) {
+        eprintln("Assertion failed.");
+        aloha_sys_abort();
+    }
+}
+
+fun assert_msg(pred: bool, message: string) -> void {
+    if (pred == false) {
+        eprint("Assertion \"");
+        eprint(message);
+        eprintln("\" failed");
+        aloha_sys_abort();
+    }
+}
+

@@ -29,8 +29,7 @@ void print_help()
 void print_version()
 {
   std::cout << "Aloha Programming Language Compiler\n"
-            << "Version: 0.1.0 (AIR-based pipeline)\n"
-            << "LLVM Backend: Enabled\n";
+            << std::endl;
 }
 
 int main(int argc, char *argv[])

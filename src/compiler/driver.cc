@@ -554,7 +554,7 @@ namespace AlohaPipeline
   int CompilerDriver::compile()
   {
     std::cout << "========================================\n";
-    std::cout << "Aloha Compiler - New Integrated Pipeline\n";
+    std::cout << "            Aloha Compiler \n";
     std::cout << "========================================\n";
     std::cout << "Input: " << options.input_file << std::endl;
     std::cout << "\n";

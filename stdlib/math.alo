@@ -1,7 +1,30 @@
-fun add(a: number, b: number) -> number {
-    return a + b;
+fun min(a: number, b: number) -> number {
+    if (a < b) {
+        return a;
+    }
+    return b;
 }
 
-fun multiply(a: number, b: number) -> number {
-    return a * b;
+fun max(a: number, b: number) -> number {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
+
+fun abs(n: number) -> number {
+    if (n < 0) {
+        return -n;
+    }
+    return n;
+}
+
+fun clamp(value: number, minVal: number, maxVal: number) -> number {
+    if (value < minVal) {
+        return minVal;
+    }
+    if (value > maxVal) {
+        return maxVal;
+    }
+    return value;
 }
