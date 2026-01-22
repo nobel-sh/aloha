@@ -1,0 +1,5 @@
+// Re-export commonly used stdlib modules so they're available everywhere
+
+import "stdlib/io.alo";
+import "stdlib/math.alo";
+import "stdlib/assert.alo";

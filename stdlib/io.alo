@@ -1,7 +1,7 @@
 extern fun aloha_sys_write(fd: number, buf: string, count: number) -> number;
 extern fun aloha_sys_read(fd: number, buf: string, count: number) -> number;
 extern fun aloha_sys_strlen(s: string) -> number;
-extern fun aloha_sys_num_to_str(value: number, buf: string, buf_size: number) -> number;
+extern fun aloha_sys_num_to_string(value: number) -> string;
 extern fun aloha_sys_input() -> string;
 
 fun STDIN() -> number { return 0; }
@@ -19,9 +19,9 @@ fun println(s: string) -> void {
 }
 
 fun printNum(value: number) -> void {
-    imut buf: string = "                                "; // 32 byte buffer
-    imut len: number = aloha_sys_num_to_str(value, buf, 32);
-    aloha_sys_write(STDOUT(), buf, len);
+    imut str: string = aloha_sys_num_to_string(value);
+    imut len: number = aloha_sys_strlen(str);
+    aloha_sys_write(STDOUT(), str, len);
 }
 
 fun printlnNum(value: number) -> void {
@@ -40,9 +40,9 @@ fun eprintln(s: string) -> void {
 }
 
 fun eprintNum(value: number) -> void {
-    imut buf: string = "                                "; // 32 byte buffer
-    imut len: number = aloha_sys_num_to_str(value, buf, 32);
-    aloha_sys_write(STDERR(), buf, len);
+    imut str: string = aloha_sys_num_to_string(value);
+    imut len: number = aloha_sys_strlen(str);
+    aloha_sys_write(STDERR(), str, len);
 }
 
 fun eprintlnNum(value: number) -> void {

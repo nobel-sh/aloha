@@ -33,12 +33,21 @@ double aloha_sys_strlen(const char *str)
     return (double)strlen(str);
 }
 
-double aloha_sys_num_to_str(double value, char *buf, double buf_size)
+char *aloha_sys_num_to_string(double value)
 {
-    if (!buf || buf_size < 2)
-        return 0.0;
-    int len = snprintf(buf, (size_t)buf_size, "%g", value);
-    return (double)(len > 0 ? len : 0);
+    // 32 bytes for a double
+    char *buf = (char *)malloc(32);
+    if (!buf)
+        return NULL;
+
+    int len = snprintf(buf, 32, "%g", value);
+    if (len < 0)
+    {
+        free(buf);
+        return NULL;
+    }
+
+    return buf;
 }
 
 void aloha_sys_exit(double code)

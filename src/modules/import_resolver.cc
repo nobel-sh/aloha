@@ -10,10 +10,15 @@ namespace aloha
 
   ImportResolver::ImportResolver(AIR::TyTable &ty_table,
                                  SymbolTable &main_symbol_table,
-                                 const std::string &current_file_path)
+                                 const std::string &current_file_path,
+                                 bool skip_prelude_injection)
       : ty_table(ty_table),
         main_symbol_table(main_symbol_table),
-        errors()
+        errors(),
+        skip_prelude_injection(skip_prelude_injection),
+        currently_importing(new std::unordered_set<std::string>()),
+        already_imported(new std::unordered_set<std::string>()),
+        owns_import_sets(true)
   {
     std::filesystem::path current_path(current_file_path);
     if (current_path.has_parent_path())
@@ -28,7 +33,14 @@ namespace aloha
     initialize_search_paths();
   }
 
-  ImportResolver::~ImportResolver() = default;
+  ImportResolver::~ImportResolver()
+  {
+    if (owns_import_sets)
+    {
+      delete currently_importing;
+      delete already_imported;
+    }
+  }
 
   void ImportResolver::initialize_search_paths()
   {
@@ -126,11 +138,59 @@ namespace aloha
     }
   }
 
+  bool ImportResolver::inject_prelude()
+  {
+    std::string prelude_path = "stdlib/prelude.alo";
+    Location prelude_loc{0, 0};
+
+    std::string file_path = resolve_import_path(prelude_path, prelude_loc);
+    if (file_path.empty())
+    {
+      errors.add_error(prelude_loc, "Cannot find prelude: '" + prelude_path + "'");
+      return false;
+    }
+
+    std::string normalized_path = normalize_path(file_path);
+
+    if (already_imported->count(normalized_path) > 0)
+    {
+      return true;
+    }
+
+    if (currently_importing->count(normalized_path) > 0)
+    {
+      errors.add_error(prelude_loc, "Circular import detected in prelude: '" + prelude_path + "'");
+      return false;
+    }
+
+    // mark as importing and process
+    currently_importing->insert(normalized_path);
+    bool success = process_imported_file(normalized_path, prelude_loc);
+    currently_importing->erase(normalized_path);
+
+    if (success)
+    {
+      already_imported->insert(normalized_path);
+      resolved_import_paths.push_back(normalized_path);
+    }
+
+    return success;
+  }
+
   bool ImportResolver::resolve_imports(aloha::Program *ast)
   {
     if (!ast)
     {
       return false;
+    }
+
+    // inject prelude for top-level program
+    if (!skip_prelude_injection)
+    {
+      if (!inject_prelude())
+      {
+        return false;
+      }
     }
 
     bool success = true;
@@ -168,24 +228,24 @@ namespace aloha
 
     std::string normalized_path = normalize_path(file_path);
 
-    if (already_imported.count(normalized_path) > 0)
+    if (already_imported->count(normalized_path) > 0)
     {
       return true;
     }
 
-    if (currently_importing.count(normalized_path) > 0)
+    if (currently_importing->count(normalized_path) > 0)
     {
       errors.add_error(import_loc, "Circular import detected: '" + import_path + "'");
       return false;
     }
 
-    currently_importing.insert(normalized_path);
+    currently_importing->insert(normalized_path);
     bool success = process_imported_file(normalized_path, import_loc);
-    currently_importing.erase(normalized_path);
+    currently_importing->erase(normalized_path);
 
     if (success)
     {
-      already_imported.insert(normalized_path);
+      already_imported->insert(normalized_path);
       resolved_import_paths.push_back(normalized_path);
     }
 
@@ -245,7 +305,13 @@ namespace aloha
         return false;
       }
 
-      ImportResolver nested_resolver(ty_table, main_symbol_table, file_path);
+      ImportResolver nested_resolver(ty_table, main_symbol_table, file_path, true);
+
+      // share import tracking sets with nested resolver
+      nested_resolver.currently_importing = this->currently_importing;
+      nested_resolver.already_imported = this->already_imported;
+      nested_resolver.owns_import_sets = false;
+
       if (!nested_resolver.resolve_imports(imported_ast.get()))
       {
         for (const auto &error : nested_resolver.get_errors().get_errors())
@@ -256,7 +322,6 @@ namespace aloha
       }
 
       // collect definitions from the imported file directly into the main symbol table
-      // this ensures var_ids, func_ids, and struct_ids are consistent across all modules
       SymbolBinder imported_def_collector(ty_table);
       imported_def_collector.set_symbol_table(&main_symbol_table);
 
@@ -269,14 +334,19 @@ namespace aloha
         return false;
       }
 
-      // store the imported AST so it can be processed by later stages
       imported_asts.push_back(std::move(imported_ast));
-
-      // merge nested imported ASTs into our list
       for (auto &nested_ast : nested_resolver.imported_asts)
       {
-        imported_asts.push_back(std::move(nested_ast));
+        if (nested_ast)
+          imported_asts.push_back(std::move(nested_ast));
       }
+      nested_resolver.imported_asts.clear();
+
+      for (auto &path : nested_resolver.resolved_import_paths)
+      {
+        resolved_import_paths.push_back(std::move(path));
+      }
+      nested_resolver.resolved_import_paths.clear();
 
       return true;
     }
