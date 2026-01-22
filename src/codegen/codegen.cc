@@ -23,7 +23,7 @@ namespace Codegen
   {
     if (!air_module)
     {
-      report_error("Cannot generate code for null module", Location{0, 0});
+      report_error("Cannot generate code for null module", Location(0, 0));
       return nullptr;
     }
 

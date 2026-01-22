@@ -168,7 +168,7 @@ namespace AlohaPipeline
         return false;
       }
 
-      lexer = std::make_unique<Lexer>(source);
+      lexer = std::make_unique<Lexer>(source, options.input_file);
       parser = std::make_unique<Parser>(*lexer);
 
       ast = parser->parse();

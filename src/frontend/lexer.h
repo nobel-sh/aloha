@@ -11,7 +11,7 @@
 class Lexer
 {
 public:
-  explicit Lexer(std::string_view source);
+  explicit Lexer(std::string_view source, std::string file_path = "<input>");
   void dump_errors() const { errors.print(); }
 
   const Aloha::LexerError &get_errors() const { return errors; }
@@ -23,6 +23,7 @@ public:
 
 private:
   std::string_view source;
+  std::string source_file;
   Aloha::LexerError errors;
   Location current_loc;
   size_t pos;

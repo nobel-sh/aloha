@@ -41,11 +41,12 @@ static std::string process_escape_sequences(const std::string &raw_str)
   return result.str();
 }
 
-Lexer::Lexer(std::string_view source)
-    : source(source), current_loc(1, 1), pos(0),
-      peeked_token(TokenKind::EOF_TOKEN, Location(1, 1)),
+Lexer::Lexer(std::string_view source, std::string file_path)
+    : source(source), source_file(std::move(file_path)),
+      current_loc(1, 1, source_file), pos(0),
+      peeked_token(TokenKind::EOF_TOKEN, Location(1, 1, source_file)),
       has_peeked(false),
-      eof_token(TokenKind::EOF_TOKEN, Location(1, 1)) {}
+      eof_token(TokenKind::EOF_TOKEN, Location(1, 1, source_file)) {}
 
 bool Lexer::is_eof() const { return pos >= source.size(); }
 
@@ -72,6 +73,7 @@ void Lexer::consume_token()
       ++current_loc.col;
     }
     ++pos;
+    current_loc.file_path = source_file;
   }
 }
 

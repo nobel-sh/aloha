@@ -141,7 +141,7 @@ namespace aloha
   bool ImportResolver::inject_prelude()
   {
     std::string prelude_path = "stdlib/prelude.alo";
-    Location prelude_loc{0, 0};
+    Location prelude_loc(0, 0);
 
     std::string file_path = resolve_import_path(prelude_path, prelude_loc);
     if (file_path.empty())
@@ -295,7 +295,7 @@ namespace aloha
         return true;
       }
 
-      Lexer lexer(source);
+      Lexer lexer(source, file_path);
       Parser parser(lexer);
 
       std::unique_ptr<aloha::Program> imported_ast = parser.parse();

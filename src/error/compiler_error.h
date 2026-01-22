@@ -87,9 +87,12 @@ namespace Aloha
         {
             for (const auto &e : errors_)
             {
-                std::cerr << "\033[1;31m" << prefix() << "\033[0m ["
-                          << e.loc.line << ":" << e.loc.col << "]: "
-                          << e.message << "\n";
+                std::cerr << "\033[1;31m" << prefix() << "\033[0m ";
+                if (e.loc.file_path)
+                {
+                    std::cerr << *e.loc.file_path << ":" << e.loc.line << ":" << e.loc.col << ": ";
+                }
+                std::cerr << e.message << "\n";
             }
         }
 
@@ -121,8 +124,15 @@ namespace Aloha
         void add_error(Location loc, const std::string &msg)
         {
             ErrorBase::add_error(loc, msg);
-            error_strings_.push_back("[" + std::to_string(loc.line) + ":" +
-                                     std::to_string(loc.col) + "] " + msg);
+            if (loc.file_path)
+            {
+                error_strings_.push_back("[" + *loc.file_path + ":" + std::to_string(loc.line) + ":" +
+                                         std::to_string(loc.col) + "] " + msg);
+            }
+            else
+            {
+                error_strings_.push_back(msg);
+            }
         }
 
         // Returns strings for parser compatibility
