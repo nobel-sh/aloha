@@ -30,6 +30,8 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPILER="$PROJECT_DIR/build/aloha"
 EXAMPLES_DIR="$PROJECT_DIR/tests/integration"
 TEMP_DIR=$(mktemp -d)
+# Set ALOHA_DEV so compiler can find stdlib when running test from /tmp
+export ALOHA_DEV="$PROJECT_DIR"
 
 # Colors for output
 GREEN='\033[0;32m'

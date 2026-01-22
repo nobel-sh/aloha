@@ -1,9 +1,8 @@
 #include "import_resolver.h"
+#include "../utils/paths.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <unistd.h>
-#include <linux/limits.h>
 
 namespace aloha
 {
@@ -44,82 +43,21 @@ namespace aloha
 
   void ImportResolver::initialize_search_paths()
   {
-    // FIXME: remove the hacky paths
-    // search path priority:
-    // 1. current file directory
-    // 2. current working directory
-    // 3. standard library directory
-    // 4. ALOHA_PATH environment variable (colon-separated paths)
 
+    // add files relative to the file being compiled
     search_paths.push_back(current_file_dir);
-    search_paths.push_back(std::filesystem::current_path());
+
+    // add standard library directory
     auto stdlib = get_stdlib_path();
     if (!stdlib.empty() && std::filesystem::exists(stdlib))
     {
       search_paths.push_back(stdlib);
     }
-
-    if (const char *aloha_path = std::getenv("ALOHA_PATH"))
-    {
-      std::stringstream ss(aloha_path);
-      std::string path;
-      while (std::getline(ss, path, ':'))
-      {
-        if (!path.empty() && std::filesystem::exists(path))
-        {
-          search_paths.push_back(path);
-        }
-      }
-    }
   }
 
   std::filesystem::path ImportResolver::get_stdlib_path() const
   {
-    if (const char *aloha_home = std::getenv("ALOHA_HOME"))
-    {
-      std::filesystem::path root_path = std::filesystem::path(aloha_home);
-      std::filesystem::path stdlib_path = root_path / "stdlib";
-      if (std::filesystem::exists(stdlib_path))
-      {
-        return root_path;
-      }
-    }
-
-    // FIXME: very hacky for now
-    // try to find stdlib relative to the compiler executable
-    char exe_path[PATH_MAX];
-    ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
-    if (len != -1)
-    {
-      exe_path[len] = '\0';
-      std::filesystem::path exe_dir = std::filesystem::path(exe_path).parent_path();
-
-      // try ../ (for build directory layout where exe is in build/ and stdlib is in ../stdlib)
-      std::filesystem::path root_path = exe_dir.parent_path();
-      std::filesystem::path stdlib_path = root_path / "stdlib";
-      if (std::filesystem::exists(stdlib_path))
-      {
-        return root_path;
-      }
-
-      // try ./ (for installed layout where exe and stdlib are siblings)
-      root_path = exe_dir;
-      stdlib_path = root_path / "stdlib";
-      if (std::filesystem::exists(stdlib_path))
-      {
-        return root_path;
-      }
-    }
-
-    // fallback: check if ../stdlib exists from current directory
-    std::filesystem::path root_path = std::filesystem::current_path().parent_path();
-    std::filesystem::path stdlib_path = root_path / "stdlib";
-    if (std::filesystem::exists(stdlib_path))
-    {
-      return root_path;
-    }
-
-    return "";
+    return aloha::utils::get_aloha_root();
   }
 
   std::string ImportResolver::normalize_path(const std::filesystem::path &path) const

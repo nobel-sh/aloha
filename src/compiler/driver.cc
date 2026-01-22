@@ -1,6 +1,7 @@
 #include "driver.h"
 #include "../air/printer.h"
 #include "../codegen/objgen.h"
+#include "../utils/paths.h"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -83,30 +84,9 @@ namespace AlohaPipeline
     return get_base_name() + extension;
   }
 
-  std::string CompilerDriver::get_stdlib_path() const
+  std::string CompilerDriver::get_stdlib_archive_path() const
   {
-    if (const char *aloha_home = std::getenv("ALOHA_HOME"))
-    {
-      return std::string(aloha_home) + "/lib/libaloha_stdlib.a";
-    }
-
-    // try to find standard library relative to the compiler executable
-    char exe_path[PATH_MAX];
-    ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
-    if (len != -1)
-    {
-      exe_path[len] = '\0';
-      std::filesystem::path exe_dir =
-          std::filesystem::path(exe_path).parent_path();
-      std::filesystem::path stdlib_path = exe_dir / "libaloha_stdlib.a";
-      if (std::filesystem::exists(stdlib_path))
-      {
-        return stdlib_path.string();
-      }
-    }
-
-    // fallback: look in build directory
-    return "../build/libaloha_stdlib.a";
+    return aloha::utils::get_stdlib_archive();
   }
 
   void CompilerDriver::dump_ast() const
@@ -486,7 +466,7 @@ namespace AlohaPipeline
     {
       std::string obj_file = get_output_name(".o");
       std::string exe_file = get_output_name(".out");
-      std::string stdlib_path = get_stdlib_path();
+      std::string stdlib_path = get_stdlib_archive_path();
 
       const char *linker_candidates[] = {"ld.lld", "ld", "lld"};
       std::string linker;

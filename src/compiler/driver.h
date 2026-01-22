@@ -80,7 +80,7 @@ namespace AlohaPipeline
 
     std::string get_base_name() const;
     std::string get_output_name(const std::string &extension) const;
-    std::string get_stdlib_path() const;
+    std::string get_stdlib_archive_path() const;
     void log(const std::string &message) const;
     void log_stage(const std::string &stage_name) const;
     void dump_ast() const;

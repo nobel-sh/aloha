@@ -26,6 +26,12 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+# Aloha root directory (hardcoded to ~/.aloha)
+if(NOT DEFINED ALOHA_ROOT)
+    set(ALOHA_ROOT "$ENV{HOME}/.aloha")
+endif()
+add_definitions(-DALOHA_ROOT="${ALOHA_ROOT}")
+
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # Source files
@@ -81,8 +87,19 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g3 -ggdb")
 
 # Installation setup
+# Default to ~/.local/bin if CMAKE_INSTALL_PREFIX is not set
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.local" CACHE PATH "Install path prefix" FORCE)
+endif()
+
 install(TARGETS aloha
     DESTINATION bin
+)
+
+# Install standard library to ~/.aloha/stdlib/
+install(DIRECTORY stdlib/
+    DESTINATION $ENV{HOME}/.aloha/stdlib
+    FILES_MATCHING PATTERN "*.alo" PATTERN "*.c"
 )
 
 # # For Testing
