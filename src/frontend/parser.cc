@@ -1,7 +1,6 @@
 #include "parser.h"
-#include "ast/ast.h"
+#include "../ast/ast.h"
 #include "token.h"
-#include "type.h"
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -177,8 +176,8 @@ std::vector<aloha::StructField> Parser::parse_struct_field()
   {
     auto identifier = expect_identifier();
     consume(TokenKind::COLON, "Expected ':' after field name");
-    auto type = parse_type();
-    aloha::StructField field(identifier->m_name, type);
+    ParseTy type_name = parse_type();
+    aloha::StructField field(identifier->m_name, type_name, type_name);
     fields.push_back(field);
     if (!match(TokenKind::RIGHT_BRACE))
     {
@@ -238,8 +237,8 @@ std::vector<aloha::Parameter> Parser::parse_parameters()
   {
     auto identifier = expect_identifier();
     consume(TokenKind::COLON, "Expected ':' after parameter name");
-    auto type = parse_type();
-    aloha::Parameter param(identifier->m_name, type);
+    ParseTy type_name = parse_type();
+    aloha::Parameter param(identifier->m_name, type_name, type_name);
     parameters.push_back(param);
     if (!match(TokenKind::RIGHT_PAREN))
     {
@@ -342,7 +341,7 @@ std::unique_ptr<aloha::Statement> Parser::parse_variable_declaration()
   }
 
   auto identifier = expect_identifier();
-  std::optional<AlohaType::Type> type = optional_type();
+  std::optional<ParseTy> type = optional_type();
   std::unique_ptr<aloha::Expression> expression = nullptr;
 
   if (match(TokenKind::EQUAL))
@@ -717,19 +716,19 @@ std::unique_ptr<aloha::Identifier> Parser::expect_identifier()
   return nullptr;
 }
 
-AlohaType::Type Parser::parse_type()
+ParseTy Parser::parse_type()
 {
   auto token = peek();
   if (match(TokenKind::IDENT))
   {
     advance();
-    return AlohaType::from_string(token->get_lexeme());
+    return token->get_lexeme();
   }
   report_error("Expected type");
-  return AlohaType::Type::UNKNOWN;
+  return "unknown";
 }
 
-std::optional<AlohaType::Type> Parser::optional_type()
+std::optional<ParseTy> Parser::optional_type()
 {
   auto token = peek();
   if (match(TokenKind::COLON))

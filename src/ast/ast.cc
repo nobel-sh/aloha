@@ -36,14 +36,14 @@ namespace aloha
 
   Number::Number(Location loc, std::string val)
       : Expression(loc), m_value(std::move(val)) {}
-  Type Number::get_type() const { return Type::NUMBER; }
+  Type Number::get_type() const { return "number"; }
 
   Boolean::Boolean(Location loc, bool val) : Expression(loc), m_value(val) {}
-  Type Boolean::get_type() const { return Type::BOOL; }
+  Type Boolean::get_type() const { return "bool"; }
 
   String::String(Location loc, std::string val)
       : Expression(loc), m_value(std::move(val)) {}
-  Type String::get_type() const { return Type::STRING; }
+  Type String::get_type() const { return "string"; }
 
   UnaryExpression::UnaryExpression(Location loc, std::string oper, ExprPtr expr)
       : Expression(loc), m_op(std::move(oper)), m_expr(std::move(expr)) {}
@@ -62,7 +62,7 @@ namespace aloha
   StructFieldAccess::StructFieldAccess(Location loc, ExprPtr struct_expr,
                                        std::string field_name)
       : Expression(loc), m_struct_expr(std::move(struct_expr)),
-        m_field_name(std::move(field_name)), m_type(Type::UNKNOWN) {}
+        m_field_name(std::move(field_name)), m_type("unknown") {}
   Type StructFieldAccess::get_type() const { return m_type; }
   void StructFieldAccess::set_type(Type type) { m_type = type; }
 
@@ -71,7 +71,7 @@ namespace aloha
                                                ExprPtr value)
       : Statement(loc), m_struct_expr(std::move(struct_expr)),
         m_field_name(std::move(field_name)), m_value(std::move(value)),
-        m_type(Type::UNKNOWN) {}
+        m_type("unknown") {}
   Type StructFieldAssignment::get_type() const { return m_type; }
 
   Declaration::Declaration(Location loc, std::string var_name,
@@ -83,12 +83,12 @@ namespace aloha
 
   Assignment::Assignment(Location loc, std::string var_name, ExprPtr expr)
       : Statement(loc), m_variable_name(std::move(var_name)),
-        m_expression(std::move(expr)), m_type(Type::UNKNOWN) {}
+        m_expression(std::move(expr)), m_type("unknown") {}
 
   FunctionCall::FunctionCall(Location loc, std::unique_ptr<Identifier> func_name,
                              std::vector<ExprPtr> args)
       : Expression(loc), m_func_name(std::move(func_name)),
-        m_arguments(std::move(args)), m_type(Type::UNKNOWN) {}
+        m_arguments(std::move(args)), m_type("unknown") {}
   Type FunctionCall::get_type() const { return m_type; }
 
   ReturnStatement::ReturnStatement(Location loc, ExprPtr expr)
@@ -113,7 +113,10 @@ namespace aloha
         m_body(std::move(body)) {}
 
   Parameter::Parameter(std::string name, Type type)
-      : m_name(std::move(name)), m_type(type) {}
+      : m_name(std::move(name)), m_type(type), m_type_name("") {}
+
+  Parameter::Parameter(std::string name, Type type, std::string type_name)
+      : m_name(std::move(name)), m_type(type), m_type_name(std::move(type_name)) {}
 
   Function::Function(Location loc, std::unique_ptr<Identifier> func_name,
                      std::vector<Parameter> params, Type return_type,
@@ -123,7 +126,10 @@ namespace aloha
         m_body(std::move(body)), m_is_extern(is_extern) {}
 
   StructField::StructField(std::string name, Type type)
-      : m_name(std::move(name)), m_type(type) {}
+      : m_name(std::move(name)), m_type(type), m_type_name("") {}
+
+  StructField::StructField(std::string name, Type type, std::string type_name)
+      : m_name(std::move(name)), m_type(type), m_type_name(std::move(type_name)) {}
 
   StructDecl::StructDecl(Location loc, std::string name,
                          std::vector<StructField> fields)
@@ -132,7 +138,7 @@ namespace aloha
   StructInstantiation::StructInstantiation(Location loc, std::string name,
                                            std::vector<ExprPtr> values)
       : Expression(loc), m_struct_name(std::move(name)),
-        m_field_values(std::move(values)), m_type(Type::UNKNOWN) {}
+        m_field_values(std::move(values)), m_type("unknown") {}
   Type StructInstantiation::get_type() const { return m_type; }
   void StructInstantiation::set_type(Type type) { m_type = type; }
 

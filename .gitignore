@@ -1,8 +1,28 @@
+# Build artifacts
 *.o
 *.out
+*.ll
+*.s
+*.a
+*.so
+*.dylib
 lib*
 
-build
+# Directories
+build/
+.cache/
+.vscode/
 
-.vscode
-.cache
+# Temporary and test artifacts
+*.tmp
+*.temp
+/test_*.alo
+/demo_*.alo
+/example_*
+/final_*
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json

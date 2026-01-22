@@ -26,8 +26,9 @@ for arg in "$@"; do
 done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMPILER="$SCRIPT_DIR/build/aloha"
-EXAMPLES_DIR="$SCRIPT_DIR/tests/programs"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+COMPILER="$PROJECT_DIR/build/aloha"
+EXAMPLES_DIR="$PROJECT_DIR/tests/programs"
 TEMP_DIR=$(mktemp -d)
 
 # Colors for output
@@ -45,7 +46,7 @@ echo ""
 
 if [ "$BUILD_COMPILER" = true ]; then
     echo "Building compiler..."
-    if ! cmake --build "$SCRIPT_DIR/build" --target aloha > /dev/null 2>&1; then
+    if ! cmake --build "$PROJECT_DIR/build" --target aloha > /dev/null 2>&1; then
         echo -e "${RED}Error: Build failed${NC}"
         exit 1
     fi

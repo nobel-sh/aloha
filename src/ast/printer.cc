@@ -95,7 +95,7 @@ namespace aloha
         os << std::string(indent, ' ') << "Declaration:{\n";
         os << std::string(indent + 2, ' ') << "Name: " << m_variable_name << "\n";
         os << std::string(indent + 2, ' ')
-           << "Type: " << (m_type ? AlohaType::to_string(*m_type) : "Inferred")
+           << "Type: " << (m_type ? *m_type : "Inferred")
            << "\n";
         os << std::string(indent + 2, ' ')
            << "Mutable: " << (m_is_mutable ? "true" : "false") << "\n";
@@ -202,11 +202,11 @@ namespace aloha
         for (const auto &param : m_parameters)
         {
             os << std::string(indent + 4, ' ') << param.m_name << ": "
-               << AlohaType::to_string(param.m_type) << "\n";
+               << param.m_type << "\n";
         }
         os << std::string(indent + 2, ' ') << "]\n";
         os << std::string(indent + 2, ' ')
-           << "ReturnType: " << AlohaType::to_string(m_return_type) << "\n";
+           << "ReturnType: " << m_return_type << "\n";
         os << std::string(indent + 2, ' ') << "Body:{\n";
         m_body->write(os, indent + 4);
         os << std::string(indent + 2, ' ') << "}\n";
@@ -221,7 +221,7 @@ namespace aloha
         for (const auto &field : m_fields)
         {
             os << std::string(indent + 4, ' ') << field.m_name << ": "
-               << AlohaType::to_string(field.m_type) << "\n";
+               << field.m_type << "\n";
         }
         os << std::string(indent + 2, ' ') << "]\n";
         os << std::string(indent, ' ') << "}\n";
@@ -243,7 +243,7 @@ namespace aloha
     void Array::write(std::ostream &os, unsigned long indent) const
     {
         os << std::string(indent, ' ') << "Array:{\n";
-        os << std::string(indent + 2, ' ') << "Type: " << AlohaType::to_string(m_type)
+        os << std::string(indent + 2, ' ') << "Type: " << m_type
            << "\n";
         os << std::string(indent + 2, ' ') << "Size: " << m_size << "\n";
         os << std::string(indent + 2, ' ') << "Elements:[\n";

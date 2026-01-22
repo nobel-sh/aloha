@@ -1,0 +1,44 @@
+import "stdlib/io.alo";
+
+struct Point {
+  x: number,
+  y: number,
+}
+
+struct Rectangle {
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+}
+
+fun main() -> number {
+    imut point = Point{10, 20};
+    imut rect = Rectangle{0, 0, 100, 200};
+
+    imut px = point->x;
+    imut py = point->y;
+
+    imut rx1 = rect->x1;
+    imut ry1 = rect->y1;
+    imut rx2 = rect->x2;
+    imut ry2 = rect->y2;
+
+    println("Point coordinates:");
+    print("x = ");
+    printlnNum(px);
+    print("y = ");
+    printlnNum(py);
+
+    println("Rectangle coordinates:");
+    print("x1 = ");
+    printlnNum(rx1);
+    print("y1 = ");
+    printlnNum(ry1);
+    print("x2 = ");
+    printlnNum(rx2);
+    print("y2 = ");
+    printlnNum(ry2);
+
+    return 0;
+}

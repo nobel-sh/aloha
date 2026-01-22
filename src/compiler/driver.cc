@@ -1,355 +1,599 @@
 #include "driver.h"
-#include "../objgen.h"
-#include "../type.h"
-#include "../utils/reader.h"
-#include <cstdlib>
-#include <filesystem>
+#include "../air/printer.h"
+#include "../codegen/objgen.h"
 #include <iostream>
-#include <llvm/Linker/Linker.h>
+#include <fstream>
+#include <filesystem>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Program.h>
+#include <llvm/Support/raw_ostream.h>
 
 #if defined(__linux__)
-    #include <linux/limits.h>
-    #include <unistd.h>
+#include <linux/limits.h>
+#include <unistd.h>
 #else
-    #error "Unsupported platform. Currently only Linux is supported."
+#error "Unsupported platform. Currently only Linux is supported."
 #endif
 
-CompilerDriver::CompilerDriver(const CompilerConfig &config)
-    : config(config), lexer(nullptr), parser(nullptr) {}
+namespace AlohaPipeline
+{
 
-CompilerDriver::~CompilerDriver() {
-  delete lexer;
-  delete parser;
-}
-
-void CompilerDriver::print_separator() const {
-  for (int i = 0; i < 50; ++i) {
-    std::cout << "-";
+  CompilerDriver::CompilerDriver(const CompilerOptions &options)
+      : options(options), has_compilation_errors(false)
+  {
+    ty_table = std::make_unique<AIR::TyTable>();
   }
-  std::cout << std::endl;
-}
 
-void CompilerDriver::dump_untyped_ast() const {
-  if (!config.dump_debug_info || !ast)
-    return;
+  CompilerDriver::~CompilerDriver() = default;
 
-  print_separator();
-  std::cout << "Untyped AST" << std::endl;
-
-  if (parser) {
-    parser->dump(ast.get());
+  bool CompilerDriver::has_errors() const
+  {
+    return has_compilation_errors;
   }
-  print_separator();
-}
 
-void CompilerDriver::dump_typed_ast() const {
-  if (!config.dump_debug_info || !ast)
-    return;
-
-  std::cout << "Semantic Analyzer: No semantic errors" << std::endl;
-  print_separator();
-  std::cout << "Typed AST" << std::endl;
-
-  if (parser) {
-    parser->dump(ast.get());
-  }
-  print_separator();
-}
-
-void CompilerDriver::dump_unoptimized_ir() const {
-  if (!config.dump_debug_info)
-    return;
-
-  std::cout << "Unoptimized LLVM IR" << std::endl;
-  codegen.dump_ir();
-  print_separator();
-}
-
-void CompilerDriver::dump_optimized_ir() const {
-  if (!config.dump_debug_info || !config.enable_optimization)
-    return;
-
-  std::cout << "Optimized LLVM IR" << std::endl;
-  codegen.dump_ir();
-}
-
-bool CompilerDriver::optimize_code() {
-  if (!config.enable_optimization) {
-    if (config.dump_debug_info) {
-      std::cout << "Optimization Turned OFF" << std::endl;
+  void CompilerDriver::print_errors() const
+  {
+    if (symbol_binder && symbol_binder->get_errors().has_errors())
+    {
+      symbol_binder->get_errors().print_errors();
     }
-    return true;
-  }
-
-  try {
-    std::cout << "Optimization Turned ON" << std::endl;
-
-    codegen.module = std::move(module);
-    optimize(codegen);
-    module = std::move(codegen.module);
-
-    if (config.dump_debug_info) {
-      print_separator();
-      dump_optimized_ir();
+    if (import_resolver && import_resolver->get_errors().has_errors())
+    {
+      import_resolver->get_errors().print_errors();
     }
-
-    return true;
-  } catch (const std::exception &e) {
-    std::cerr << "ERROR: Optimization failed: " << e.what() << std::endl;
-    return false;
-  }
-}
-
-bool CompilerDriver::emit_object_file() {
-  try {
-    std::string object_name = config.file_name + ".o";
-    codegen.module = std::move(module);
-    objgen(codegen, object_name);
-    module = std::move(codegen.module);
-
-    return true;
-  } catch (const std::exception &e) {
-    std::cerr << "ERROR: Object file generation failed: " << e.what()
-              << std::endl;
-    return false;
-  }
-}
-
-std::string CompilerDriver::get_stdlib_path() const {
-  if (const char *aloha_home = std::getenv("ALOHA_HOME")) {
-    return std::string(aloha_home) + "/lib/libaloha_stdlib.a";
-  }
-
-  // DEV(remove): try to find standard library relative to the compiler executable
-  char exe_path[PATH_MAX];
-  ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
-  if (len != -1) {
-    exe_path[len] = '\0';
-    std::filesystem::path exe_dir =
-        std::filesystem::path(exe_path).parent_path();
-    std::filesystem::path stdlib_path = exe_dir / "libaloha_stdlib.a";
-    if (std::filesystem::exists(stdlib_path)) {
-      return stdlib_path.string();
+    if (type_resolver && type_resolver->get_errors().has_errors())
+    {
+      type_resolver->get_errors().print_errors();
+    }
+    if (air_builder && air_builder->get_errors().has_errors())
+    {
+      air_builder->get_errors().print_errors();
+    }
+    if (codegen && codegen->has_errors())
+    {
+      codegen->get_error_reporter().print_errors();
     }
   }
 
-  //TODO: fix this
-  // Fallback: look in build directory
-  return "../build/libaloha_stdlib.a";
-}
+  void CompilerDriver::log(const std::string &message) const
+  {
+    if (options.verbose)
+    {
+      std::cout << "[INFO] " << message << std::endl;
+    }
+  }
 
-bool CompilerDriver::link_executable() {
-  try {
-    std::string object_name = config.file_name + ".o";
-    std::string executable_name = config.file_name + ".out";
-    std::string stdlib_path = get_stdlib_path();
+  void CompilerDriver::log_stage(const std::string &stage_name) const
+  {
+    std::cout << "Stage: " << stage_name << "..." << std::endl;
+  }
 
-    const char *linker_candidates[] = {"ld.lld", "ld", "lld"};
+  std::string CompilerDriver::get_base_name() const
+  {
+    std::filesystem::path p(options.input_file);
+    return p.stem().string();
+  }
 
-    std::string linker;
-    for (const char *candidate : linker_candidates) {
-      if (auto linker_path = llvm::sys::findProgramByName(candidate)) {
-        linker = linker_path.get();
-        break;
+  std::string CompilerDriver::get_output_name(const std::string &extension) const
+  {
+    if (!options.output_file.empty())
+    {
+      return options.output_file + extension;
+    }
+    return get_base_name() + extension;
+  }
+
+  std::string CompilerDriver::get_stdlib_path() const
+  {
+    if (const char *aloha_home = std::getenv("ALOHA_HOME"))
+    {
+      return std::string(aloha_home) + "/lib/libaloha_stdlib.a";
+    }
+
+    // try to find standard library relative to the compiler executable
+    char exe_path[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+    if (len != -1)
+    {
+      exe_path[len] = '\0';
+      std::filesystem::path exe_dir =
+          std::filesystem::path(exe_path).parent_path();
+      std::filesystem::path stdlib_path = exe_dir / "libaloha_stdlib.a";
+      if (std::filesystem::exists(stdlib_path))
+      {
+        return stdlib_path.string();
       }
     }
 
-    if (linker.empty()) {
-      std::cerr << "ERROR: No linker found (tried: ld.lld, ld, lld)" << std::endl;
-      return false;
-    }
+    // fallback: look in build directory
+    return "../build/libaloha_stdlib.a";
+  }
 
-    std::cout << "Linking with: " << linker << std::endl;
+  void CompilerDriver::dump_ast() const
+  {
+    if (!options.dump_ast || !ast || !parser)
+      return;
 
-    // build ELF linker args
-    std::vector<llvm::StringRef> args = {
-        linker,
-        "-o",
-        executable_name,
-        "/usr/lib/x86_64-linux-gnu/crt1.o",
-        "/usr/lib/x86_64-linux-gnu/crti.o",
-        object_name,
-        stdlib_path,
-        "/usr/lib/x86_64-linux-gnu/crtn.o",
-        "-L/usr/lib/x86_64-linux-gnu",
-        "-L/usr/lib",
-        "-L/lib/x86_64-linux-gnu",
-        "-L/lib",
-        "-lc",
-        "-dynamic-linker",
-        "/lib64/ld-linux-x86-64.so.2"};
+    std::cout << "\n========================================\n";
+    std::cout << "UNTYPED AST\n";
+    std::cout << "========================================\n";
+    parser->dump(ast.get());
+    std::cout << "========================================\n\n";
+  }
 
-    std::string error_msg;
-    int result = llvm::sys::ExecuteAndWait(linker, args, std::nullopt, {}, 0, 0,
-                                           &error_msg);
+  void CompilerDriver::dump_air() const
+  {
+    if (!options.dump_air || !air_module)
+      return;
 
-    if (result == 0) {
-      std::cout << "Linking successful, executable created: " << executable_name
-                << std::endl;
+    std::cout << "\n========================================\n";
+    std::cout << "AIR MODULE\n";
+    std::cout << "========================================\n";
+    AIR::Printer printer(std::cout, ty_table.get());
+    printer.print(air_module.get());
+    std::cout << "========================================\n\n";
+  }
+
+  void CompilerDriver::dump_llvm_ir() const
+  {
+    if (!options.dump_ir || !llvm_module)
+      return;
+
+    std::cout << "\n========================================\n";
+    std::cout << "LLVM IR\n";
+    std::cout << "========================================\n";
+    llvm_module->print(llvm::outs(), nullptr);
+    std::cout << "========================================\n\n";
+  }
+
+  bool CompilerDriver::stage_parse()
+  {
+    log_stage("Parsing");
+
+    try
+    {
+      std::ifstream file(options.input_file);
+      if (!file.is_open())
+      {
+        std::cerr << "Error: Could not open file: " << options.input_file << std::endl;
+        return false;
+      }
+      std::string source((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+      file.close();
+
+      if (source.empty())
+      {
+        std::cerr << "Error: File is empty: " << options.input_file << std::endl;
+        return false;
+      }
+
+      lexer = std::make_unique<Lexer>(source);
+      parser = std::make_unique<Parser>(*lexer);
+
+      ast = parser->parse();
+      if (!ast)
+      {
+        std::cerr << "Error: Parsing failed" << std::endl;
+        return false;
+      }
+
+      log("Parsed successfully");
+      dump_ast();
       return true;
-    } else {
-      std::cerr << "Linking failed with error code: " << result << std::endl;
-      if (!error_msg.empty()) {
-        std::cerr << "Error: " << error_msg << std::endl;
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: Parsing exception: " << e.what() << std::endl;
+      return false;
+    }
+  }
+
+  bool CompilerDriver::stage_symbol_binding()
+  {
+    log_stage("Definition Collection");
+
+    try
+    {
+      symbol_binder = std::make_unique<aloha::SymbolBinder>(*ty_table);
+
+      if (!symbol_binder->bind(ast.get()))
+      {
+        std::cerr << "Error: Symbol binding failed" << std::endl;
+        symbol_binder->get_errors().print_errors();
+        has_compilation_errors = true;
+        return false;
       }
+
+      log("Definition collection completed successfully");
+
+      return true;
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: Definition collection exception: " << e.what() << std::endl;
+      has_compilation_errors = true;
       return false;
     }
-  } catch (const std::exception &e) {
-    std::cerr << "ERROR: Linking failed: " << e.what() << std::endl;
-    return false;
   }
-}
 
-int CompilerDriver::compile() {
-  print_separator();
+  bool CompilerDriver::stage_import_resolution()
+  {
+    log_stage("Import Resolution");
 
-  if (!parse_and_resolve_imports())
-    return 1;
+    try
+    {
+      import_resolver = std::make_unique<aloha::ImportResolver>(
+          *ty_table, symbol_binder->get_symbol_table(), options.input_file);
 
-  if (!compile_modules())
-    return 1;
+      if (!import_resolver->resolve_imports(ast.get()))
+      {
+        std::cerr << "Error: Import resolution failed" << std::endl;
+        import_resolver->get_errors().print_errors();
+        has_compilation_errors = true;
+        return false;
+      }
 
-  if (!link_modules())
-    return 1;
-
-  if (!optimize_code())
-    return 1;
-
-  if (!emit_object_file())
-    return 1;
-
-  if (!link_executable())
-    return 1;
-
-  return 0;
-}
-
-bool CompilerDriver::parse_and_resolve_imports() {
-  try {
-    std::cout << "Parsing modules...\n";
-    if (!import_resolver.process_imports(config.input_file, module_context)) {
-      return false;
-    }
-
-    std::cout << "Parsed " << module_context.get_modules().size()
-              << " module(s)\n";
-    print_separator();
-    return true;
-  } catch (const std::exception &e) {
-    std::cerr << "ERROR: Module parsing failed: " << e.what() << std::endl;
-    return false;
-  }
-}
-
-bool CompilerDriver::compile_modules() {
-  try {
-    std::cout << "Compiling modules...\n";
-
-    auto &modules = module_context.get_modules();
-
-    for (auto &mod : modules) {
-      std::cout << "  Compiling: " << mod->module_name << std::endl;
-
-      Aloha::ExportedSymbols imported_symbols;
-      for (const auto &dep_path : mod->dependencies) {
-        auto *dep_module = module_context.get_module(dep_path);
-        if (dep_module && dep_module->is_compiled) {
-          imported_symbols.merge(dep_module->exported_symbols);
+      log("Import resolution completed successfully");
+      auto import_paths = import_resolver->get_import_paths();
+      if (!import_paths.empty())
+      {
+        log("  Imports resolved: " + std::to_string(import_paths.size()));
+        for (const auto &path : import_paths)
+        {
+          log("    - " + path);
         }
       }
 
-      SemanticAnalyzer module_analyzer;
-      module_analyzer.import_symbols(imported_symbols.functions,
-                                     imported_symbols.structs);
-      module_analyzer.analyze(mod->ast.get());
-
-      module_analyzer.export_symbols(mod->exported_symbols.functions,
-                                     mod->exported_symbols.structs);
-
-      auto llvm_module =
-          std::make_unique<llvm::Module>(mod->module_name, codegen.context);
-
-      // temporarily set the module
-      auto original_module = std::move(codegen.module);
-      codegen.module = std::move(llvm_module);
-
-      // declare all imported functions as external
-      for (const auto &[fn_name, fn_info] : imported_symbols.functions) {
-        codegen.declare_fn_external(fn_name, fn_info);
-      }
-
-      if (!codegen.generate_code(mod->ast.get())) {
-        std::cerr << "ERROR: Code generation failed for " << mod->module_name
-                  << std::endl;
-        return false;
-      }
-
-      // store the compiled module and restore the original
-      mod->llvm_module = std::move(codegen.module);
-      mod->is_compiled = true;
-      codegen.module = std::move(original_module);
+      return true;
     }
-
-    print_separator();
-    return true;
-  } catch (const std::exception &e) {
-    std::cerr << "ERROR: Module compilation failed: " << e.what() << std::endl;
-    return false;
-  }
-}
-
-bool CompilerDriver::link_modules() {
-  try {
-    std::cout << "Linking modules...\n";
-
-    auto &modules = module_context.get_modules();
-    if (modules.empty()) {
-      std::cerr << "ERROR: No modules to link\n";
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: Import resolution exception: " << e.what() << std::endl;
+      has_compilation_errors = true;
       return false;
     }
+  }
 
-    // find the main module and the last one is the entry point
-    module = std::move(modules.back()->llvm_module);
+  bool CompilerDriver::stage_type_resolution()
+  {
+    log_stage("Type Resolution");
 
-    if (!module) {
-      std::cerr << "ERROR: Entry point module does not exist\n";
+    try
+    {
+      type_resolver = std::make_unique<aloha::TypeResolver>(
+          *ty_table, symbol_binder->get_symbol_table());
+
+      if (!type_resolver->resolve(ast.get()))
+      {
+        std::cerr << "Error: Type resolution failed" << std::endl;
+        type_resolver->get_errors().print_errors();
+        has_compilation_errors = true;
+        return false;
+      }
+
+      if (import_resolver)
+      {
+        const auto &imported_asts = import_resolver->get_imported_asts();
+        for (const auto &imported_ast : imported_asts)
+        {
+          if (!type_resolver->resolve(imported_ast.get()))
+          {
+            std::cerr << "Error: Type resolution failed in imported file" << std::endl;
+            type_resolver->get_errors().print_errors();
+            has_compilation_errors = true;
+            return false;
+          }
+        }
+      }
+
+      log("Type resolution completed successfully");
+      log("  Structs resolved: " +
+          std::to_string(type_resolver->get_resolved_structs().size()));
+      log("  Functions resolved: " +
+          std::to_string(type_resolver->get_resolved_functions().size()));
+
+      return true;
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: Type resolution exception: " << e.what() << std::endl;
+      has_compilation_errors = true;
       return false;
     }
-
-    // link all other modules in reverse dependency order
-    llvm::Linker linker(*module);
-    for (size_t i = 0; i < modules.size() - 1; ++i) {
-      if (!modules[i]->llvm_module) {
-        std::cerr << "ERROR: Module " << modules[i]->module_name
-                  << " is null\n";
-        return false;
-      }
-
-      std::cout << "  Linking: " << modules[i]->module_name << std::endl;
-
-      if (linker.linkInModule(std::move(modules[i]->llvm_module))) {
-        std::cerr << "ERROR: Failed to link module: " << modules[i]->module_name
-                  << std::endl;
-        return false;
-      }
-    }
-
-    std::cout << "Successfully linked " << modules.size() << " module(s)\n";
-    print_separator();
-
-    if (config.dump_debug_info) {
-      std::cout << "Linked LLVM IR:\n";
-      codegen.module = std::move(module);
-      codegen.dump_ir();
-      module = std::move(codegen.module);
-      print_separator();
-    }
-
-    return true;
-  } catch (const std::exception &e) {
-    std::cerr << "ERROR: Module linking failed: " << e.what() << std::endl;
-    return false;
   }
-}
+
+  bool CompilerDriver::stage_air_building()
+  {
+    log_stage("AIR Building");
+
+    try
+    {
+      air_builder = std::make_unique<aloha::AIRBuilder>(
+          *ty_table,
+          symbol_binder->get_symbol_table(),
+          type_resolver->get_resolved_structs(),
+          type_resolver->get_resolved_functions());
+
+      air_module = air_builder->build(ast.get());
+      if (!air_module)
+      {
+        std::cerr << "Error: AIR building failed" << std::endl;
+        air_builder->get_errors().print_errors();
+        has_compilation_errors = true;
+        return false;
+      }
+
+      if (import_resolver)
+      {
+        const auto &imported_asts = import_resolver->get_imported_asts();
+        for (const auto &imported_ast : imported_asts)
+        {
+          auto imported_module = air_builder->build(imported_ast.get());
+          if (!imported_module)
+          {
+            std::cerr << "Error: AIR building failed in imported file" << std::endl;
+            air_builder->get_errors().print_errors();
+            has_compilation_errors = true;
+            return false;
+          }
+
+          for (auto &func : imported_module->functions)
+          {
+            air_module->functions.push_back(std::move(func));
+          }
+          for (auto &struct_decl : imported_module->structs)
+          {
+            air_module->structs.push_back(std::move(struct_decl));
+          }
+        }
+      }
+
+      log("AIR building completed successfully");
+      dump_air();
+      return true;
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: AIR building exception: " << e.what() << std::endl;
+      has_compilation_errors = true;
+      return false;
+    }
+  }
+
+  bool CompilerDriver::stage_codegen()
+  {
+    log_stage("Code Generation");
+
+    try
+    {
+      codegen = std::make_unique<Codegen::CodeGenerator>(*ty_table);
+
+      llvm_module = codegen->generate(air_module.get());
+      if (!llvm_module)
+      {
+        std::cerr << "Error: Code generation failed" << std::endl;
+        codegen->get_error_reporter().print_errors();
+        has_compilation_errors = true;
+        return false;
+      }
+
+      log("Code generation completed successfully");
+      dump_llvm_ir();
+      return true;
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: Code generation exception: " << e.what() << std::endl;
+      has_compilation_errors = true;
+      return false;
+    }
+  }
+
+  bool CompilerDriver::stage_optimize()
+  {
+    if (!options.enable_optimization)
+    {
+      log("Optimization: disabled");
+      return true;
+    }
+
+    log_stage("Optimization");
+
+    try
+    {
+      optimize_module(llvm_module.get());
+      log("Optimization passes completed");
+      return true;
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: Optimization exception: " << e.what() << std::endl;
+      return false;
+    }
+  }
+
+  bool CompilerDriver::stage_emit_llvm_ir()
+  {
+    if (!options.emit_llvm)
+    {
+      return true;
+    }
+
+    log_stage("Emitting LLVM IR");
+
+    try
+    {
+      std::string ir_file = get_output_name(".ll");
+      std::error_code ec;
+      llvm::raw_fd_ostream out(ir_file, ec, llvm::sys::fs::OF_Text);
+
+      if (ec)
+      {
+        std::cerr << "Error: Could not open file " << ir_file << ": "
+                  << ec.message() << std::endl;
+        return false;
+      }
+
+      llvm_module->print(out, nullptr);
+      out.close();
+
+      std::cout << "LLVM IR written to: " << ir_file << std::endl;
+      return true;
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: LLVM IR emission exception: " << e.what() << std::endl;
+      return false;
+    }
+  }
+
+  bool CompilerDriver::stage_emit_object()
+  {
+    if (!options.emit_object && !options.emit_executable)
+    {
+      return true;
+    }
+
+    log_stage("Emitting Object File");
+
+    try
+    {
+      std::string obj_file = get_output_name(".o");
+
+      emit_object_file(llvm_module.get(), obj_file);
+
+      std::cout << "Object file written to: " << obj_file << std::endl;
+      return true;
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: Object file emission exception: " << e.what() << std::endl;
+      return false;
+    }
+  }
+
+  bool CompilerDriver::stage_link_executable()
+  {
+    if (!options.emit_executable)
+    {
+      return true;
+    }
+
+    log_stage("Linking Executable");
+
+    try
+    {
+      std::string obj_file = get_output_name(".o");
+      std::string exe_file = get_output_name(".out");
+      std::string stdlib_path = get_stdlib_path();
+
+      const char *linker_candidates[] = {"ld.lld", "ld", "lld"};
+      std::string linker;
+
+      for (const char *candidate : linker_candidates)
+      {
+        if (auto linker_path = llvm::sys::findProgramByName(candidate))
+        {
+          linker = linker_path.get();
+          break;
+        }
+      }
+
+      if (linker.empty())
+      {
+        std::cerr << "Error: No linker found (tried: ld.lld, ld, lld)" << std::endl;
+        return false;
+      }
+
+      log("Using linker: " + linker);
+
+      std::vector<llvm::StringRef> args = {
+          linker,
+          "-o",
+          exe_file,
+          "/usr/lib/x86_64-linux-gnu/crt1.o",
+          "/usr/lib/x86_64-linux-gnu/crti.o",
+          obj_file,
+          stdlib_path,
+          "/usr/lib/x86_64-linux-gnu/crtn.o",
+          "-L/usr/lib/x86_64-linux-gnu",
+          "-L/usr/lib",
+          "-L/lib/x86_64-linux-gnu",
+          "-L/lib",
+          "-lc",
+          "-dynamic-linker",
+          "/lib64/ld-linux-x86-64.so.2"};
+
+      std::string error_msg;
+      int result = llvm::sys::ExecuteAndWait(linker, args, std::nullopt, {}, 0, 0,
+                                             &error_msg);
+
+      if (result == 0)
+      {
+        std::cout << "Linking successful: " << exe_file << std::endl;
+        return true;
+      }
+      else
+      {
+        std::cerr << "Error: Linking failed with code " << result << std::endl;
+        if (!error_msg.empty())
+        {
+          std::cerr << "Error: " << error_msg << std::endl;
+        }
+        return false;
+      }
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: Linking exception: " << e.what() << std::endl;
+      return false;
+    }
+  }
+
+  int CompilerDriver::compile()
+  {
+    std::cout << "========================================\n";
+    std::cout << "Aloha Compiler - New Integrated Pipeline\n";
+    std::cout << "========================================\n";
+    std::cout << "Input: " << options.input_file << std::endl;
+    std::cout << "\n";
+
+    if (!stage_parse())
+      return 1;
+
+    if (!stage_symbol_binding())
+      return 1;
+
+    if (!stage_import_resolution())
+      return 1;
+
+    if (!stage_type_resolution())
+      return 1;
+
+    if (!stage_air_building())
+      return 1;
+
+    if (!stage_codegen())
+      return 1;
+
+    if (!stage_optimize())
+      return 1;
+
+    if (!stage_emit_llvm_ir())
+      return 1;
+
+    if (!stage_emit_object())
+      return 1;
+
+    if (!stage_link_executable())
+      return 1;
+
+    std::cout << "\n========================================\n";
+    std::cout << "Compilation successful!\n";
+    std::cout << "========================================\n";
+
+    return 0;
+  }
+
+} // namespace CompilerPipeline

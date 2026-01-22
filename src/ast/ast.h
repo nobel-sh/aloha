@@ -3,8 +3,7 @@
 
 #include "decl.h"
 #include "visitor.h"
-#include "location.h"
-#include "type.h"
+#include "../frontend/location.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -15,7 +14,7 @@
 namespace aloha
 {
 
-  using Type = AlohaType::Type;
+  using Type = std::string;
 
   class Node
   {
@@ -132,7 +131,7 @@ namespace aloha
     std::string m_name;
     Type m_type;
 
-    explicit Identifier(Location loc, std::string name, Type t = Type::UNKNOWN);
+    explicit Identifier(Location loc, std::string name, Type t = "unknown");
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
     Type get_type() const override;
@@ -263,8 +262,10 @@ namespace aloha
   public:
     std::string m_name;
     Type m_type;
+    std::string m_type_name; // Store original type name for resolution
 
     Parameter(std::string name, Type type);
+    Parameter(std::string name, Type type, std::string type_name);
   };
 
   class Function : public Statement
@@ -288,8 +289,10 @@ namespace aloha
   public:
     std::string m_name;
     Type m_type;
+    std::string m_type_name; // Store original type name for resolution
 
     StructField(std::string name, Type type);
+    StructField(std::string name, Type type, std::string type_name);
   };
 
   class StructDecl : public Statement

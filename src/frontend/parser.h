@@ -1,16 +1,17 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
-#include "ast/ast.h"
-#include "error/parser_error.h"
+#include "../ast/ast.h"
+#include "../error/parser_error.h"
 #include "lexer.h"
 #include "token.h"
-#include "type.h"
 #include <functional>
 #include <map>
 #include <memory>
 #include <optional>
 #include <vector>
+
+using ParseTy = std::string;
 
 class Parser
 {
@@ -52,13 +53,13 @@ private:
   template <typename T>
   void consume(const T &value, std::string message);
   [[nodiscard]] std::optional<Token> get_token(bool use_next) const;
-  [[nodiscard]] std::optional<AlohaType::Type> optional_type();
+  [[nodiscard]] std::optional<ParseTy> optional_type();
+  ParseTy parse_type();
   Location current_location() const;
 
   void panic_parser(const std::string &message);
 
   std::unique_ptr<aloha::Identifier> expect_identifier();
-  AlohaType::Type parse_type();
   bool is_reserved_ident() const;
   bool is_reserved_ident(Token t) const;
 
