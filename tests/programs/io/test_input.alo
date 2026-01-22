@@ -1,9 +1,0 @@
-import "stdlib/io.alo";
-
-fun main() -> number {
-    print("What's your name: ");
-    imut name:string = input();
-    print("Hello, ");
-    println(name);
-    return 0;
-}

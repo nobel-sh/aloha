@@ -693,8 +693,8 @@ namespace Codegen
     }
 
     llvm::BasicBlock *then_block = llvm::BasicBlock::Create(*context, "then", current_function);
-    llvm::BasicBlock *else_block = llvm::BasicBlock::Create(*context, "else");
     llvm::BasicBlock *merge_block = llvm::BasicBlock::Create(*context, "ifcont");
+    llvm::BasicBlock *else_block = nullptr;
 
     if (node->else_branch.empty())
     {
@@ -702,6 +702,7 @@ namespace Codegen
     }
     else
     {
+      else_block = llvm::BasicBlock::Create(*context, "else");
       builder->CreateCondBr(cond, then_block, else_block);
     }
 
@@ -710,8 +711,10 @@ namespace Codegen
     {
       stmt->accept(*this);
     }
-    bool then_has_terminator = builder->GetInsertBlock()->getTerminator() != nullptr;
-    if (!then_has_terminator)
+    llvm::BasicBlock *then_end_block = builder->GetInsertBlock();
+    // If insertion point is cleared (null), it means all paths in the branch have terminated
+    bool then_has_terminator = !then_end_block || (then_end_block && then_end_block->getTerminator() != nullptr);
+    if (!then_has_terminator && then_end_block)
     {
       builder->CreateBr(merge_block);
     }
@@ -725,8 +728,10 @@ namespace Codegen
       {
         stmt->accept(*this);
       }
-      else_has_terminator = builder->GetInsertBlock()->getTerminator() != nullptr;
-      if (!else_has_terminator)
+      llvm::BasicBlock *else_end_block = builder->GetInsertBlock();
+      // If insertion point is cleared (null), it means all paths in the branch have terminated
+      else_has_terminator = !else_end_block || (else_end_block && else_end_block->getTerminator() != nullptr);
+      if (!else_has_terminator && else_end_block)
       {
         builder->CreateBr(merge_block);
       }

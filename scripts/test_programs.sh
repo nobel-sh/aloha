@@ -28,7 +28,7 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPILER="$PROJECT_DIR/build/aloha"
-EXAMPLES_DIR="$PROJECT_DIR/tests/programs"
+EXAMPLES_DIR="$PROJECT_DIR/tests/integration"
 TEMP_DIR=$(mktemp -d)
 
 # Colors for output

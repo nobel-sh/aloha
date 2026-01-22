@@ -1,5 +1,0 @@
-import "error_circular_a.alo";
-
-fun funcB() -> number {
-    return funcA();
-}

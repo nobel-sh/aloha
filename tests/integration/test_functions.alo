@@ -1,0 +1,236 @@
+fun simple_function() -> number {
+    return 42;
+}
+
+fun add(a: number, b: number) -> number {
+    return a + b;
+}
+
+fun multiply(x: number, y: number) -> number {
+    return x * y;
+}
+
+fun subtract(a: number, b: number) -> number {
+    return a - b;
+}
+
+fun test_basic_functions() -> void {
+    imut result: number = simple_function();
+    assert_msg(result == 42, "simple_function() should return 42");
+    
+    imut sum: number = add(10, 20);
+    assert_msg(sum == 30, "add(10, 20) should return 30");
+    
+    imut prod: number = multiply(5, 6);
+    assert_msg(prod == 30, "multiply(5, 6) should return 30");
+    
+    imut diff: number = subtract(100, 30);
+    assert_msg(diff == 70, "subtract(100, 30) should return 70");
+    
+    println("[PASS] Basic function tests passed");
+}
+
+fun max_of_two(a: number, b: number) -> number {
+    if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+fun min_of_two(a: number, b: number) -> number {
+    if (a < b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+fun abs_value(n: number) -> number {
+    if (n < 0) {
+        return -n;
+    } else {
+        return n;
+    }
+}
+
+fun test_conditional_functions() -> void {
+    imut maximum: number = max_of_two(10, 20);
+    assert_msg(maximum == 20, "max_of_two(10, 20) should return 20");
+    
+    imut maximum2: number = max_of_two(50, 30);
+    assert_msg(maximum2 == 50, "max_of_two(50, 30) should return 50");
+    
+    imut minimum: number = min_of_two(10, 20);
+    assert_msg(minimum == 10, "min_of_two(10, 20) should return 10");
+    
+    imut abs1: number = abs_value(-42);
+    assert_msg(abs1 == 42, "abs_value(-42) should return 42");
+    
+    imut abs2: number = abs_value(42);
+    assert_msg(abs2 == 42, "abs_value(42) should return 42");
+    
+    println("[PASS] Conditional function tests passed");
+}
+
+fun factorial(n: number) -> number {
+    if (n <= 1) {
+        return 1;
+    } else {
+        return n * factorial(n - 1);
+    }
+}
+
+fun fibonacci(n: number) -> number {
+    if (n <= 1) {
+        return n;
+    } else {
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+}
+
+fun sum_to_n(n: number) -> number {
+    if (n <= 0) {
+        return 0;
+    } else {
+        return n + sum_to_n(n - 1);
+    }
+}
+
+fun power(base: number, exp: number) -> number {
+    if (exp == 0) {
+        return 1;
+    } else {
+        return base * power(base, exp - 1);
+    }
+}
+
+fun test_recursive_functions() -> void {
+    imut fact5: number = factorial(5);
+    assert_msg(fact5 == 120, "factorial(5) should return 120");
+    
+    imut fact7: number = factorial(7);
+    assert_msg(fact7 == 5040, "factorial(7) should return 5040");
+    
+    imut fib5: number = fibonacci(5);
+    assert_msg(fib5 == 5, "fibonacci(5) should return 5");
+    
+    imut fib8: number = fibonacci(8);
+    assert_msg(fib8 == 21, "fibonacci(8) should return 21");
+    
+    imut sum10: number = sum_to_n(10);
+    assert_msg(sum10 == 55, "sum_to_n(10) should return 55");
+    
+    imut pow2_8: number = power(2, 8);
+    assert_msg(pow2_8 == 256, "power(2, 8) should return 256");
+    
+    imut pow3_4: number = power(3, 4);
+    assert_msg(pow3_4 == 81, "power(3, 4) should return 81");
+    
+    println("[PASS] Recursive function tests passed");
+}
+
+fun is_even(n: number) -> bool {
+    if (n == 0) {
+        return true;
+    } else {
+        if (n == 1) {
+            return false;
+        } else {
+            if (n < 0) {
+                return is_even(-n);
+            } else {
+                return is_even(n - 2);
+            }
+        }
+    }
+}
+
+fun test_boolean_returning_functions() -> void {
+    imut even8: bool = is_even(8);
+    assert_msg(even8 == true, "is_even(8) should return true");
+    
+    imut even7: bool = is_even(7);
+    assert_msg(even7 == false, "is_even(7) should return false");
+    
+    imut even0: bool = is_even(0);
+    assert_msg(even0 == true, "is_even(0) should return true");
+    
+    println("[PASS] Boolean returning function tests passed");
+}
+
+fun complex_calculation(a: number, b: number, c: number) -> number {
+    imut step1: number = add(a, b);
+    imut step2: number = multiply(step1, c);
+    imut step3: number = subtract(step2, a);
+    return step3;
+}
+
+fun nested_function_calls() -> number {
+    imut x: number = add(5, 10);
+    imut y: number = multiply(x, 2);
+    imut z: number = subtract(y, 5);
+    return z;
+}
+
+fun test_composed_functions() -> void {
+    imut result1: number = complex_calculation(10, 20, 3);
+    assert_msg(result1 == 80, "complex_calculation(10, 20, 3) should return 80");
+    
+    imut result2: number = nested_function_calls();
+    assert_msg(result2 == 25, "nested_function_calls() should return 25");
+    
+    imut nested: number = add(multiply(5, 3), subtract(20, 5));
+    assert_msg(nested == 30, "add(multiply(5, 3), subtract(20, 5)) should return 30");
+    
+    println("[PASS] Composed function tests passed");
+}
+
+fun void_function() -> void {
+    imut x: number = 42;
+}
+
+fun void_function_with_call() -> void {
+    void_function();
+}
+
+fun test_void_functions() -> void {
+    void_function();
+    void_function_with_call();
+    
+    println("[PASS] Void function tests passed");
+}
+
+fun test_function_parameters() -> void {
+    imut sum1: number = add(0, 0);
+    assert_msg(sum1 == 0, "add(0, 0) should return 0");
+    
+    imut sum2: number = add(-10, 10);
+    assert_msg(sum2 == 0, "add(-10, 10) should return 0");
+    
+    imut sum3: number = add(-5, -10);
+    assert_msg(sum3 == -15, "add(-5, -10) should return -15");
+    
+    imut prod1: number = multiply(0, 100);
+    assert_msg(prod1 == 0, "multiply(0, 100) should return 0");
+    
+    imut prod2: number = multiply(-5, 6);
+    assert_msg(prod2 == -30, "multiply(-5, 6) should return -30");
+    
+    println("[PASS] Function parameter tests passed");
+}
+
+fun main() -> number {
+    println("=== Running Function Tests ===");
+    
+    test_basic_functions();
+    test_conditional_functions();
+    test_recursive_functions();
+    test_boolean_returning_functions();
+    test_composed_functions();
+    test_void_functions();
+    test_function_parameters();
+    
+    println("\n[SUCCESS] All tests passed!");
+    return 0;
+}

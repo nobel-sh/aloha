@@ -1,6 +1,0 @@
-import "stdlib/io.alo";
-
-fun main() -> number {
-    println("Hello from main!");
-    return 0;
-}
