@@ -5,6 +5,7 @@
 #include "../ty/ty.h"
 #include "../ast/ast.h"
 #include "../frontend/location.h"
+#include "../error/compiler_error.h"
 #include <memory>
 
 namespace aloha
@@ -16,7 +17,7 @@ namespace aloha
     AIR::TyTable &ty_table;
     SymbolTable symbol_table;
     SymbolTable *symbol_table_ptr; // allow using external symbol table for imports
-    SymbolError errors;
+    Aloha::TyError errors;
     Scope *current_scope;
 
   public:
@@ -34,7 +35,7 @@ namespace aloha
     SymbolTable &get_symbol_table() { return *symbol_table_ptr; }
     const SymbolTable &get_symbol_table() const { return *symbol_table_ptr; }
 
-    const SymbolError &get_errors() const { return errors; }
+    const Aloha::TyError &get_errors() const { return errors; }
 
   private:
     // register all struct names and function names

@@ -3,6 +3,7 @@
 
 #include "../ty/ty.h"
 #include "../ast/ast.h"
+#include "../error/compiler_error.h"
 #include "../frontend/location.h"
 #include "symbol_binder.h"
 #include <iostream>
@@ -52,30 +53,7 @@ namespace aloha
         : id(fid), name(n), return_type(ret), param_types(params), is_extern(ext), location(loc) {}
   };
 
-  class TypeResolutionError
-  {
-  private:
-    std::vector<std::string> errors;
-
-  public:
-    void add_error(Location loc, const std::string &message)
-    {
-      errors.push_back("[" + std::to_string(loc.line) + ":" +
-                       std::to_string(loc.col) + "] " + message);
-    }
-
-    bool has_errors() const { return !errors.empty(); }
-
-    void print_errors() const
-    {
-      for (const auto &error : errors)
-      {
-        std::cerr << "Type Resolution Error: " << error << std::endl;
-      }
-    }
-
-    const std::vector<std::string> &get_errors() const { return errors; }
-  };
+  using TypeResolutionError = Aloha::TyError;
 
   class TypeResolver
   {

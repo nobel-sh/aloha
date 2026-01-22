@@ -35,23 +35,23 @@ namespace AlohaPipeline
   {
     if (symbol_binder && symbol_binder->get_errors().has_errors())
     {
-      symbol_binder->get_errors().print_errors();
+      symbol_binder->get_errors().print();
     }
     if (import_resolver && import_resolver->get_errors().has_errors())
     {
-      import_resolver->get_errors().print_errors();
+      import_resolver->get_errors().print();
     }
     if (type_resolver && type_resolver->get_errors().has_errors())
     {
-      type_resolver->get_errors().print_errors();
+      type_resolver->get_errors().print();
     }
     if (air_builder && air_builder->get_errors().has_errors())
     {
-      air_builder->get_errors().print_errors();
+      air_builder->get_errors().print();
     }
     if (codegen && codegen->has_errors())
     {
-      codegen->get_error_reporter().print_errors();
+      codegen->get_error_reporter().print();
     }
   }
 
@@ -200,7 +200,7 @@ namespace AlohaPipeline
       if (!symbol_binder->bind(ast.get()))
       {
         std::cerr << "Error: Symbol binding failed" << std::endl;
-        symbol_binder->get_errors().print_errors();
+        symbol_binder->get_errors().print();
         has_compilation_errors = true;
         return false;
       }
@@ -229,7 +229,7 @@ namespace AlohaPipeline
       if (!import_resolver->resolve_imports(ast.get()))
       {
         std::cerr << "Error: Import resolution failed" << std::endl;
-        import_resolver->get_errors().print_errors();
+        import_resolver->get_errors().print();
         has_compilation_errors = true;
         return false;
       }
@@ -267,7 +267,7 @@ namespace AlohaPipeline
       if (!type_resolver->resolve(ast.get()))
       {
         std::cerr << "Error: Type resolution failed" << std::endl;
-        type_resolver->get_errors().print_errors();
+        type_resolver->get_errors().print();
         has_compilation_errors = true;
         return false;
       }
@@ -280,7 +280,7 @@ namespace AlohaPipeline
           if (!type_resolver->resolve(imported_ast.get()))
           {
             std::cerr << "Error: Type resolution failed in imported file" << std::endl;
-            type_resolver->get_errors().print_errors();
+            type_resolver->get_errors().print();
             has_compilation_errors = true;
             return false;
           }
@@ -319,7 +319,7 @@ namespace AlohaPipeline
       if (!air_module)
       {
         std::cerr << "Error: AIR building failed" << std::endl;
-        air_builder->get_errors().print_errors();
+        air_builder->get_errors().print();
         has_compilation_errors = true;
         return false;
       }
@@ -333,7 +333,7 @@ namespace AlohaPipeline
           if (!imported_module)
           {
             std::cerr << "Error: AIR building failed in imported file" << std::endl;
-            air_builder->get_errors().print_errors();
+            air_builder->get_errors().print();
             has_compilation_errors = true;
             return false;
           }
@@ -373,7 +373,7 @@ namespace AlohaPipeline
       if (!llvm_module)
       {
         std::cerr << "Error: Code generation failed" << std::endl;
-        codegen->get_error_reporter().print_errors();
+        codegen->get_error_reporter().print();
         has_compilation_errors = true;
         return false;
       }

@@ -2,6 +2,7 @@
 #define SEMA_SYMBOL_TABLE_H_
 
 #include "../ty/ty.h"
+#include "../error/compiler_error.h"
 #include "../frontend/location.h"
 #include <cstdint>
 #include <iostream>
@@ -166,31 +167,5 @@ namespace aloha
     }
   };
 
-  class SymbolError
-  {
-  private:
-    std::vector<std::string> errors;
-
-  public:
-    void add_error(Location loc, const std::string &message)
-    {
-      errors.push_back("[" + std::to_string(loc.line) + ":" +
-                       std::to_string(loc.col) + "] " + message);
-    }
-
-    bool has_errors() const { return !errors.empty(); }
-
-    void print_errors() const
-    {
-      for (const auto &error : errors)
-      {
-        std::cerr << "Symbol Error: " << error << std::endl;
-      }
-    }
-
-    const std::vector<std::string> &get_errors() const { return errors; }
-  };
-
 } // namespace aloha
-
 #endif // SEMA_SYMBOL_TABLE_H_

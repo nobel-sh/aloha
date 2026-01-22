@@ -2,7 +2,7 @@
 #define PARSER_H_
 
 #include "../ast/ast.h"
-#include "../error/parser_error.h"
+#include "../error/compiler_error.h"
 #include "lexer.h"
 #include "token.h"
 #include <functional>
@@ -36,7 +36,7 @@ private:
   Lexer *lexer;
   Token current_token;
   Token next_token;
-  ErrorCollector error_collector;
+  Aloha::ParserError errors;
   void report_error(const std::string &message);
   static std::map<std::string, prefix_parser_func> prefix_parsers;
   static std::map<std::string, infix_parser_func> infix_parsers;

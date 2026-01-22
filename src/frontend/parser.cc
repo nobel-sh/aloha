@@ -86,12 +86,12 @@ bool Parser::match(TokenKind value, bool use_next)
 void Parser::report_error(const std::string &message)
 {
   const std::string loc_message = message + " at :" + peek()->loc.to_string();
-  error_collector.add_error(loc_message);
+  errors.add_error(loc_message);
 }
 
 const std::vector<std::string> &Parser::get_errors() const
 {
-  return error_collector.get_errors();
+  return errors.get_errors();
 }
 
 std::unique_ptr<aloha::Program> Parser::parse()

@@ -39,7 +39,7 @@ namespace Codegen
 
     if (has_errors())
     {
-      error_reporter.print_errors();
+      error_reporter.print();
       return nullptr;
     }
 
@@ -54,8 +54,6 @@ namespace Codegen
 
     return std::move(module);
   }
-
-
 
   void CodeGenerator::generate_types()
   {
@@ -144,8 +142,8 @@ namespace Codegen
       }
 
       llvm::Function::LinkageTypes linkage = func->is_extern
-                                                  ? llvm::Function::ExternalLinkage
-                                                  : llvm::Function::ExternalLinkage;
+                                                 ? llvm::Function::ExternalLinkage
+                                                 : llvm::Function::ExternalLinkage;
 
       llvm::Function *llvm_func = llvm::Function::Create(
           func_type, linkage, func->name, module.get());
@@ -281,7 +279,7 @@ namespace Codegen
       llvm::Function *func, const std::string &var_name, llvm::Type *type)
   {
     llvm::IRBuilder<> tmp_builder(&func->getEntryBlock(),
-                                   func->getEntryBlock().begin());
+                                  func->getEntryBlock().begin());
     return tmp_builder.CreateAlloca(type, nullptr, var_name);
   }
 

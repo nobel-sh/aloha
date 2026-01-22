@@ -47,14 +47,6 @@ Lexer::Lexer(std::string_view source)
       has_peeked(false),
       eof_token(TokenKind::EOF_TOKEN, Location(1, 1)) {}
 
-void Lexer::dump_errors() const
-{
-  for (const auto &err : errors)
-  {
-    std::cerr << err << '\n';
-  }
-}
-
 bool Lexer::is_eof() const { return pos >= source.size(); }
 
 char Lexer::peek_token() const { return peek_token(0); }
@@ -93,7 +85,7 @@ void Lexer::consume_token(size_t n)
 
 void Lexer::add_error(const std::string &message)
 {
-  errors.push_back(message + " at " + current_loc.to_string());
+  errors.add_error(current_loc, message);
 }
 
 void Lexer::handle_single_line_comment()

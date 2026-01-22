@@ -6,6 +6,7 @@
 #include "../frontend/lexer.h"
 #include "../frontend/parser.h"
 #include "../sema/symbol_binder.h"
+#include "../error/compiler_error.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -26,8 +27,8 @@ namespace aloha
 
     bool resolve_imports(aloha::Program *ast);
 
-    SymbolError &get_errors() { return errors; }
-    const SymbolError &get_errors() const { return errors; }
+    Aloha::TyError &get_errors() { return errors; }
+    const Aloha::TyError &get_errors() const { return errors; }
 
     const std::vector<std::string> &get_import_paths() const
     {
@@ -42,7 +43,7 @@ namespace aloha
   private:
     AIR::TyTable &ty_table;
     SymbolTable &main_symbol_table;
-    SymbolError errors;
+    Aloha::TyError errors;
 
     std::filesystem::path current_file_dir;
     std::vector<std::filesystem::path> search_paths;

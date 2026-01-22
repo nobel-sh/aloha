@@ -1,6 +1,7 @@
 #ifndef LEXER_H_
 #define LEXER_H_
 
+#include "../error/compiler_error.h"
 #include "location.h"
 #include "token.h"
 #include <string>
@@ -11,10 +12,10 @@ class Lexer
 {
 public:
   explicit Lexer(std::string_view source);
-  void dump_errors() const;
+  void dump_errors() const { errors.print(); }
 
-  const std::vector<std::string> &get_errors() const { return errors; }
-  bool has_error() const { return !errors.empty(); }
+  const Aloha::LexerError &get_errors() const { return errors; }
+  bool has_error() const { return errors.has_errors(); }
 
   Token next_token();
   Token peek_next_token();
@@ -22,7 +23,7 @@ public:
 
 private:
   std::string_view source;
-  std::vector<std::string> errors;
+  Aloha::LexerError errors;
   Location current_loc;
   size_t pos;
 

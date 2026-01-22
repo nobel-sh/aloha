@@ -4,6 +4,7 @@
 #include "../ty/ty.h"
 #include "../ast/ast.h"
 #include "../ast/visitor.h"
+#include "../error/compiler_error.h"
 #include "air.h"
 #include "expr.h"
 #include "stmt.h"
@@ -20,30 +21,7 @@
 namespace aloha
 {
 
-  class AIRBuildError
-  {
-  private:
-    std::vector<std::string> errors;
-
-  public:
-    void add_error(Location loc, const std::string &message)
-    {
-      errors.push_back("[" + std::to_string(loc.line) + ":" +
-                       std::to_string(loc.col) + "] " + message);
-    }
-
-    bool has_errors() const { return !errors.empty(); }
-
-    void print_errors() const
-    {
-      for (const auto &error : errors)
-      {
-        std::cerr << "AIR Build Error: " << error << std::endl;
-      }
-    }
-
-    const std::vector<std::string> &get_errors() const { return errors; }
-  };
+  using AIRBuildError = Aloha::AIRError;
 
   class AIRBuilder : public ASTVisitor
   {

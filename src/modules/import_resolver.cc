@@ -250,7 +250,7 @@ namespace aloha
       {
         for (const auto &error : nested_resolver.get_errors().get_errors())
         {
-          errors.add_error(import_loc, error);
+          errors.add_error(import_loc, error.message);
         }
         return false;
       }
@@ -264,7 +264,7 @@ namespace aloha
       {
         for (const auto &error : imported_def_collector.get_errors().get_errors())
         {
-          errors.add_error(import_loc, "In import '" + file_path + "': " + error);
+          errors.add_error(import_loc, "In import '" + file_path + "': " + error.message);
         }
         return false;
       }

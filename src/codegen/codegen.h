@@ -4,6 +4,7 @@
 #include "../air/air.h"
 #include "../air/expr.h"
 #include "../air/stmt.h"
+#include "../error/compiler_error.h"
 #include "../ty/ty.h"
 
 #include <llvm/IR/IRBuilder.h>
@@ -20,51 +21,11 @@
 
 namespace Codegen
 {
-  struct CodegenError
-  {
-    std::string message;
-    Location location;
+  using CodegenErrorReporter = Aloha::CodegenError;
 
-    CodegenError(const std::string &msg, const Location &loc)
-        : message(msg), location(loc) {}
-
-    void print() const
-    {
-      std::cerr << "Codegen Error: [" << location.line << ":" << location.col << "] "
-                << message << std::endl;
-    }
-  };
-
-  class CodegenErrorReporter
+  class CodeGenerator : public AIR::AIRVisitor
   {
   private:
-    std::vector<CodegenError> errors;
-
-  public:
-    void report_error(const std::string &message, const Location &location)
-    {
-      errors.emplace_back(message, location);
-    }
-
-    bool has_errors() const { return !errors.empty(); }
-    size_t error_count() const { return errors.size(); }
-    const std::vector<CodegenError> &get_errors() const { return errors; }
-
-    void print_errors() const
-    {
-      for (const auto &error : errors)
-      {
-        error.print();
-      }
-    }
-
-    void clear() { errors.clear(); }
-  };
-
-    class CodeGenerator : public AIR::AIRVisitor
-  {
-  private:
-
     // LLVM infrastructure
     std::unique_ptr<llvm::LLVMContext> context;
     std::unique_ptr<llvm::Module> module;
@@ -88,9 +49,9 @@ namespace Codegen
     std::unordered_map<AIR::VarId, llvm::AllocaInst *> variable_map;
 
     // Current codegen state
-    llvm::Value *current_value;        // Result of expression codegen
-    llvm::Function *current_function;  // Currently generating function
-    AIR::Module *current_air_module;   // Current AIR module being processed
+    llvm::Value *current_value;       // Result of expression codegen
+    llvm::Function *current_function; // Currently generating function
+    AIR::Module *current_air_module;  // Current AIR module being processed
 
   public:
     explicit CodeGenerator(AIR::TyTable &ty_table);
@@ -105,7 +66,6 @@ namespace Codegen
     llvm::Module *get_module() const { return module.get(); }
 
   private:
-
     void generate_types();
     llvm::Type *get_llvm_type(AIR::TyId ty_id);
     void generate_struct_types();
@@ -116,9 +76,9 @@ namespace Codegen
     void generate_function_bodies();
     void generate_function(AIR::Function *func);
 
-       llvm::AllocaInst *create_entry_block_alloca(llvm::Function *func,
-                                                  const std::string &var_name,
-                                                  llvm::Type *type);
+    llvm::AllocaInst *create_entry_block_alloca(llvm::Function *func,
+                                                const std::string &var_name,
+                                                llvm::Type *type);
 
     // Expressions
     void visit(AIR::NumberLiteral *node) override;
@@ -146,7 +106,7 @@ namespace Codegen
 
     void report_error(const std::string &message, const Location &location)
     {
-      error_reporter.report_error(message, location);
+      error_reporter.add_error(location, message);
     }
   };
 

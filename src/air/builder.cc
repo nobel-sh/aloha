@@ -653,7 +653,7 @@ namespace aloha
 
     if (errors.has_errors())
     {
-      errors.print_errors();
+      errors.print();
       return nullptr;
     }
 
