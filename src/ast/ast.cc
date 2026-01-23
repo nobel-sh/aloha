@@ -37,47 +37,36 @@ namespace aloha
 
     Integer::Integer(Location loc, int64_t val)
         : Expression(loc), m_value(val) {}
-    Type Integer::get_type() const { return "int"; }
 
     Float::Float(Location loc, double val)
         : Expression(loc), m_value(val) {}
-    Type Float::get_type() const { return "float"; }
 
     Boolean::Boolean(Location loc, bool val) : Expression(loc), m_value(val) {}
-    Type Boolean::get_type() const { return "bool"; }
 
     String::String(Location loc, std::string val)
         : Expression(loc), m_value(std::move(val)) {}
-    Type String::get_type() const { return "string"; }
 
     UnaryExpression::UnaryExpression(Location loc, std::string oper, ExprPtr expr)
         : Expression(loc), m_op(std::move(oper)), m_expr(std::move(expr)) {}
-    Type UnaryExpression::get_type() const { return m_expr->get_type(); }
 
     BinaryExpression::BinaryExpression(Location loc, ExprPtr lhs, std::string oper,
                                        ExprPtr rhs)
         : Expression(loc), m_left(std::move(lhs)), m_op(std::move(oper)),
           m_right(std::move(rhs)) {}
-    Type BinaryExpression::get_type() const { return m_left->get_type(); }
 
-    Identifier::Identifier(Location loc, std::string name, Type t)
-        : Expression(loc), m_name(std::move(name)), m_type(t) {}
-    Type Identifier::get_type() const { return m_type; }
+    Identifier::Identifier(Location loc, std::string name)
+        : Expression(loc), m_name(std::move(name)) {}
 
     StructFieldAccess::StructFieldAccess(Location loc, ExprPtr struct_expr,
                                          std::string field_name)
         : Expression(loc), m_struct_expr(std::move(struct_expr)),
-          m_field_name(std::move(field_name)), m_type("unknown") {}
-    Type StructFieldAccess::get_type() const { return m_type; }
-    void StructFieldAccess::set_type(Type type) { m_type = type; }
+          m_field_name(std::move(field_name)) {}
 
     StructFieldAssignment::StructFieldAssignment(Location loc, ExprPtr struct_expr,
                                                  std::string field_name,
                                                  ExprPtr value)
         : Statement(loc), m_struct_expr(std::move(struct_expr)),
-          m_field_name(std::move(field_name)), m_value(std::move(value)),
-          m_type("unknown") {}
-    Type StructFieldAssignment::get_type() const { return m_type; }
+          m_field_name(std::move(field_name)), m_value(std::move(value)) {}
 
     Declaration::Declaration(Location loc, std::string var_name,
                              std::optional<Type> type, ExprPtr expr,
@@ -88,13 +77,12 @@ namespace aloha
 
     Assignment::Assignment(Location loc, std::string var_name, ExprPtr expr)
         : Statement(loc), m_variable_name(std::move(var_name)),
-          m_expression(std::move(expr)), m_type("unknown") {}
+          m_expression(std::move(expr)) {}
 
     FunctionCall::FunctionCall(Location loc, std::unique_ptr<Identifier> func_name,
                                std::vector<ExprPtr> args)
         : Expression(loc), m_func_name(std::move(func_name)),
-          m_arguments(std::move(args)), m_type("unknown") {}
-    Type FunctionCall::get_type() const { return m_type; }
+          m_arguments(std::move(args)) {}
 
     ReturnStatement::ReturnStatement(Location loc, ExprPtr expr)
         : Statement(loc), m_expression(std::move(expr)) {}
@@ -118,10 +106,10 @@ namespace aloha
           m_body(std::move(body)) {}
 
     Parameter::Parameter(std::string name, Type type)
-        : m_name(std::move(name)), m_type(type), m_type_name("") {}
+        : m_name(std::move(name)), m_type(type) {}
 
     Parameter::Parameter(std::string name, Type type, std::string type_name)
-        : m_name(std::move(name)), m_type(type), m_type_name(std::move(type_name)) {}
+        : m_name(std::move(name)), m_type(type) {}
 
     Function::Function(Location loc, std::unique_ptr<Identifier> func_name,
                        std::vector<Parameter> params, Type return_type,
@@ -130,11 +118,19 @@ namespace aloha
           m_parameters(std::move(params)), m_return_type(return_type),
           m_body(std::move(body)), m_is_extern(is_extern) {}
 
+    Function::Function(Location loc, std::unique_ptr<Identifier> func_name,
+                       std::vector<Parameter> params, Type return_type,
+                       std::string return_type_name,
+                       std::unique_ptr<StatementBlock> body, bool is_extern)
+        : Statement(loc), m_name(std::move(func_name)),
+          m_parameters(std::move(params)), m_return_type(return_type),
+          m_body(std::move(body)), m_is_extern(is_extern) {}
+
     StructField::StructField(std::string name, Type type)
-        : m_name(std::move(name)), m_type(type), m_type_name("") {}
+        : m_name(std::move(name)), m_type(type) {}
 
     StructField::StructField(std::string name, Type type, std::string type_name)
-        : m_name(std::move(name)), m_type(type), m_type_name(std::move(type_name)) {}
+        : m_name(std::move(name)), m_type(type) {}
 
     StructDecl::StructDecl(Location loc, std::string name,
                            std::vector<StructField> fields)
@@ -143,21 +139,10 @@ namespace aloha
     StructInstantiation::StructInstantiation(Location loc, std::string name,
                                              std::vector<ExprPtr> values)
         : Expression(loc), m_struct_name(std::move(name)),
-          m_field_values(std::move(values)), m_type("unknown") {}
-    Type StructInstantiation::get_type() const { return m_type; }
-    void StructInstantiation::set_type(Type type) { m_type = type; }
+          m_field_values(std::move(values)) {}
 
     Array::Array(Location loc, std::vector<ExprPtr> members)
-        : Expression(loc), m_members(std::move(members))
-    {
-        if (m_members.size() > 0)
-        {
-            m_type = m_members[0]->get_type();
-            m_size = m_members.size();
-        }
-    }
-    Type Array::get_type() const { return m_type; }
-    void Array::set_type(Type t) { m_type = t; }
+        : Expression(loc), m_members(std::move(members)), m_size(m_members.size()) {}
 
     bool StatementBlock::is_empty() const { return m_statements.empty(); }
 

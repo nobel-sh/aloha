@@ -6,6 +6,7 @@
 #include "../ast/ast.h"
 #include "../frontend/location.h"
 #include "../error/compiler_error.h"
+#include "../ast/ty_spec.h"
 #include <memory>
 
 namespace aloha
@@ -30,7 +31,7 @@ namespace aloha
       symbol_table_ptr = table;
     }
 
-    bool bind(Program *program);
+    bool bind(Program *program, TySpecArena &type_arena);
 
     SymbolTable &get_symbol_table() { return *symbol_table_ptr; }
     const SymbolTable &get_symbol_table() const { return *symbol_table_ptr; }
@@ -39,9 +40,9 @@ namespace aloha
 
   private:
     // register all struct names and function names
-    void bind_declarations(Program *program);
+    void bind_declarations(Program *program, const TySpecArena &type_arena);
     void bind_struct_declaration(StructDecl *struct_decl);
-    void bind_function_declaration(Function *func);
+    void bind_function_declaration(Function *func, const TySpecArena &type_arena);
 
     // bind variables in function bodies
     void bind_function_bodies(Program *program);

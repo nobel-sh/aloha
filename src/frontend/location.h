@@ -11,6 +11,8 @@ struct Location
   uint32_t col;
   std::optional<std::string> file_path;
 
+  constexpr Location() : line(0), col(0), file_path(std::nullopt) {}
+
   constexpr Location(uint32_t line, uint32_t col)
       : line(line), col(col), file_path(std::nullopt) {}
 

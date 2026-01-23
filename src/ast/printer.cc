@@ -4,6 +4,14 @@
 
 namespace aloha
 {
+    thread_local const TySpecArena *g_print_arena = nullptr;
+
+    static std::string type_to_string(TySpecId id)
+    {
+        if (g_print_arena)
+            return g_print_arena->to_string(id);
+        return std::to_string(id);
+    }
 
     void StatementBlock::write(std::ostream &os, unsigned long indent) const
     {
@@ -100,7 +108,7 @@ namespace aloha
         os << std::string(indent, ' ') << "Declaration:{\n";
         os << std::string(indent + 2, ' ') << "Name: " << m_variable_name << "\n";
         os << std::string(indent + 2, ' ')
-           << "Type: " << (m_type ? *m_type : "Inferred")
+           << "Type: " << (m_type ? type_to_string(*m_type) : "Inferred")
            << "\n";
         os << std::string(indent + 2, ' ')
            << "Mutable: " << (m_is_mutable ? "true" : "false") << "\n";
@@ -207,11 +215,11 @@ namespace aloha
         for (const auto &param : m_parameters)
         {
             os << std::string(indent + 4, ' ') << param.m_name << ": "
-               << param.m_type << "\n";
+               << type_to_string(param.m_type) << "\n";
         }
         os << std::string(indent + 2, ' ') << "]\n";
         os << std::string(indent + 2, ' ')
-           << "ReturnType: " << m_return_type << "\n";
+           << "ReturnType: " << type_to_string(m_return_type) << "\n";
         os << std::string(indent + 2, ' ') << "Body:{\n";
         m_body->write(os, indent + 4);
         os << std::string(indent + 2, ' ') << "}\n";
@@ -226,7 +234,7 @@ namespace aloha
         for (const auto &field : m_fields)
         {
             os << std::string(indent + 4, ' ') << field.m_name << ": "
-               << field.m_type << "\n";
+               << type_to_string(field.m_type) << "\n";
         }
         os << std::string(indent + 2, ' ') << "]\n";
         os << std::string(indent, ' ') << "}\n";
@@ -248,8 +256,6 @@ namespace aloha
     void Array::write(std::ostream &os, unsigned long indent) const
     {
         os << std::string(indent, ' ') << "Array:{\n";
-        os << std::string(indent + 2, ' ') << "Type: " << m_type
-           << "\n";
         os << std::string(indent + 2, ' ') << "Size: " << m_size << "\n";
         os << std::string(indent + 2, ' ') << "Elements:[\n";
         for (const auto &member : m_members)
@@ -268,6 +274,21 @@ namespace aloha
             node->write(os, indent + 2);
         }
         os << std::string(indent, ' ') << "}\n";
+    }
+
+    void Program::write(std::ostream &os, const TySpecArena &arena, unsigned long indent) const
+    {
+        // set the arena for printing
+        g_print_arena = &arena;
+
+        os << std::string(indent, ' ') << "Program:{\n";
+        for (const auto &node : m_nodes)
+        {
+            node->write(os, indent + 2);
+        }
+        os << std::string(indent, ' ') << "}\n";
+
+        g_print_arena = nullptr;
     }
 
     void Import::write(std::ostream &os, unsigned long indent) const

@@ -8,10 +8,11 @@
 #include <utility>
 #include <vector>
 
-Parser::Parser(Lexer &lexer)
+Parser::Parser(Lexer &lexer, aloha::TySpecArena &arena)
     : lexer(&lexer),
       current_token(TokenKind::EOF_TOKEN, Location(1, 1)),
-      next_token(TokenKind::EOF_TOKEN, Location(1, 1))
+      next_token(TokenKind::EOF_TOKEN, Location(1, 1)),
+      type_arena(&arena)
 {
   // Initialize with first two tokens
   current_token = lexer.next_token();
@@ -97,6 +98,7 @@ const std::vector<std::string> &Parser::get_errors() const
 std::unique_ptr<aloha::Program> Parser::parse()
 {
   auto program = std::make_unique<aloha::Program>(current_location());
+
   while (!is_eof())
   {
     if (match("import"))
@@ -126,12 +128,13 @@ std::unique_ptr<aloha::Function> Parser::parse_function()
   auto parameters = parse_parameters();
   consume(TokenKind::RIGHT_PAREN, "Expected ')' after parameters");
   consume(TokenKind::THIN_ARROW, "Expected '->' before return type");
-  auto return_type = parse_type();
+  ParseTy return_type = parse_type();
+  std::string return_type_name = type_arena->to_string(return_type);
   consume(TokenKind::LEFT_BRACE, "Expected '{' keyword before function body");
   auto statements = parse_statements();
   return std::make_unique<aloha::Function>(
-      loc, std::move(identifier), std::move(parameters), std::move(return_type),
-      std::move(statements), false);
+      loc, std::move(identifier), std::move(parameters), return_type,
+      std::move(return_type_name), std::move(statements), false);
 }
 
 std::unique_ptr<aloha::Function> Parser::parse_extern_function()
@@ -144,11 +147,12 @@ std::unique_ptr<aloha::Function> Parser::parse_extern_function()
   auto parameters = parse_parameters();
   consume(TokenKind::RIGHT_PAREN, "Expected ')' after parameters");
   consume(TokenKind::THIN_ARROW, "Expected '->' before return type");
-  auto return_type = parse_type();
+  ParseTy return_type = parse_type();
+  std::string return_type_name = type_arena->to_string(return_type);
   consume(TokenKind::SEMICOLON, "Expected ';' after extern function declaration");
   return std::make_unique<aloha::Function>(
-      loc, std::move(identifier), std::move(parameters), std::move(return_type),
-      nullptr, true);
+      loc, std::move(identifier), std::move(parameters), return_type,
+      std::move(return_type_name), nullptr, true);
 }
 
 std::unique_ptr<aloha::Import> Parser::parse_import()
@@ -176,8 +180,9 @@ std::vector<aloha::StructField> Parser::parse_struct_field()
   {
     auto identifier = expect_identifier();
     consume(TokenKind::COLON, "Expected ':' after field name");
-    ParseTy type_name = parse_type();
-    aloha::StructField field(identifier->m_name, type_name, type_name);
+    ParseTy type_id = parse_type();
+    std::string type_name = type_arena->to_string(type_id);
+    aloha::StructField field(identifier->m_name, type_id, type_name);
     fields.push_back(field);
     if (!match(TokenKind::RIGHT_BRACE))
     {
@@ -237,8 +242,9 @@ std::vector<aloha::Parameter> Parser::parse_parameters()
   {
     auto identifier = expect_identifier();
     consume(TokenKind::COLON, "Expected ':' after parameter name");
-    ParseTy type_name = parse_type();
-    aloha::Parameter param(identifier->m_name, type_name, type_name);
+    ParseTy type_id = parse_type();
+    std::string type_name = type_arena->to_string(type_id);
+    aloha::Parameter param(identifier->m_name, type_id, type_name);
     parameters.push_back(param);
     if (!match(TokenKind::RIGHT_PAREN))
     {
@@ -724,13 +730,44 @@ std::unique_ptr<aloha::Identifier> Parser::expect_identifier()
 ParseTy Parser::parse_type()
 {
   auto token = peek();
+  Location loc = current_location();
+
   if (match(TokenKind::IDENT))
   {
     advance();
-    return token->get_lexeme();
+    auto lexeme = token->get_lexeme();
+
+    // Check for builtin types
+    if (lexeme == "int")
+    {
+      return type_arena->builtin(loc, aloha::TySpec::Builtin::Int);
+    }
+    else if (lexeme == "float")
+    {
+      return type_arena->builtin(loc, aloha::TySpec::Builtin::Float);
+    }
+    else if (lexeme == "bool")
+    {
+      return type_arena->builtin(loc, aloha::TySpec::Builtin::Bool);
+    }
+    else if (lexeme == "string")
+    {
+      return type_arena->builtin(loc, aloha::TySpec::Builtin::String);
+    }
+    else if (lexeme == "void")
+    {
+      return type_arena->builtin(loc, aloha::TySpec::Builtin::Void);
+    }
+    else
+    {
+      // Named type (struct, etc.)
+      return type_arena->named(loc, lexeme);
+    }
   }
+
   report_error("Expected type");
-  return "unknown";
+  // Return a placeholder - could create an "error" type
+  return 0;
 }
 
 std::optional<ParseTy> Parser::optional_type()
@@ -764,4 +801,4 @@ bool Parser::is_reserved_ident() const
   return false;
 }
 
-void Parser::dump(aloha::Program *p) const { p->write(std::cout, 2); }
+void Parser::dump(aloha::Program *p, const aloha::TySpecArena &arena) const { p->write(std::cout, arena, 2); }

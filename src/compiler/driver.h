@@ -3,6 +3,7 @@
 
 #include "../frontend/lexer.h"
 #include "../frontend/parser.h"
+#include "../ast/ty_spec.h"
 #include "../ty/ty.h"
 #include "../sema/symbol_binder.h"
 #include "../modules/import_resolver.h"
@@ -51,6 +52,8 @@ namespace AlohaPipeline
 
   private:
     CompilerOptions options;
+
+    aloha::TySpecArena type_arena; // shared type_spec arena
 
     std::unique_ptr<Lexer> lexer;
     std::unique_ptr<Parser> parser;

@@ -9,10 +9,12 @@ namespace aloha
 
   ImportResolver::ImportResolver(AIR::TyTable &ty_table,
                                  SymbolTable &main_symbol_table,
+                                 aloha::TySpecArena &type_arena,
                                  const std::string &current_file_path,
                                  bool skip_prelude_injection)
       : ty_table(ty_table),
         main_symbol_table(main_symbol_table),
+        type_arena(type_arena),
         errors(),
         skip_prelude_injection(skip_prelude_injection),
         currently_importing(new std::unordered_set<std::string>()),
@@ -234,7 +236,7 @@ namespace aloha
       }
 
       Lexer lexer(source, file_path);
-      Parser parser(lexer);
+      Parser parser(lexer, type_arena);
 
       std::unique_ptr<aloha::Program> imported_ast = parser.parse();
       if (!imported_ast)
@@ -243,7 +245,7 @@ namespace aloha
         return false;
       }
 
-      ImportResolver nested_resolver(ty_table, main_symbol_table, file_path, true);
+      ImportResolver nested_resolver(ty_table, main_symbol_table, type_arena, file_path, true);
 
       // share import tracking sets with nested resolver
       nested_resolver.currently_importing = this->currently_importing;
@@ -263,7 +265,7 @@ namespace aloha
       SymbolBinder imported_def_collector(ty_table);
       imported_def_collector.set_symbol_table(&main_symbol_table);
 
-      if (!imported_def_collector.bind(imported_ast.get()))
+      if (!imported_def_collector.bind(imported_ast.get(), type_arena))
       {
         for (const auto &error : imported_def_collector.get_errors().get_errors())
         {

@@ -3,6 +3,7 @@
 
 #include "decl.h"
 #include "visitor.h"
+#include "ty_spec.h"
 #include "../frontend/location.h"
 #include <cstdint>
 #include <memory>
@@ -14,7 +15,8 @@
 namespace aloha
 {
 
-  using Type = std::string;
+  // Type alias for ast type annotations
+  using Type = TySpecId;
 
   class Node
   {
@@ -33,7 +35,6 @@ namespace aloha
   {
   public:
     explicit Expression(Location loc) : Node(loc) {}
-    virtual Type get_type() const = 0;
   };
 
   class Statement : public Node
@@ -75,7 +76,6 @@ namespace aloha
     explicit Integer(Location loc, int64_t val);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
   };
 
   class Float : public Expression
@@ -86,7 +86,6 @@ namespace aloha
     explicit Float(Location loc, double val);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
   };
 
   class Boolean : public Expression
@@ -97,7 +96,6 @@ namespace aloha
     explicit Boolean(Location loc, bool val);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
   };
 
   class String : public Expression
@@ -108,7 +106,6 @@ namespace aloha
     explicit String(Location loc, std::string val);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
   };
 
   class UnaryExpression : public Expression
@@ -120,7 +117,6 @@ namespace aloha
     UnaryExpression(Location loc, std::string oper, ExprPtr expr);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
   };
 
   class BinaryExpression : public Expression
@@ -133,19 +129,16 @@ namespace aloha
     BinaryExpression(Location loc, ExprPtr lhs, std::string oper, ExprPtr rhs);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
   };
 
   class Identifier : public Expression
   {
   public:
     std::string m_name;
-    Type m_type;
 
-    explicit Identifier(Location loc, std::string name, Type t = "unknown");
+    explicit Identifier(Location loc, std::string name);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
   };
 
   class StructFieldAccess : public Expression
@@ -153,13 +146,10 @@ namespace aloha
   public:
     ExprPtr m_struct_expr;
     std::string m_field_name;
-    Type m_type;
 
     StructFieldAccess(Location loc, ExprPtr struct_expr, std::string field_name);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
-    void set_type(Type type);
   };
 
   class StructFieldAssignment : public Statement
@@ -168,13 +158,11 @@ namespace aloha
     ExprPtr m_struct_expr;
     std::string m_field_name;
     ExprPtr m_value;
-    Type m_type;
 
     StructFieldAssignment(Location loc, ExprPtr struct_expr,
                           std::string field_name, ExprPtr value);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const;
   };
 
   class Declaration : public Statement
@@ -197,7 +185,6 @@ namespace aloha
   public:
     std::string m_variable_name;
     ExprPtr m_expression;
-    Type m_type;
 
     Assignment(Location loc, std::string var_name, ExprPtr expr);
     void write(std::ostream &os, unsigned long indent = 0) const override;
@@ -209,13 +196,11 @@ namespace aloha
   public:
     std::unique_ptr<Identifier> m_func_name;
     std::vector<ExprPtr> m_arguments;
-    Type m_type;
 
     FunctionCall(Location loc, std::unique_ptr<Identifier> func_name,
                  std::vector<ExprPtr> args);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
   };
 
   class ReturnStatement : public Statement
@@ -273,7 +258,6 @@ namespace aloha
   public:
     std::string m_name;
     Type m_type;
-    std::string m_type_name; // Store original type name for resolution
 
     Parameter(std::string name, Type type);
     Parameter(std::string name, Type type, std::string type_name);
@@ -291,6 +275,9 @@ namespace aloha
     Function(Location loc, std::unique_ptr<Identifier> func_name,
              std::vector<Parameter> params, Type return_type,
              std::unique_ptr<StatementBlock> body, bool is_extern = false);
+    Function(Location loc, std::unique_ptr<Identifier> func_name,
+             std::vector<Parameter> params, Type return_type, std::string return_type_name,
+             std::unique_ptr<StatementBlock> body, bool is_extern = false);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
   };
@@ -300,7 +287,6 @@ namespace aloha
   public:
     std::string m_name;
     Type m_type;
-    std::string m_type_name; // Store original type name for resolution
 
     StructField(std::string name, Type type);
     StructField(std::string name, Type type, std::string type_name);
@@ -322,27 +308,21 @@ namespace aloha
   public:
     std::string m_struct_name;
     std::vector<ExprPtr> m_field_values;
-    Type m_type;
 
     StructInstantiation(Location loc, std::string name,
                         std::vector<ExprPtr> values);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
-    Type get_type() const override;
-    void set_type(Type type);
   };
 
   class Array : public Expression
   {
   public:
     std::vector<ExprPtr> m_members;
-    Type m_type;
     uint64_t m_size;
 
     Array(Location loc, std::vector<ExprPtr> members);
     void write(std::ostream &os, unsigned long indent = 0) const override;
-    Type get_type() const override;
-    void set_type(Type type);
     void accept(ASTVisitor &visitor) override;
   };
 
@@ -353,6 +333,7 @@ namespace aloha
 
     explicit Program(Location loc) : Node(loc) {}
     void write(std::ostream &os, unsigned long indent = 0) const override;
+    void write(std::ostream &os, const TySpecArena &arena, unsigned long indent = 0) const;
     void accept(ASTVisitor &visitor) override;
   };
 

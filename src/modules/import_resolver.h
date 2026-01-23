@@ -21,6 +21,7 @@ namespace aloha
   public:
     ImportResolver(AIR::TyTable &ty_table,
                    SymbolTable &main_symbol_table,
+                   aloha::TySpecArena &type_arena,
                    const std::string &current_file_path,
                    bool skip_prelude_injection = false);
 
@@ -46,6 +47,7 @@ namespace aloha
   private:
     AIR::TyTable &ty_table;
     SymbolTable &main_symbol_table;
+    aloha::TySpecArena &type_arena;
     Aloha::TyError errors;
 
     bool skip_prelude_injection;

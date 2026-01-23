@@ -5,7 +5,7 @@
 namespace aloha
 {
 
-  bool TypeResolver::resolve(Program *program)
+  bool TypeResolver::resolve(Program *program, const TySpecArena &type_arena)
   {
     if (!program)
     {
@@ -17,7 +17,7 @@ namespace aloha
     {
       if (auto struct_decl = dynamic_cast<StructDecl *>(node.get()))
       {
-        resolve_struct_fields(struct_decl);
+        resolve_struct_fields(struct_decl, type_arena);
       }
     }
 
@@ -25,7 +25,7 @@ namespace aloha
     {
       if (auto func = dynamic_cast<Function *>(node.get()))
       {
-        resolve_function_signature(func);
+        resolve_function_signature(func, type_arena);
       }
     }
 
@@ -90,7 +90,7 @@ namespace aloha
     return std::nullopt;
   }
 
-  void TypeResolver::resolve_struct_fields(StructDecl *struct_decl)
+  void TypeResolver::resolve_struct_fields(StructDecl *struct_decl, const TySpecArena &type_arena)
   {
     const std::string &struct_name = struct_decl->m_name;
 
@@ -109,9 +109,7 @@ namespace aloha
 
     for (const auto &field : struct_decl->m_fields)
     {
-      std::string type_name = field.m_type_name.empty()
-                                  ? field.m_type
-                                  : field.m_type_name;
+      std::string type_name = type_arena.to_string(field.m_type);
 
       auto ty_id_opt = resolve_type_name(type_name, struct_decl->get_location());
       if (!ty_id_opt.has_value())
@@ -130,7 +128,7 @@ namespace aloha
     resolved_structs.insert({struct_id, std::move(resolved)});
   }
 
-  void TypeResolver::resolve_function_signature(Function *func)
+  void TypeResolver::resolve_function_signature(Function *func, const TySpecArena &type_arena)
   {
     const std::string &func_name = func->m_name->m_name;
 
@@ -144,7 +142,7 @@ namespace aloha
 
     FunctionId func_id = func_opt->id;
 
-    std::string return_type_name = func->m_return_type;
+    std::string return_type_name = type_arena.to_string(func->m_return_type);
     auto return_ty_id_opt = resolve_type_name(return_type_name, func->get_location());
     if (!return_ty_id_opt.has_value())
     {
@@ -154,9 +152,7 @@ namespace aloha
     std::vector<AIR::TyId> param_types;
     for (const auto &param : func->m_parameters)
     {
-      std::string type_name = param.m_type_name.empty()
-                                  ? param.m_type
-                                  : param.m_type_name;
+      std::string type_name = type_arena.to_string(param.m_type);
       auto ty_id_opt = resolve_type_name(type_name, func->get_location());
       if (!ty_id_opt.has_value())
       {

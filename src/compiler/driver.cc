@@ -97,7 +97,7 @@ namespace AlohaPipeline
     std::cout << "\n========================================\n";
     std::cout << "UNTYPED AST\n";
     std::cout << "========================================\n";
-    parser->dump(ast.get());
+    parser->dump(ast.get(), type_arena);
     std::cout << "========================================\n\n";
   }
 
@@ -149,7 +149,7 @@ namespace AlohaPipeline
       }
 
       lexer = std::make_unique<Lexer>(source, options.input_file);
-      parser = std::make_unique<Parser>(*lexer);
+      parser = std::make_unique<Parser>(*lexer, type_arena);
 
       ast = parser->parse();
       if (!ast)
@@ -177,7 +177,7 @@ namespace AlohaPipeline
     {
       symbol_binder = std::make_unique<aloha::SymbolBinder>(*ty_table);
 
-      if (!symbol_binder->bind(ast.get()))
+      if (!symbol_binder->bind(ast.get(), type_arena))
       {
         std::cerr << "Error: Symbol binding failed" << std::endl;
         symbol_binder->get_errors().print();
@@ -204,7 +204,7 @@ namespace AlohaPipeline
     try
     {
       import_resolver = std::make_unique<aloha::ImportResolver>(
-          *ty_table, symbol_binder->get_symbol_table(), options.input_file);
+          *ty_table, symbol_binder->get_symbol_table(), type_arena, options.input_file);
 
       if (!import_resolver->resolve_imports(ast.get()))
       {
@@ -244,7 +244,7 @@ namespace AlohaPipeline
       type_resolver = std::make_unique<aloha::TypeResolver>(
           *ty_table, symbol_binder->get_symbol_table());
 
-      if (!type_resolver->resolve(ast.get()))
+      if (!type_resolver->resolve(ast.get(), type_arena))
       {
         std::cerr << "Error: Type resolution failed" << std::endl;
         type_resolver->get_errors().print();
@@ -257,7 +257,7 @@ namespace AlohaPipeline
         const auto &imported_asts = import_resolver->get_imported_asts();
         for (const auto &imported_ast : imported_asts)
         {
-          if (!type_resolver->resolve(imported_ast.get()))
+          if (!type_resolver->resolve(imported_ast.get(), type_arena))
           {
             std::cerr << "Error: Type resolution failed in imported file" << std::endl;
             type_resolver->get_errors().print();

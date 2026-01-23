@@ -3,6 +3,7 @@
 
 #include "../ast/ast.h"
 #include "../error/compiler_error.h"
+#include "../ast/ty_spec.h"
 #include "lexer.h"
 #include "token.h"
 #include <functional>
@@ -11,7 +12,7 @@
 #include <optional>
 #include <vector>
 
-using ParseTy = std::string;
+using ParseTy = aloha::TySpecId;
 
 class Parser
 {
@@ -21,10 +22,10 @@ public:
   using infix_parser_func = std::function<std::unique_ptr<aloha::Expression>(
       Parser &, std::unique_ptr<aloha::Expression>)>;
 
-  explicit Parser(Lexer &lexer);
+  explicit Parser(Lexer &lexer, aloha::TySpecArena &arena);
 
   std::unique_ptr<aloha::Program> parse();
-  void dump(aloha::Program *p) const;
+  void dump(aloha::Program *p, const aloha::TySpecArena &arena) const;
   const std::vector<std::string> &get_errors() const;
 
   // exposed for testing
@@ -37,6 +38,7 @@ private:
   Token current_token;
   Token next_token;
   Aloha::ParserError errors;
+  aloha::TySpecArena *type_arena; // Points to Program's type_arena during parsing
   void report_error(const std::string &message);
   static std::map<std::string, prefix_parser_func> prefix_parsers;
   static std::map<std::string, infix_parser_func> infix_parsers;

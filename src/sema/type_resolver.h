@@ -71,7 +71,7 @@ namespace aloha
     TypeResolver(AIR::TyTable &table, SymbolTable &symbols)
         : ty_table(table), symbol_table(symbols) {}
 
-    bool resolve(Program *program);
+    bool resolve(Program *program, const TySpecArena &type_arena);
 
     // resolve a type name to tyId
     std::optional<AIR::TyId> resolve_type_name(const std::string &name, Location loc);
@@ -89,8 +89,8 @@ namespace aloha
     const TypeResolutionError &get_errors() const { return errors; }
 
   private:
-    void resolve_struct_fields(StructDecl *struct_decl);
-    void resolve_function_signature(Function *func);
+    void resolve_struct_fields(StructDecl *struct_decl, const TySpecArena &type_arena);
+    void resolve_function_signature(Function *func, const TySpecArena &type_arena);
 
     // circular dependency detection for structs
     bool check_circular_dependency(AIR::StructId struct_id, const std::string &struct_name,

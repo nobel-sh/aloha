@@ -4,7 +4,7 @@
 namespace aloha
 {
 
-  bool SymbolBinder::bind(Program *program)
+  bool SymbolBinder::bind(Program *program, TySpecArena &type_arena)
   {
     if (!program)
     {
@@ -12,7 +12,7 @@ namespace aloha
       return false;
     }
 
-    bind_declarations(program);
+    bind_declarations(program, type_arena);
 
     if (!errors.has_errors())
     {
@@ -28,7 +28,7 @@ namespace aloha
     return true;
   }
 
-  void SymbolBinder::bind_declarations(Program *program)
+  void SymbolBinder::bind_declarations(Program *program, const TySpecArena &type_arena)
   {
     for (const auto &node : program->m_nodes)
     {
@@ -38,7 +38,7 @@ namespace aloha
       }
       else if (auto func = dynamic_cast<Function *>(node.get()))
       {
-        bind_function_declaration(func);
+        bind_function_declaration(func, type_arena);
       }
     }
   }
@@ -59,7 +59,7 @@ namespace aloha
     symbol_table_ptr->register_struct(name, struct_id, type_id, loc);
   }
 
-  void SymbolBinder::bind_function_declaration(Function *func)
+  void SymbolBinder::bind_function_declaration(Function *func, const TySpecArena &type_arena)
   {
     const std::string &name = func->m_name->m_name;
     Location loc = func->get_location();
@@ -74,10 +74,10 @@ namespace aloha
     std::vector<AIR::TyId> param_types;
     for (const auto &param : func->m_parameters)
     {
-      auto param_ty_opt = ty_table.lookup_by_name(param.m_type);
+      auto param_ty_opt = ty_table.lookup_by_name(type_arena.to_string(param.m_type));
       if (!param_ty_opt.has_value())
       {
-        errors.add_error(loc, "Unknown parameter type: " + param.m_type);
+        errors.add_error(loc, "Unknown parameter type: " + type_arena.to_string(param.m_type));
         param_types.push_back(AIR::TyIds::ERROR);
       }
       else
@@ -86,11 +86,11 @@ namespace aloha
       }
     }
 
-    auto return_ty_opt = ty_table.lookup_by_name(func->m_return_type);
+    auto return_ty_opt = ty_table.lookup_by_name(type_arena.to_string(func->m_return_type));
     AIR::TyId return_ty = AIR::TyIds::ERROR;
     if (!return_ty_opt.has_value())
     {
-      errors.add_error(loc, "Unknown return type: " + func->m_return_type);
+      errors.add_error(loc, "Unknown return type: " + type_arena.to_string(func->m_return_type));
     }
     else
     {
