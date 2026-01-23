@@ -22,9 +22,14 @@ namespace aloha
         os << std::string(indent, ' ') << "}\n";
     }
 
-    void Number::write(std::ostream &os, unsigned long indent) const
+    void Integer::write(std::ostream &os, unsigned long indent) const
     {
-        os << std::string(indent, ' ') << "Number: " << m_value << "\n";
+        os << std::string(indent, ' ') << "Integer: " << m_value << "\n";
+    }
+
+    void Float::write(std::ostream &os, unsigned long indent) const
+    {
+        os << std::string(indent, ' ') << "Float: " << m_value << "\n";
     }
 
     void Boolean::write(std::ostream &os, unsigned long indent) const

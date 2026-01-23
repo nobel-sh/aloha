@@ -54,7 +54,8 @@ namespace aloha
 
     const AIRBuildError &get_errors() const { return errors; }
 
-    void visit(Number *node) override;
+    void visit(Integer *node) override;
+    void visit(Float *node) override;
     void visit(Boolean *node) override;
     void visit(String *node) override;
     void visit(UnaryExpression *node) override;

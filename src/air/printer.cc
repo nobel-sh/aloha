@@ -27,10 +27,16 @@ namespace AIR
         return std::to_string(static_cast<uint32_t>(ty));
     }
 
-    void Printer::visit(NumberLiteral *node)
+    void Printer::visit(IntegerLiteral *node)
     {
         write_indent();
-        os << "NumberLiteral: " << node->value << "\n";
+        os << "IntegerLiteral: " << node->value << "\n";
+    }
+
+    void Printer::visit(FloatLiteral *node)
+    {
+        write_indent();
+        os << "FloatLiteral: " << node->value << "\n";
     }
 
     void Printer::visit(StringLiteral *node)

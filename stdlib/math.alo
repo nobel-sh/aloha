@@ -1,25 +1,56 @@
-fun min(a: number, b: number) -> number {
+fun minInt(a: int, b: int) -> int {
     if (a < b) {
         return a;
     }
     return b;
 }
 
-fun max(a: number, b: number) -> number {
+fun maxInt(a: int, b: int) -> int {
     if (a > b) {
         return a;
     }
     return b;
 }
 
-fun abs(n: number) -> number {
+fun absInt(n: int) -> int {
     if (n < 0) {
         return -n;
     }
     return n;
 }
 
-fun clamp(value: number, minVal: number, maxVal: number) -> number {
+fun clampInt(value: int, minVal: int, maxVal: int) -> int {
+    if (value < minVal) {
+        return minVal;
+    }
+    if (value > maxVal) {
+        return maxVal;
+    }
+    return value;
+}
+
+fun minFloat(a: float, b: float) -> float {
+    if (a < b) {
+        return a;
+    }
+    return b;
+}
+
+fun maxFloat(a: float, b: float) -> float {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
+
+fun absFloat(n: float) -> float {
+    if (n < 0.0) {
+        return -n;
+    }
+    return n;
+}
+
+fun clampFloat(value: float, minVal: float, maxVal: float) -> float {
     if (value < minVal) {
         return minVal;
     }

@@ -1,15 +1,16 @@
-extern fun aloha_sys_write(fd: number, buf: string, count: number) -> number;
-extern fun aloha_sys_read(fd: number, buf: string, count: number) -> number;
-extern fun aloha_sys_strlen(s: string) -> number;
-extern fun aloha_sys_num_to_string(value: number) -> string;
+extern fun aloha_sys_write(fd: int, buf: string, count: int) -> int;
+extern fun aloha_sys_read(fd: int, buf: string, count: int) -> int;
+extern fun aloha_sys_strlen(s: string) -> int;
+extern fun aloha_sys_int_to_string(value: int) -> string;
+extern fun aloha_sys_float_to_string(value: float) -> string;
 extern fun aloha_sys_input() -> string;
 
-fun STDIN() -> number { return 0; }
-fun STDOUT() -> number { return 1; }
-fun STDERR() -> number { return 2; }
+fun STDIN() -> int { return 0; }
+fun STDOUT() -> int { return 1; }
+fun STDERR() -> int { return 2; }
 
 fun print(s: string) -> void {
-    imut len: number = aloha_sys_strlen(s);
+    imut len: int = aloha_sys_strlen(s);
     aloha_sys_write(STDOUT(), s, len);
 }
 
@@ -18,19 +19,30 @@ fun println(s: string) -> void {
     aloha_sys_write(STDOUT(), "\n", 1);
 }
 
-fun printNum(value: number) -> void {
-    imut str: string = aloha_sys_num_to_string(value);
-    imut len: number = aloha_sys_strlen(str);
+fun printInt(value: int) -> void {
+    imut str: string = aloha_sys_int_to_string(value);
+    imut len: int = aloha_sys_strlen(str);
     aloha_sys_write(STDOUT(), str, len);
 }
 
-fun printlnNum(value: number) -> void {
-    printNum(value);
+fun printlnInt(value: int) -> void {
+    printInt(value);
+    aloha_sys_write(STDOUT(), "\n", 1);
+}
+
+fun printFloat(value: float) -> void {
+    imut str: string = aloha_sys_float_to_string(value);
+    imut len: int = aloha_sys_strlen(str);
+    aloha_sys_write(STDOUT(), str, len);
+}
+
+fun printlnFloat(value: float) -> void {
+    printFloat(value);
     aloha_sys_write(STDOUT(), "\n", 1);
 }
 
 fun eprint(s: string) -> void {
-    imut len: number = aloha_sys_strlen(s);
+    imut len: int = aloha_sys_strlen(s);
     aloha_sys_write(STDERR(), s, len);
 }
 
@@ -39,14 +51,25 @@ fun eprintln(s: string) -> void {
     aloha_sys_write(STDERR(), "\n", 1);
 }
 
-fun eprintNum(value: number) -> void {
-    imut str: string = aloha_sys_num_to_string(value);
-    imut len: number = aloha_sys_strlen(str);
+fun eprintInt(value: int) -> void {
+    imut str: string = aloha_sys_int_to_string(value);
+    imut len: int = aloha_sys_strlen(str);
     aloha_sys_write(STDERR(), str, len);
 }
 
-fun eprintlnNum(value: number) -> void {
-    eprintNum(value);
+fun eprintlnInt(value: int) -> void {
+    eprintInt(value);
+    aloha_sys_write(STDERR(), "\n", 1);
+}
+
+fun eprintFloat(value: float) -> void {
+    imut str: string = aloha_sys_float_to_string(value);
+    imut len: int = aloha_sys_strlen(str);
+    aloha_sys_write(STDERR(), str, len);
+}
+
+fun eprintlnFloat(value: float) -> void {
+    eprintFloat(value);
     aloha_sys_write(STDERR(), "\n", 1);
 }
 

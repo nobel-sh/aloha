@@ -20,7 +20,8 @@ namespace AIR
         void print(Module *module);
 
         // expression visitors
-        void visit(NumberLiteral *node) override;
+        void visit(IntegerLiteral *node) override;
+        void visit(FloatLiteral *node) override;
         void visit(StringLiteral *node) override;
         void visit(BoolLiteral *node) override;
         void visit(VarRef *node) override;

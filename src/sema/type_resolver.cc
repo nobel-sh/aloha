@@ -49,9 +49,13 @@ namespace aloha
 
   std::optional<AIR::TyId> TypeResolver::resolve_type_name(const std::string &name, Location loc)
   {
-    if (name == "number")
+    if (name == "int")
     {
-      return AIR::TyIds::NUMBER;
+      return AIR::TyIds::INTEGER;
+    }
+    else if (name == "float")
+    {
+      return AIR::TyIds::FLOAT;
     }
     else if (name == "string")
     {
@@ -215,7 +219,7 @@ namespace aloha
   // suggest the closest type name for an unknown type using Levenstein distance
   std::string TypeResolver::suggest_type_name(const std::string &name) const
   {
-    std::vector<std::string> candidates = {"number", "string", "bool", "void"};
+    std::vector<std::string> candidates = {"int", "float", "string", "bool", "void"};
 
     for (const auto &[struct_name, struct_symbol] : symbol_table.structs)
     {
@@ -246,7 +250,7 @@ namespace aloha
 
   bool TypeResolver::is_primitive_type(const std::string &name) const
   {
-    return name == "number" || name == "string" || name == "bool" || name == "void";
+    return name == "int" || name == "float" || name == "string" || name == "bool" || name == "void";
   }
 
 } // namespace aloha

@@ -11,7 +11,8 @@ namespace AIR
     virtual ~AIRVisitor() = default;
 
     // expression visitors
-    virtual void visit(NumberLiteral *node) = 0;
+    virtual void visit(IntegerLiteral *node) = 0;
+    virtual void visit(FloatLiteral *node) = 0;
     virtual void visit(StringLiteral *node) = 0;
     virtual void visit(BoolLiteral *node) = 0;
     virtual void visit(VarRef *node) = 0;

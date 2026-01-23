@@ -1,64 +1,64 @@
 fun test_math_min_max() -> void {
-    imut min1: number = min(10, 20);
+    imut min1 = minInt(10, 20);
     assert_msg(min1 == 10, "min(10, 20) should return 10");
     
-    imut min2: number = min(50, 30);
+    imut min2 = minInt(50, 30);
     assert_msg(min2 == 30, "min(50, 30) should return 30");
     
-    imut min3: number = min(-10, 5);
+    imut min3 = minInt(-10, 5);
     assert_msg(min3 == -10, "min(-10, 5) should return -10");
     
-    imut min4: number = min(100, 100);
+    imut min4 = minInt(100, 100);
     assert_msg(min4 == 100, "min(100, 100) should return 100");
     
-    imut max1: number = max(10, 20);
+    imut max1 = maxInt(10, 20);
     assert_msg(max1 == 20, "max(10, 20) should return 20");
     
-    imut max2: number = max(50, 30);
+    imut max2 = maxInt(50, 30);
     assert_msg(max2 == 50, "max(50, 30) should return 50");
     
-    imut max3: number = max(-10, 5);
+    imut max3 = maxInt(-10, 5);
     assert_msg(max3 == 5, "max(-10, 5) should return 5");
     
-    imut max4: number = max(100, 100);
+    imut max4 = maxInt(100, 100);
     assert_msg(max4 == 100, "max(100, 100) should return 100");
     
     println("[PASS] Min/max function tests passed");
 }
 
 fun test_math_abs() -> void {
-    imut abs1: number = abs(42);
+    imut abs1 = absInt(42);
     assert_msg(abs1 == 42, "abs(42) should return 42");
     
-    imut abs2: number = abs(-42);
+    imut abs2 = absInt(-42);
     assert_msg(abs2 == 42, "abs(-42) should return 42");
     
-    imut abs3: number = abs(0);
+    imut abs3 = absInt(0);
     assert_msg(abs3 == 0, "abs(0) should return 0");
     
-    imut abs4: number = abs(-1000);
+    imut abs4 = absInt(-1000);
     assert_msg(abs4 == 1000, "abs(-1000) should return 1000");
     
     println("[PASS] Abs function tests passed");
 }
 
 fun test_math_clamp() -> void {
-    imut clamp1: number = clamp(50, 0, 100);
+    imut clamp1 = clampInt(50, 0, 100);
     assert_msg(clamp1 == 50, "clamp(50, 0, 100) should return 50");
     
-    imut clamp2: number = clamp(-10, 0, 100);
+    imut clamp2 = clampInt(-10, 0, 100);
     assert_msg(clamp2 == 0, "clamp(-10, 0, 100) should return 0");
     
-    imut clamp3: number = clamp(150, 0, 100);
+    imut clamp3 = clampInt(150, 0, 100);
     assert_msg(clamp3 == 100, "clamp(150, 0, 100) should return 100");
     
-    imut clamp4: number = clamp(25, 20, 30);
+    imut clamp4 = clampInt(25, 20, 30);
     assert_msg(clamp4 == 25, "clamp(25, 20, 30) should return 25");
     
-    imut clamp5: number = clamp(10, 20, 30);
+    imut clamp5 = clampInt(10, 20, 30);
     assert_msg(clamp5 == 20, "clamp(10, 20, 30) should return 20");
     
-    imut clamp6: number = clamp(40, 20, 30);
+    imut clamp6 = clampInt(40, 20, 30);
     assert_msg(clamp6 == 30, "clamp(40, 20, 30) should return 30");
     
     println("[PASS] Clamp function tests passed");
@@ -71,12 +71,12 @@ fun test_print_functions() -> void {
     println("");
     println("  - println() works");
     
-    print("  - printNum() works: ");
-    printNum(42);
+    print("  - printInt() works: ");
+    printInt(42);
     println("");
     
-    print("  - printlnNum() works: ");
-    printlnNum(123);
+    print("  - printlnInt() works: ");
+    printlnInt(123);
     
     println("[PASS] Print function tests passed");
 }
@@ -95,80 +95,80 @@ fun test_assertions() -> void {
 }
 
 fun test_combined_math_operations() -> void {
-    imut a: number = 10;
-    imut b: number = 20;
-    imut c: number = -5;
+    imut a = 10;
+    imut b = 20;
+    imut c = -5;
     
-    imut max_ab: number = max(a, b);
-    imut min_ab: number = min(a, b);
-    imut range: number = max_ab - min_ab;
+    imut max_ab = maxInt(a, b);
+    imut min_ab = minInt(a, b);
+    imut range = max_ab - min_ab;
     assert_msg(range == 10, "Range between 10 and 20 should be 10");
     
-    imut abs_c: number = abs(c);
-    imut sum: number = max_ab + abs_c;
+    imut abs_c = absInt(c);
+    imut sum = max_ab + abs_c;
     assert_msg(sum == 25, "max(10, 20) + abs(-5) should equal 25");
     
-    imut clamped: number = clamp(sum, 0, 20);
+    imut clamped = clampInt(sum, 0, 20);
     assert_msg(clamped == 20, "clamp(25, 0, 20) should equal 20");
     
     println("[PASS] Combined math operation tests passed");
 }
 
 fun test_nested_math_calls() -> void {
-    imut result1: number = max(min(10, 20), min(30, 40));
+    imut result1 = maxInt(minInt(10, 20), minInt(30, 40));
     assert_msg(result1 == 30, "max(min(10, 20), min(30, 40)) should equal 30");
     
-    imut result2: number = abs(min(-10, -20));
+    imut result2 = absInt(minInt(-10, -20));
     assert_msg(result2 == 20, "abs(min(-10, -20)) should equal 20");
     
-    imut result3: number = clamp(max(5, 15), 0, 10);
+    imut result3 = clampInt(maxInt(5, 15), 0, 10);
     assert_msg(result3 == 10, "clamp(max(5, 15), 0, 10) should equal 10");
     
-    imut result4: number = min(abs(-100), abs(50));
+    imut result4 = minInt(absInt(-100), absInt(50));
     assert_msg(result4 == 50, "min(abs(-100), abs(50)) should equal 50");
     
     println("[PASS] Nested math call tests passed");
 }
 
 fun test_edge_cases() -> void {
-    imut min_same: number = min(42, 42);
+    imut min_same = minInt(42, 42);
     assert_msg(min_same == 42, "min of same values should return that value");
     
-    imut max_same: number = max(42, 42);
+    imut max_same = maxInt(42, 42);
     assert_msg(max_same == 42, "max of same values should return that value");
     
-    imut abs_zero: number = abs(0);
+    imut abs_zero = absInt(0);
     assert_msg(abs_zero == 0, "abs(0) should return 0");
     
-    imut clamp_at_min: number = clamp(10, 10, 20);
+    imut clamp_at_min = clampInt(10, 10, 20);
     assert_msg(clamp_at_min == 10, "clamp at minimum boundary should work");
     
-    imut clamp_at_max: number = clamp(20, 10, 20);
+    imut clamp_at_max = clampInt(20, 10, 20);
     assert_msg(clamp_at_max == 20, "clamp at maximum boundary should work");
     
     println("[PASS] Edge case tests passed");
 }
 
 fun test_math_with_expressions() -> void {
-    imut x: number = 10;
-    imut y: number = 20;
+    imut x = 10;
+    imut y = 20;
     
-    imut result1: number = max(x * 2, y + 5);
+    imut result1 = maxInt(x * 2, y + 5);
     assert_msg(result1 == 25, "max(10*2, 20+5) should equal 25");
     
-    imut result2: number = min(x - 5, y / 2);
+    imut result2 = minInt(x - 5, y / 2);
     assert_msg(result2 == 5, "min(10-5, 20/2) should equal 5");
     
-    imut result3: number = abs(x - y);
+    imut result3 = absInt(x - y);
     assert_msg(result3 == 10, "abs(10-20) should equal 10");
     
-    imut result4: number = clamp(x + y, x, y);
+    imut result4 = clampInt(x + y, x, y);
     assert_msg(result4 == 20, "clamp(30, 10, 20) should equal 20");
     
     println("[PASS] Math with expressions tests passed");
 }
 
-fun main() -> number {
+fun main() -> int {
     println("=== Running Standard Library Tests ===");
     
     test_math_min_max();

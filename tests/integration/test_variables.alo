@@ -1,27 +1,27 @@
 fun test_immutable_variables() -> void {
-    imut x: number = 42;
+    imut x: int = 42;
     assert_msg(x == 42, "Immutable variable x should be 42");
     
-    imut y: number = -17;
+    imut y: int = -17;
     assert_msg(y == -17, "Immutable variable y should be -17");
     
-    imut sum: number = x + y;
+    imut sum: int = x + y;
     assert_msg(sum == 25, "Sum of x and y should be 25");
     
-    imut product: number = x * 2;
+    imut product: int = x * 2;
     assert_msg(product == 84, "Product should be 84");
     
     println("[PASS] Immutable variable tests passed");
 }
 
 fun test_type_annotations() -> void {
-    imut a: number = 100;
-    imut b: number = 200;
+    imut a: int = 100;
+    imut b: int = 200;
     imut c: bool = true;
     imut d: bool = false;
     
-    assert_msg(a == 100, "Type annotated number a should be 100");
-    assert_msg(b == 200, "Type annotated number b should be 200");
+    assert_msg(a == 100, "Type annotated int a should be 100");
+    assert_msg(b == 200, "Type annotated int b should be 200");
     assert_msg(c == true, "Type annotated bool c should be true");
     assert_msg(d == false, "Type annotated bool d should be false");
     
@@ -45,52 +45,52 @@ fun test_type_inference() -> void {
 }
 
 fun test_multiple_declarations() -> void {
-    imut a: number = 1;
-    imut b: number = 2;
-    imut c: number = 3;
-    imut d: number = 4;
-    imut e: number = 5;
+    imut a: int = 1;
+    imut b: int = 2;
+    imut c: int = 3;
+    imut d: int = 4;
+    imut e: int = 5;
     
-    imut sum: number = a + b + c + d + e;
+    imut sum: int = a + b + c + d + e;
     assert_msg(sum == 15, "Sum of 1+2+3+4+5 should be 15");
     
-    imut product: number = a * b * c;
+    imut product: int = a * b * c;
     assert_msg(product == 6, "Product of 1*2*3 should be 6");
     
     println("[PASS] Multiple declaration tests passed");
 }
 
 fun test_variables_in_expressions() -> void {
-    imut x: number = 10;
-    imut y: number = 20;
+    imut x: int = 10;
+    imut y: int = 20;
     
-    imut expr1: number = x + y * 2;
+    imut expr1: int = x + y * 2;
     assert_msg(expr1 == 50, "Expression x + y * 2 should be 50");
     
-    imut expr2: number = (x + y) * 2;
+    imut expr2: int = (x + y) * 2;
     assert_msg(expr2 == 60, "Expression (x + y) * 2 should be 60");
     
-    imut expr3: number = x * x + y * y;
+    imut expr3: int = x * x + y * y;
     assert_msg(expr3 == 500, "Expression x*x + y*y should be 500");
     
-    imut expr4: number = x - y + x;
+    imut expr4: int = x - y + x;
     assert_msg(expr4 == 0, "Expression x - y + x should be 0");
     
     println("[PASS] Variables in expressions tests passed");
 }
 
-fun compute_with_locals(a: number, b: number) -> number {
-    imut temp1: number = a * 2;
-    imut temp2: number = b * 3;
-    imut result: number = temp1 + temp2;
+fun compute_with_locals(a: int, b: int) -> int {
+    imut temp1: int = a * 2;
+    imut temp2: int = b * 3;
+    imut result: int = temp1 + temp2;
     return result;
 }
 
 fun test_local_variables_in_functions() -> void {
-    imut result1: number = compute_with_locals(5, 10);
+    imut result1: int = compute_with_locals(5, 10);
     assert_msg(result1 == 40, "compute_with_locals(5, 10) should return 40");
     
-    imut result2: number = compute_with_locals(3, 7);
+    imut result2: int = compute_with_locals(3, 7);
     assert_msg(result2 == 27, "compute_with_locals(3, 7) should return 27");
     
     println("[PASS] Local variables in functions tests passed");
@@ -129,35 +129,35 @@ fun test_string_variables() -> void {
 }
 
 fun test_zero_and_negative() -> void {
-    imut zero: number = 0;
+    imut zero: int = 0;
     assert_msg(zero == 0, "Zero should equal 0");
     
-    imut negative: number = -100;
+    imut negative: int = -100;
     assert_msg(negative == -100, "Negative should equal -100");
     
-    imut neg_zero: number = -0;
+    imut neg_zero: int = -0;
     assert_msg(neg_zero == 0, "Negative zero should equal 0");
     
-    imut sum: number = zero + negative;
+    imut sum: int = zero + negative;
     assert_msg(sum == -100, "0 + (-100) should equal -100");
     
     println("[PASS] Zero and negative tests passed");
 }
 
-fun test_large_numbers() -> void {
-    imut large1: number = 1000000;
-    imut large2: number = 2000000;
-    imut sum: number = large1 + large2;
+fun test_large_ints() -> void {
+    imut large1: int = 1000000;
+    imut large2: int = 2000000;
+    imut sum: int = large1 + large2;
     
-    assert_msg(sum == 3000000, "Large number addition should work");
+    assert_msg(sum == 3000000, "Large int addition should work");
     
-    imut product: number = 1000 * 1000;
+    imut product: int = 1000 * 1000;
     assert_msg(product == 1000000, "1000 * 1000 should equal 1000000");
     
-    println("[PASS] Large number tests passed");
+    println("[PASS] Large int tests passed");
 }
 
-fun main() -> number {
+fun main() -> int {
     println("=== Running Variable Tests ===");
     
     test_immutable_variables();
@@ -169,7 +169,7 @@ fun main() -> number {
     test_boolean_variables();
     test_string_variables();
     test_zero_and_negative();
-    test_large_numbers();
+    test_large_ints();
     
     println("\n[SUCCESS] All tests passed!");
     return 0;

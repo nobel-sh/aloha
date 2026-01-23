@@ -5,10 +5,15 @@
 namespace aloha
 {
 
-  void AIRBuilder::visit(Number *node)
+  void AIRBuilder::visit(Integer *node)
   {
-    double value = std::stod(node->m_value);
-    current_expr = std::make_unique<AIR::NumberLiteral>(node->get_location(), value);
+    current_expr = std::make_unique<AIR::IntegerLiteral>(node->get_location(),
+                                                         node->m_value);
+  }
+  void AIRBuilder::visit(Float *node)
+  {
+    current_expr = std::make_unique<AIR::FloatLiteral>(node->get_location(),
+                                                       node->m_value);
   }
 
   void AIRBuilder::visit(Boolean *node)
@@ -35,16 +40,22 @@ namespace aloha
 
     if (op == AIR::UnaryOpKind::NEG)
     {
-      if (operand_ty != AIR::TyIds::NUMBER)
+      if (operand_ty == AIR::TyIds::INTEGER)
       {
-        errors.add_error(node->get_location(),
-                         "Negation operator requires numeric operand");
         current_expr = std::make_unique<AIR::UnaryOp>(node->get_location(), op,
-                                                      std::move(operand), AIR::TyIds::ERROR);
+                                                      std::move(operand), AIR::TyIds::INTEGER);
         return;
       }
+      else if (operand_ty == AIR::TyIds::FLOAT)
+      {
+        current_expr = std::make_unique<AIR::UnaryOp>(node->get_location(), op,
+                                                      std::move(operand), AIR::TyIds::FLOAT);
+        return;
+      }
+      errors.add_error(node->get_location(),
+                       "Negation operator requires numeric operand");
       current_expr = std::make_unique<AIR::UnaryOp>(node->get_location(), op,
-                                                    std::move(operand), AIR::TyIds::NUMBER);
+                                                    std::move(operand), AIR::TyIds::ERROR);
       return;
     }
     else if (op == AIR::UnaryOpKind::NOT)
@@ -86,19 +97,21 @@ namespace aloha
 
     if (is_arithmetic_op(op))
     {
-      if (left_ty != AIR::TyIds::NUMBER || right_ty != AIR::TyIds::NUMBER)
+      if ((left_ty == AIR::TyIds::INTEGER && right_ty == AIR::TyIds::INTEGER) ||
+          (left_ty == AIR::TyIds::FLOAT && right_ty == AIR::TyIds::FLOAT))
       {
-        errors.add_error(node->get_location(),
-                         "Arithmetic operation '" + node->m_op +
-                             "' requires numeric operands");
+        AIR::TyId result_ty = left_ty; // both are same type here
         current_expr = std::make_unique<AIR::BinaryOp>(node->get_location(), op,
                                                        std::move(left), std::move(right),
-                                                       AIR::TyIds::ERROR);
+                                                       result_ty);
         return;
       }
+      errors.add_error(node->get_location(),
+                       "Arithmetic operation '" + node->m_op +
+                           "' requires numeric operands");
       current_expr = std::make_unique<AIR::BinaryOp>(node->get_location(), op,
                                                      std::move(left), std::move(right),
-                                                     AIR::TyIds::NUMBER);
+                                                     AIR::TyIds::ERROR);
       return;
     }
     else if (is_comparison_op(op))

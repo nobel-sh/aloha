@@ -16,10 +16,11 @@ namespace AIR
   namespace TyIds
   {
     constexpr TyId ERROR = 0; // tyId 0 is a resolved type id used as a sentinel/error value
-    constexpr TyId NUMBER = 1;
-    constexpr TyId STRING = 2;
-    constexpr TyId BOOL = 3;
-    constexpr TyId VOID = 4;
+    constexpr TyId INTEGER = 1;
+    constexpr TyId FLOAT = 2;
+    constexpr TyId STRING = 3;
+    constexpr TyId BOOL = 4;
+    constexpr TyId VOID = 5;
     constexpr TyId USER_DEFINED_START = 1000;
   }
 
@@ -28,7 +29,8 @@ namespace AIR
   enum class TyKind
   {
     ERROR,
-    NUMBER,
+    INTEGER,
+    FLOAT,
     STRING,
     BOOL,
     VOID,
@@ -54,7 +56,7 @@ namespace AIR
 
     bool is_builtin() const
     {
-      return kind == TyKind::NUMBER || kind == TyKind::STRING ||
+      return kind == TyKind::INTEGER || kind == TyKind::FLOAT || kind == TyKind::STRING ||
              kind == TyKind::BOOL || kind == TyKind::VOID;
     }
 

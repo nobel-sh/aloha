@@ -6,7 +6,8 @@
 class ASTVisitor
 {
 public:
-  virtual void visit(aloha::Number *node) = 0;
+  virtual void visit(aloha::Integer *node) = 0;
+  virtual void visit(aloha::Float *node) = 0;
   virtual void visit(aloha::Boolean *node) = 0;
   virtual void visit(aloha::String *node) = 0;
   virtual void visit(aloha::UnaryExpression *node) = 0;

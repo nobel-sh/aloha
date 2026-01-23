@@ -67,12 +67,23 @@ namespace aloha
     void accept(ASTVisitor &visitor) override;
   };
 
-  class Number : public Expression
+  class Integer : public Expression
   {
   public:
-    std::string m_value;
+    int64_t m_value;
 
-    explicit Number(Location loc, std::string val);
+    explicit Integer(Location loc, int64_t val);
+    void write(std::ostream &os, unsigned long indent = 0) const override;
+    void accept(ASTVisitor &visitor) override;
+    Type get_type() const override;
+  };
+
+  class Float : public Expression
+  {
+  public:
+    double m_value;
+
+    explicit Float(Location loc, double val);
     void write(std::ostream &os, unsigned long indent = 0) const override;
     void accept(ASTVisitor &visitor) override;
     Type get_type() const override;

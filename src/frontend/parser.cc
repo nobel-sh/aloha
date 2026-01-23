@@ -596,10 +596,15 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary()
     return nullptr;
   }
 
-  if (match(TokenKind::INT) || match(TokenKind::FLOAT))
+  if (match(TokenKind::INT))
   {
     advance();
-    return std::make_unique<aloha::Number>(loc, token->get_lexeme());
+    return std::make_unique<aloha::Integer>(loc, std::stoll(token->get_lexeme()));
+  }
+  if (match(TokenKind::FLOAT))
+  {
+    advance();
+    return std::make_unique<aloha::Float>(loc, std::stod(token->get_lexeme()));
   }
 
   if (match(TokenKind::STRING))
@@ -649,7 +654,7 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary()
       }
 
       // TODO: represent null in better structure
-      return std::make_unique<aloha::Number>(loc, "null");
+      return std::make_unique<aloha::String>(loc, "null");
     }
 
     return std::make_unique<aloha::Identifier>(loc, token->get_lexeme());

@@ -1,101 +1,101 @@
 fun test_addition() -> void {
-    imut a: number = 10;
-    imut b: number = 20;
-    imut result: number = a + b;
+    imut a: int = 10;
+    imut b: int = 20;
+    imut result: int = a + b;
     assert_msg(result == 30, "Basic addition: 10 + 20 should equal 30");
     
-    imut large_sum: number = 1000 + 2000;
+    imut large_sum: int = 1000 + 2000;
     assert_msg(large_sum == 3000, "Large addition: 1000 + 2000 should equal 3000");
     
-    imut negative_sum: number = -10 + 5;
+    imut negative_sum: int = -10 + 5;
     assert_msg(negative_sum == -5, "Negative addition: -10 + 5 should equal -5");
     
-    imut zero_sum: number = 0 + 0;
+    imut zero_sum: int = 0 + 0;
     assert_msg(zero_sum == 0, "Zero addition: 0 + 0 should equal 0");
     
     println("[PASS] Addition tests passed");
 }
 
 fun test_subtraction() -> void {
-    imut diff1: number = 50 - 20;
+    imut diff1: int = 50 - 20;
     assert_msg(diff1 == 30, "Basic subtraction: 50 - 20 should equal 30");
     
-    imut diff2: number = 10 - 30;
+    imut diff2: int = 10 - 30;
     assert_msg(diff2 == -20, "Negative result: 10 - 30 should equal -20");
     
-    imut diff3: number = 100 - 100;
+    imut diff3: int = 100 - 100;
     assert_msg(diff3 == 0, "Same numbers: 100 - 100 should equal 0");
     
-    imut diff4: number = -10 - 5;
+    imut diff4: int = -10 - 5;
     assert_msg(diff4 == -15, "Negative subtraction: -10 - 5 should equal -15");
     
     println("[PASS] Subtraction tests passed");
 }
 
 fun test_multiplication() -> void {
-    imut prod1: number = 5 * 6;
+    imut prod1: int = 5 * 6;
     assert_msg(prod1 == 30, "Basic multiplication: 5 * 6 should equal 30");
     
-    imut prod2: number = 10 * 0;
+    imut prod2: int = 10 * 0;
     assert_msg(prod2 == 0, "Multiply by zero: 10 * 0 should equal 0");
     
-    imut prod3: number = -5 * 4;
+    imut prod3: int = -5 * 4;
     assert_msg(prod3 == -20, "Negative multiplication: -5 * 4 should equal -20");
     
-    imut prod4: number = -3 * -7;
+    imut prod4: int = -3 * -7;
     assert_msg(prod4 == 21, "Two negatives: -3 * -7 should equal 21");
     
-    imut prod5: number = 100 * 100;
+    imut prod5: int = 100 * 100;
     assert_msg(prod5 == 10000, "Large multiplication: 100 * 100 should equal 10000");
     
     println("[PASS] Multiplication tests passed");
 }
 
 fun test_division() -> void {
-    imut div1: number = 20 / 4;
+    imut div1: int = 20 / 4;
     assert_msg(div1 == 5, "Basic division: 20 / 4 should equal 5");
     
-    imut div2: number = 100 / 10;
+    imut div2: int = 100 / 10;
     assert_msg(div2 == 10, "Division: 100 / 10 should equal 10");
     
-    imut div3: number = -20 / 4;
+    imut div3: int = -20 / 4;
     assert_msg(div3 == -5, "Negative division: -20 / 4 should equal -5");
     
-    imut div4: number = 50 / 10;
+    imut div4: int = 50 / 10;
     assert_msg(div4 == 5, "Division: 50 / 10 should equal 5");
     
     println("[PASS] Division tests passed");
 }
 
 fun test_unary_operations() -> void {
-    imut positive: number = 42;
-    imut negative: number = -positive;
+    imut positive: int = 42;
+    imut negative: int = -positive;
     assert_msg(negative == -42, "Unary minus: -42 should equal -42");
     
-    imut double_negative: number = -negative;
+    imut double_negative: int = -negative;
     assert_msg(double_negative == 42, "Double negative: -(-42) should equal 42");
     
-    imut zero: number = 0;
-    imut neg_zero: number = -zero;
+    imut zero: int = 0;
+    imut neg_zero: int = -zero;
     assert_msg(neg_zero == 0, "Negative zero: -0 should equal 0");
     
     println("[PASS] Unary operation tests passed");
 }
 
 fun test_complex_expressions() -> void {
-    imut expr1: number = 2 + 3 * 4;
+    imut expr1: int = 2 + 3 * 4;
     assert_msg(expr1 == 14, "Precedence: 2 + 3 * 4 should equal 14");
     
-    imut expr2: number = (2 + 3) * 4;
+    imut expr2: int = (2 + 3) * 4;
     assert_msg(expr2 == 20, "Parentheses: (2 + 3) * 4 should equal 20");
     
-    imut expr3: number = 10 + 5 - 3;
+    imut expr3: int = 10 + 5 - 3;
     assert_msg(expr3 == 12, "Chained operations: 10 + 5 - 3 should equal 12");
     
-    imut expr4: number = 100 / 10 + 5 * 2;
+    imut expr4: int = 100 / 10 + 5 * 2;
     assert_msg(expr4 == 20, "Mixed operations: 100 / 10 + 5 * 2 should equal 20");
     
-    imut expr5: number = (20 - 10) / (3 - 1);
+    imut expr5: int = (20 - 10) / (3 - 1);
     assert_msg(expr5 == 5, "Nested parentheses: (20 - 10) / (3 - 1) should equal 5");
     
     println("[PASS] Complex expression tests passed");
@@ -109,15 +109,15 @@ fun test_comparison_operators() -> void {
     assert_msg(10 == 10, "Equality: 10 == 10 should be true");
     assert_msg(10 != 5, "Inequality: 10 != 5 should be true");
     
-    imut x: number = 100;
-    imut y: number = 50;
+    imut x: int = 100;
+    imut y: int = 50;
     assert_msg(x > y, "Variable comparison: 100 > 50 should be true");
     assert_msg(y < x, "Variable comparison: 50 < 100 should be true");
     
     println("[PASS] Comparison operator tests passed");
 }
 
-fun main() -> number {
+fun main() -> int {
     println("=== Running Arithmetic Tests ===");
     
     test_addition();

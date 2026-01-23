@@ -81,7 +81,8 @@ namespace Codegen
                                                 llvm::Type *type);
 
     // Expressions
-    void visit(AIR::NumberLiteral *node) override;
+    void visit(AIR::IntegerLiteral *node) override;
+    void visit(AIR::FloatLiteral *node) override;
     void visit(AIR::StringLiteral *node) override;
     void visit(AIR::BoolLiteral *node) override;
     void visit(AIR::VarRef *node) override;

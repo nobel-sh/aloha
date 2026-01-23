@@ -58,7 +58,8 @@ namespace Codegen
   void CodeGenerator::generate_types()
   {
     // primitive types
-    type_map[AIR::TyIds::NUMBER] = llvm::Type::getDoubleTy(*context);
+    type_map[AIR::TyIds::INTEGER] = llvm::Type::getInt64Ty(*context);
+    type_map[AIR::TyIds::FLOAT] = llvm::Type::getDoubleTy(*context);
     type_map[AIR::TyIds::BOOL] = llvm::Type::getInt1Ty(*context);
     type_map[AIR::TyIds::VOID] = llvm::Type::getVoidTy(*context);
     type_map[AIR::TyIds::STRING] = llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
@@ -283,7 +284,13 @@ namespace Codegen
     return tmp_builder.CreateAlloca(type, nullptr, var_name);
   }
 
-  void CodeGenerator::visit(AIR::NumberLiteral *node)
+  void CodeGenerator::visit(AIR::IntegerLiteral *node)
+  {
+    uint64_t value = static_cast<uint64_t>(node->value);
+    current_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value, true);
+  }
+
+  void CodeGenerator::visit(AIR::FloatLiteral *node)
   {
     current_value = llvm::ConstantFP::get(*context, llvm::APFloat(node->value));
   }
@@ -324,8 +331,29 @@ namespace Codegen
     current_value = builder->CreateLoad(alloca->getAllocatedType(), alloca, node->name);
   }
 
+  enum class NumericKind
+  {
+    INTEGER,
+    FLOAT,
+    BOOL,
+    OTHER
+  };
+
+  NumericKind get_numeric_kind(AIR::TyId ty_id)
+  {
+    if (ty_id == AIR::TyIds::INTEGER)
+      return NumericKind::INTEGER;
+    if (ty_id == AIR::TyIds::FLOAT)
+      return NumericKind::FLOAT;
+    if (ty_id == AIR::TyIds::BOOL)
+      return NumericKind::BOOL;
+    return NumericKind::OTHER;
+  }
+
   void CodeGenerator::visit(AIR::BinaryOp *node)
   {
+    current_value = nullptr; // set on success
+
     node->left->accept(*this);
     llvm::Value *left = current_value;
 
@@ -335,110 +363,158 @@ namespace Codegen
     if (!left || !right)
     {
       report_error("Failed to generate binary operation operands", node->loc);
-      current_value = nullptr;
       return;
     }
+
+    NumericKind kind = get_numeric_kind(node->left->ty);
 
     switch (node->op)
     {
     case AIR::BinaryOpKind::ADD:
-      current_value = builder->CreateFAdd(left, right, "addtmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateAdd(left, right, "addtmp");
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFAdd(left, right, "addtmp");
+      else
+        report_error("Unsupported type for addition", node->loc);
       break;
+
     case AIR::BinaryOpKind::SUB:
-      current_value = builder->CreateFSub(left, right, "subtmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateSub(left, right, "subtmp");
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFSub(left, right, "subtmp");
+      else
+        report_error("Unsupported type for subtraction", node->loc);
       break;
+
     case AIR::BinaryOpKind::MUL:
-      current_value = builder->CreateFMul(left, right, "multmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateMul(left, right, "multmp");
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFMul(left, right, "multmp");
+      else
+        report_error("Unsupported type for multiplication", node->loc);
       break;
+
     case AIR::BinaryOpKind::DIV:
-      current_value = builder->CreateFDiv(left, right, "divtmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateSDiv(left, right, "divtmp"); // signed division
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFDiv(left, right, "divtmp");
+      else
+        report_error("Unsupported type for division", node->loc);
       break;
+
     case AIR::BinaryOpKind::MOD:
-      current_value = builder->CreateFRem(left, right, "modtmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateSRem(left, right, "modtmp"); // signed remainder
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFRem(left, right, "modtmp");
+      else
+        report_error("Unsupported type for modulo", node->loc);
       break;
 
     case AIR::BinaryOpKind::EQ:
-      if (node->left->ty == AIR::TyIds::NUMBER)
-      {
-        current_value = builder->CreateFCmpOEQ(left, right, "eqtmp");
-      }
-      else if (node->left->ty == AIR::TyIds::BOOL)
-      {
+      if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL)
         current_value = builder->CreateICmpEQ(left, right, "eqtmp");
-      }
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFCmpOEQ(left, right, "eqtmp");
       else
-      {
         report_error("Unsupported type for equality comparison", node->loc);
-        current_value = nullptr;
-      }
       break;
 
     case AIR::BinaryOpKind::NE:
-      if (node->left->ty == AIR::TyIds::NUMBER)
-      {
-        current_value = builder->CreateFCmpONE(left, right, "netmp");
-      }
-      else if (node->left->ty == AIR::TyIds::BOOL)
-      {
+      if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL)
         current_value = builder->CreateICmpNE(left, right, "netmp");
-      }
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFCmpONE(left, right, "netmp");
       else
-      {
         report_error("Unsupported type for inequality comparison", node->loc);
-        current_value = nullptr;
-      }
       break;
 
     case AIR::BinaryOpKind::LT:
-      current_value = builder->CreateFCmpOLT(left, right, "lttmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateICmpSLT(left, right, "lttmp");
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFCmpOLT(left, right, "lttmp");
+      else
+        report_error("Unsupported type for less-than comparison", node->loc);
       break;
+
     case AIR::BinaryOpKind::LE:
-      current_value = builder->CreateFCmpOLE(left, right, "letmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateICmpSLE(left, right, "letmp");
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFCmpOLE(left, right, "letmp");
+      else
+        report_error("Unsupported type for less-equal comparison", node->loc);
       break;
+
     case AIR::BinaryOpKind::GT:
-      current_value = builder->CreateFCmpOGT(left, right, "gttmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateICmpSGT(left, right, "gttmp");
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFCmpOGT(left, right, "gttmp");
+      else
+        report_error("Unsupported type for greater-than comparison", node->loc);
       break;
+
     case AIR::BinaryOpKind::GE:
-      current_value = builder->CreateFCmpOGE(left, right, "getmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateICmpSGE(left, right, "getmp");
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFCmpOGE(left, right, "getmp");
+      else
+        report_error("Unsupported type for greater-equal comparison", node->loc);
       break;
 
     case AIR::BinaryOpKind::AND:
       current_value = builder->CreateAnd(left, right, "andtmp");
       break;
+
     case AIR::BinaryOpKind::OR:
       current_value = builder->CreateOr(left, right, "ortmp");
       break;
 
     default:
       report_error("Unknown binary operation", node->loc);
-      current_value = nullptr;
       break;
     }
   }
 
   void CodeGenerator::visit(AIR::UnaryOp *node)
   {
+    current_value = nullptr; // set on success
+
     node->operand->accept(*this);
     llvm::Value *operand = current_value;
 
     if (!operand)
     {
       report_error("Failed to generate unary operation operand", node->loc);
-      current_value = nullptr;
       return;
     }
+
+    NumericKind kind = get_numeric_kind(node->operand->ty);
 
     switch (node->op)
     {
     case AIR::UnaryOpKind::NEG:
-      current_value = builder->CreateFNeg(operand, "negtmp");
+      if (kind == NumericKind::INTEGER)
+        current_value = builder->CreateNeg(operand, "negtmp");
+      else if (kind == NumericKind::FLOAT)
+        current_value = builder->CreateFNeg(operand, "negtmp");
+      else
+        report_error("Unsupported type for negation", node->loc);
       break;
+
     case AIR::UnaryOpKind::NOT:
       current_value = builder->CreateNot(operand, "nottmp");
       break;
+
     default:
       report_error("Unknown unary operation", node->loc);
-      current_value = nullptr;
       break;
     }
   }

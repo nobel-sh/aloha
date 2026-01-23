@@ -10,15 +10,23 @@
 
 namespace AIR
 {
+  class IntegerLiteral : public Expr
+  {
+  public:
+    int64_t value;
 
-  class NumberLiteral : public Expr
+    IntegerLiteral(const Location &loc, int64_t value)
+        : Expr(loc, TyIds::INTEGER), value(value) {}
+    void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+  };
+
+  class FloatLiteral : public Expr
   {
   public:
     double value;
 
-    NumberLiteral(const Location &loc, double value)
-        : Expr(loc, TyIds::NUMBER), value(value) {}
-
+    FloatLiteral(const Location &loc, double value)
+        : Expr(loc, TyIds::FLOAT), value(value) {}
     void accept(AIRVisitor &visitor) override { visitor.visit(this); }
   };
 

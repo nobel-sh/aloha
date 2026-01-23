@@ -1,36 +1,36 @@
-fun simple_function() -> number {
+fun simple_function() -> int {
     return 42;
 }
 
-fun add(a: number, b: number) -> number {
+fun add(a: int, b: int ) -> int {
     return a + b;
 }
 
-fun multiply(x: number, y: number) -> number {
+fun multiply(x: int, y: int) -> int {
     return x * y;
 }
 
-fun subtract(a: number, b: number) -> number {
+fun subtract(a: int, b: int) -> int {
     return a - b;
 }
 
 fun test_basic_functions() -> void {
-    imut result: number = simple_function();
+    imut result: int = simple_function();
     assert_msg(result == 42, "simple_function() should return 42");
     
-    imut sum: number = add(10, 20);
+    imut sum: int = add(10, 20);
     assert_msg(sum == 30, "add(10, 20) should return 30");
     
-    imut prod: number = multiply(5, 6);
+    imut prod: int = multiply(5, 6);
     assert_msg(prod == 30, "multiply(5, 6) should return 30");
     
-    imut diff: number = subtract(100, 30);
+    imut diff: int = subtract(100, 30);
     assert_msg(diff == 70, "subtract(100, 30) should return 70");
     
     println("[PASS] Basic function tests passed");
 }
 
-fun max_of_two(a: number, b: number) -> number {
+fun max_of_two(a: int, b: int) -> int {
     if (a > b) {
         return a;
     } else {
@@ -38,7 +38,7 @@ fun max_of_two(a: number, b: number) -> number {
     }
 }
 
-fun min_of_two(a: number, b: number) -> number {
+fun min_of_two(a: int, b: int) -> int {
     if (a < b) {
         return a;
     } else {
@@ -46,7 +46,7 @@ fun min_of_two(a: number, b: number) -> number {
     }
 }
 
-fun abs_value(n: number) -> number {
+fun abs_value(n: int) -> int {
     if (n < 0) {
         return -n;
     } else {
@@ -55,25 +55,25 @@ fun abs_value(n: number) -> number {
 }
 
 fun test_conditional_functions() -> void {
-    imut maximum: number = max_of_two(10, 20);
+    imut maximum: int = max_of_two(10, 20);
     assert_msg(maximum == 20, "max_of_two(10, 20) should return 20");
     
-    imut maximum2: number = max_of_two(50, 30);
+    imut maximum2: int = max_of_two(50, 30);
     assert_msg(maximum2 == 50, "max_of_two(50, 30) should return 50");
     
-    imut minimum: number = min_of_two(10, 20);
+    imut minimum: int = min_of_two(10, 20);
     assert_msg(minimum == 10, "min_of_two(10, 20) should return 10");
     
-    imut abs1: number = abs_value(-42);
+    imut abs1: int = abs_value(-42);
     assert_msg(abs1 == 42, "abs_value(-42) should return 42");
     
-    imut abs2: number = abs_value(42);
+    imut abs2: int = abs_value(42);
     assert_msg(abs2 == 42, "abs_value(42) should return 42");
     
     println("[PASS] Conditional function tests passed");
 }
 
-fun factorial(n: number) -> number {
+fun factorial(n: int) -> int {
     if (n <= 1) {
         return 1;
     } else {
@@ -81,7 +81,7 @@ fun factorial(n: number) -> number {
     }
 }
 
-fun fibonacci(n: number) -> number {
+fun fibonacci(n: int) -> int {
     if (n <= 1) {
         return n;
     } else {
@@ -89,7 +89,7 @@ fun fibonacci(n: number) -> number {
     }
 }
 
-fun sum_to_n(n: number) -> number {
+fun sum_to_n(n: int) -> int {
     if (n <= 0) {
         return 0;
     } else {
@@ -97,7 +97,7 @@ fun sum_to_n(n: number) -> number {
     }
 }
 
-fun power(base: number, exp: number) -> number {
+fun power(base: int, exp: int) -> int {
     if (exp == 0) {
         return 1;
     } else {
@@ -106,31 +106,31 @@ fun power(base: number, exp: number) -> number {
 }
 
 fun test_recursive_functions() -> void {
-    imut fact5: number = factorial(5);
+    imut fact5: int = factorial(5);
     assert_msg(fact5 == 120, "factorial(5) should return 120");
     
-    imut fact7: number = factorial(7);
+    imut fact7: int = factorial(7);
     assert_msg(fact7 == 5040, "factorial(7) should return 5040");
     
-    imut fib5: number = fibonacci(5);
+    imut fib5: int = fibonacci(5);
     assert_msg(fib5 == 5, "fibonacci(5) should return 5");
     
-    imut fib8: number = fibonacci(8);
+    imut fib8: int = fibonacci(8);
     assert_msg(fib8 == 21, "fibonacci(8) should return 21");
     
-    imut sum10: number = sum_to_n(10);
+    imut sum10: int = sum_to_n(10);
     assert_msg(sum10 == 55, "sum_to_n(10) should return 55");
     
-    imut pow2_8: number = power(2, 8);
+    imut pow2_8: int = power(2, 8);
     assert_msg(pow2_8 == 256, "power(2, 8) should return 256");
     
-    imut pow3_4: number = power(3, 4);
+    imut pow3_4: int = power(3, 4);
     assert_msg(pow3_4 == 81, "power(3, 4) should return 81");
     
     println("[PASS] Recursive function tests passed");
 }
 
-fun is_even(n: number) -> bool {
+fun is_even(n: int) -> bool {
     if (n == 0) {
         return true;
     } else {
@@ -159,35 +159,35 @@ fun test_boolean_returning_functions() -> void {
     println("[PASS] Boolean returning function tests passed");
 }
 
-fun complex_calculation(a: number, b: number, c: number) -> number {
-    imut step1: number = add(a, b);
-    imut step2: number = multiply(step1, c);
-    imut step3: number = subtract(step2, a);
+fun complex_calculation(a: int, b: int, c: int) -> int {
+    imut step1: int = add(a, b);
+    imut step2: int = multiply(step1, c);
+    imut step3: int = subtract(step2, a);
     return step3;
 }
 
-fun nested_function_calls() -> number {
-    imut x: number = add(5, 10);
-    imut y: number = multiply(x, 2);
-    imut z: number = subtract(y, 5);
+fun nested_function_calls() -> int {
+    imut x: int = add(5, 10);
+    imut y: int = multiply(x, 2);
+    imut z: int = subtract(y, 5);
     return z;
 }
 
 fun test_composed_functions() -> void {
-    imut result1: number = complex_calculation(10, 20, 3);
+    imut result1: int = complex_calculation(10, 20, 3);
     assert_msg(result1 == 80, "complex_calculation(10, 20, 3) should return 80");
     
-    imut result2: number = nested_function_calls();
+    imut result2: int = nested_function_calls();
     assert_msg(result2 == 25, "nested_function_calls() should return 25");
     
-    imut nested: number = add(multiply(5, 3), subtract(20, 5));
+    imut nested: int = add(multiply(5, 3), subtract(20, 5));
     assert_msg(nested == 30, "add(multiply(5, 3), subtract(20, 5)) should return 30");
     
     println("[PASS] Composed function tests passed");
 }
 
 fun void_function() -> void {
-    imut x: number = 42;
+    imut x: int = 42;
 }
 
 fun void_function_with_call() -> void {
@@ -202,25 +202,25 @@ fun test_void_functions() -> void {
 }
 
 fun test_function_parameters() -> void {
-    imut sum1: number = add(0, 0);
+    imut sum1: int = add(0, 0);
     assert_msg(sum1 == 0, "add(0, 0) should return 0");
     
-    imut sum2: number = add(-10, 10);
+    imut sum2: int = add(-10, 10);
     assert_msg(sum2 == 0, "add(-10, 10) should return 0");
     
-    imut sum3: number = add(-5, -10);
+    imut sum3: int = add(-5, -10);
     assert_msg(sum3 == -15, "add(-5, -10) should return -15");
     
-    imut prod1: number = multiply(0, 100);
+    imut prod1: int = multiply(0, 100);
     assert_msg(prod1 == 0, "multiply(0, 100) should return 0");
     
-    imut prod2: number = multiply(-5, 6);
+    imut prod2: int = multiply(-5, 6);
     assert_msg(prod2 == -30, "multiply(-5, 6) should return -30");
     
     println("[PASS] Function parameter tests passed");
 }
 
-fun main() -> number {
+fun main() -> int {
     println("=== Running Function Tests ===");
     
     test_basic_functions();

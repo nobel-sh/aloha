@@ -4,7 +4,9 @@
 // forward declarations for ast nodes
 namespace aloha
 {
-    class Number;
+    // class Number;
+    class Integer;
+    class Float;
     class Boolean;
     class String;
     class UnaryExpression;

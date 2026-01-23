@@ -7,7 +7,8 @@ namespace AIR
   TyTable::TyTable()
       : next_ty_id(TyIds::USER_DEFINED_START), next_struct_id(0)
   {
-    register_builtin("number", TyKind::NUMBER, TyIds::NUMBER);
+    register_builtin("int", TyKind::INTEGER, TyIds::INTEGER);
+    register_builtin("float", TyKind::FLOAT, TyIds::FLOAT);
     register_builtin("string", TyKind::STRING, TyIds::STRING);
     register_builtin("bool", TyKind::BOOL, TyIds::BOOL);
     register_builtin("void", TyKind::VOID, TyIds::VOID);
@@ -93,7 +94,7 @@ namespace AIR
 
   bool TyTable::is_numeric(TyId id) const
   {
-    return id == TyIds::NUMBER;
+    return id == TyIds::INTEGER || id == TyIds::FLOAT;
   }
 
   bool TyTable::is_bool(TyId id) const

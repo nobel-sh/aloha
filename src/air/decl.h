@@ -7,7 +7,8 @@ namespace AIR
   // forward declarations for all air nodes
   //
   // expression nodes
-  class NumberLiteral;
+  class IntegerLiteral;
+  class FloatLiteral;
   class StringLiteral;
   class BoolLiteral;
   class VarRef;

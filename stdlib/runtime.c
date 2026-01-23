@@ -1,8 +1,6 @@
 /**
  * This file provides low-level system primitives that are called from
  * higher-level Aloha standard library functions.
- *
- * Note : Use 'double' for Aloha's 'number' type. TODO: change this when we have proper type support
  */
 
 #include <stddef.h>
@@ -12,28 +10,51 @@
 #include <string.h>
 #include <unistd.h>
 
-double aloha_sys_write(double fd, const char *buf, double count)
+// aliases for Aloha types
+typedef int64_t aloha_int;
+typedef double aloha_float;
+
+aloha_int aloha_sys_write(aloha_int fd, const char *buf, aloha_int count)
 {
     if (!buf || count < 0)
-        return -1.0;
-    return (double)write((int)fd, buf, (size_t)count);
+        return -1;
+    ssize_t result = write((int)fd, buf, (size_t)count);
+    return (aloha_int)result;
 }
 
-double aloha_sys_read(double fd, char *buf, double count)
+aloha_int aloha_sys_read(aloha_int fd, char *buf, aloha_int count)
 {
     if (!buf || count < 0)
-        return -1.0;
-    return (double)read((int)fd, buf, (size_t)count);
+        return -1;
+    ssize_t result = read((int)fd, buf, (size_t)count);
+    return (aloha_int)result;
 }
 
-double aloha_sys_strlen(const char *str)
+aloha_int aloha_sys_strlen(const char *str)
 {
     if (!str)
-        return 0.0;
-    return (double)strlen(str);
+        return 0;
+    return (aloha_int)strlen(str);
 }
 
-char *aloha_sys_num_to_string(double value)
+char *aloha_sys_int_to_string(aloha_int value)
+{
+    // 24 bytes for int64_t
+    char *buf = (char *)malloc(24);
+    if (!buf)
+        return NULL;
+
+    int len = snprintf(buf, 24, "%ld", value);
+    if (len < 0)
+    {
+        free(buf);
+        return NULL;
+    }
+
+    return buf;
+}
+
+char *aloha_sys_float_to_string(aloha_float value)
 {
     // 32 bytes for a double
     char *buf = (char *)malloc(32);
@@ -50,7 +71,7 @@ char *aloha_sys_num_to_string(double value)
     return buf;
 }
 
-void aloha_sys_exit(double code)
+void aloha_sys_exit(aloha_int code)
 {
     exit((int)code);
 }
