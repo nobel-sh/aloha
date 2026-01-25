@@ -72,6 +72,7 @@ namespace Codegen
 
     void declare_functions();
     llvm::FunctionType *get_function_type(AIR::Function *func);
+    void generate_main_wrapper();
 
     void generate_function_bodies();
     void generate_function(AIR::Function *func);

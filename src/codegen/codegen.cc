@@ -37,6 +37,9 @@ namespace Codegen
 
     generate_function_bodies();
 
+    // wrap the main function with a custom entry point
+    generate_main_wrapper();
+
     if (has_errors())
     {
       error_reporter.print();
@@ -146,8 +149,14 @@ namespace Codegen
                                                  ? llvm::Function::ExternalLinkage
                                                  : llvm::Function::ExternalLinkage;
 
+      std::string llvm_name = func->name;
+      if (llvm_name == "main")
+      {
+        llvm_name = "__aloha_main";
+      }
+
       llvm::Function *llvm_func = llvm::Function::Create(
-          func_type, linkage, func->name, module.get());
+          func_type, linkage, llvm_name, module.get());
 
       // Set parameter names
       unsigned idx = 0;
@@ -254,7 +263,6 @@ namespace Codegen
       else
       {
         // For non-void functions, if there's no terminator, it's an error
-        // (should have been caught by semantic analysis)
         report_error("Function '" + func->name + "' missing return statement", func->loc);
         // Add a dummy return to prevent LLVM errors
         llvm::Type *ret_type = get_llvm_type(func->return_ty);
@@ -274,6 +282,50 @@ namespace Codegen
     }
 
     current_function = nullptr;
+  }
+
+  void CodeGenerator::generate_main_wrapper()
+  {
+    auto it = std::find_if(
+        current_air_module->functions.begin(),
+        current_air_module->functions.end(),
+        [](const std::unique_ptr<AIR::Function> &f)
+        { return f->name == "main"; });
+
+    if (it == current_air_module->functions.end())
+    {
+      return; // No main function to wrap
+    }
+
+    AIR::Function *main_func = it->get();
+
+    llvm::FunctionType *main_wrapper_type = llvm::FunctionType::get(
+        llvm::Type::getInt32Ty(*context), false);
+    llvm::Function *main_wrapper_func = llvm::Function::Create(
+        main_wrapper_type,
+        llvm::Function::ExternalLinkage,
+        "main",
+        module.get());
+
+    llvm::BasicBlock *entry_block = llvm::BasicBlock::Create(*context, "entry", main_wrapper_func);
+    builder->SetInsertPoint(entry_block);
+
+    llvm::Function *llvm_main_func = function_map[main_func->func_id];
+    if (!llvm_main_func)
+    {
+      report_error("Function 'main' not declared", main_func->loc);
+      return;
+    }
+    llvm::Value *ret_value = builder->CreateCall(llvm_main_func, {});
+
+    if (main_func->return_ty == AIR::TyIds::VOID)
+    {
+      builder->CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+    }
+    else
+    {
+      builder->CreateRet(ret_value);
+    }
   }
 
   llvm::AllocaInst *CodeGenerator::create_entry_block_alloca(

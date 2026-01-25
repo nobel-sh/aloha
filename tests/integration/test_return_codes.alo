@@ -1,0 +1,29 @@
+fun check_value(n: int) -> int {
+    if (n < 0) {
+        return -1;
+    } else {
+        if (n == 0) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
+fun main() -> int {
+    imut value: int = -5;
+    imut result: int = check_value(value);
+    
+    if (result == -1) {
+        println("Value is negative, returning -1");
+        return -1;
+    } else {
+        if (result == 0) {
+            println("Value is zero, returning 0");
+            return 0;
+        } else {
+            println("Value is positive, returning 1");
+            return 1;
+        }
+    }
+}
