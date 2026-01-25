@@ -645,39 +645,33 @@ namespace Codegen
       return;
     }
 
-    llvm::Type *obj_type = object->getType();
-    llvm::StructType *struct_type = nullptr;
-
-    if (obj_type->isStructTy())
-    {
-      struct_type = llvm::cast<llvm::StructType>(obj_type);
-    }
-    else if (obj_type->isPointerTy())
-    {
-      // From LLVM 18, opaque pointers don't have element type
-      // We need to track the struct type separately
-      // For now, try to extract from the alloca if available
-      struct_type = nullptr; // FIXME: needs proper handling
-    }
-
-    if (!struct_type)
+    const AIR::TyInfo *obj_ty_info = ty_table.get_ty_info(node->object->ty);
+    if (!obj_ty_info || !obj_ty_info->is_struct())
     {
       report_error("Field access on non-struct type", node->loc);
       current_value = nullptr;
       return;
     }
 
-    llvm::Value *struct_ptr;
-    if (obj_type->isStructTy())
+    llvm::StructType *struct_type = struct_map[obj_ty_info->struct_id.value()];
+    if (!struct_type)
     {
-      llvm::AllocaInst *tmp_alloca = builder->CreateAlloca(struct_type, nullptr, "tmp_struct");
-      builder->CreateStore(object, tmp_alloca);
-      struct_ptr = tmp_alloca;
+      report_error("Struct type not found in Struct mapping from AirTy -> LLVM Type", node->loc);
+      current_value = nullptr;
+      return;
     }
-    else
+
+    llvm::Type *obj_llvm_type = object->getType();
+    if (!obj_llvm_type->isStructTy())
     {
-      struct_ptr = object;
+      report_error("Expected struct value for field access", node->loc);
+      current_value = nullptr;
+      return;
     }
+
+    llvm::AllocaInst *tmp_alloca = builder->CreateAlloca(struct_type, nullptr, "tmp_struct");
+    builder->CreateStore(object, tmp_alloca);
+    llvm::Value *struct_ptr = tmp_alloca;
 
     llvm::Value *field_ptr = builder->CreateStructGEP(
         struct_type, struct_ptr, node->field_index, "field_ptr");
@@ -761,30 +755,30 @@ namespace Codegen
       return;
     }
 
-    llvm::Type *obj_type = object->getType();
-    llvm::StructType *struct_type = nullptr;
-    llvm::Value *struct_ptr = nullptr;
-
-    if (obj_type->isStructTy())
-    {
-      struct_type = llvm::cast<llvm::StructType>(obj_type);
-      llvm::AllocaInst *tmp_alloca = builder->CreateAlloca(struct_type, nullptr, "tmp_struct");
-      builder->CreateStore(object, tmp_alloca);
-      struct_ptr = tmp_alloca;
-    }
-    else if (obj_type->isPointerTy())
-    {
-      // In LLVM 18 with opaque pointers, we need to handle this differently
-      // For now, assume it's already a pointer to a struct
-      struct_ptr = object;
-      struct_type = nullptr; // FIXME: needs proper type tracking
-    }
-
-    if (!struct_type || !struct_ptr)
+    const AIR::TyInfo *obj_ty_info = ty_table.get_ty_info(node->object->ty);
+    if (!obj_ty_info || !obj_ty_info->is_struct())
     {
       report_error("Field assignment on non-struct type", node->loc);
       return;
     }
+
+    llvm::StructType *struct_type = struct_map[obj_ty_info->struct_id.value()];
+    if (!struct_type)
+    {
+      report_error("Struct type not found in codegen", node->loc);
+      return;
+    }
+
+    llvm::Type *obj_llvm_type = object->getType();
+    if (!obj_llvm_type->isStructTy())
+    {
+      report_error("Expected struct value for field assignment", node->loc);
+      return;
+    }
+
+    llvm::AllocaInst *tmp_alloca = builder->CreateAlloca(struct_type, nullptr, "tmp_struct");
+    builder->CreateStore(object, tmp_alloca);
+    llvm::Value *struct_ptr = tmp_alloca;
 
     llvm::Value *field_ptr = builder->CreateStructGEP(
         struct_type, struct_ptr, node->field_index, "field_ptr");
