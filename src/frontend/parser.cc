@@ -475,6 +475,7 @@ std::map<std::string, Precedence> precedence = {
     {"<=", PREC_COMPARISON},
     {">=", PREC_COMPARISON},
     {"!=", PREC_COMPARISON},
+    {"->", PREC_CALL},
 };
 
 std::map<std::string, Parser::prefix_parser_func> Parser::prefix_parsers = {
@@ -566,6 +567,13 @@ std::map<std::string, Parser::infix_parser_func> Parser::infix_parsers = {
            parser.current_location(), std::move(left),
            "!=", std::move(parser.parse_expression(PREC_COMPARISON)));
      }},
+    {"->",
+     [](Parser &parser, auto left)
+     {
+       auto field_name = parser.expect_identifier()->m_name;
+       return std::make_unique<aloha::StructFieldAccess>(
+           parser.current_location(), std::move(left), std::move(field_name));
+     }},
 
 };
 
@@ -645,10 +653,6 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary()
     if (match(TokenKind::LEFT_BRACE, true))
     {
       return parse_struct_instantiation();
-    }
-    if (match(TokenKind::THIN_ARROW, true))
-    {
-      return parse_struct_field_access();
     }
     advance();
     if (is_reserved_ident(*token))

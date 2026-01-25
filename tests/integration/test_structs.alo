@@ -1,0 +1,113 @@
+struct Point {
+    x: int,
+    y: int
+}
+
+struct Rectangle {
+    top_left: Point,
+    bottom_right: Point
+}
+
+struct Circle {
+    center: Point,
+    radius: int
+}
+
+struct Box {
+    position: Point,
+    dimensions: Point
+}
+
+fun test_basic_structs() -> void {
+    imut p: Point = Point { 10, 20 };
+    assert_msg(p->x == 10, "Point x should be 10");
+    assert_msg(p->y == 20, "Point y should be 20");
+    
+    imut dx: int = p->x * 2;
+    imut dy: int = p->y + 5;
+    assert_msg(dx == 20, "dx should be 20");
+    assert_msg(dy == 25, "dy should be 25");
+    
+    println("[PASS] Basic struct tests passed");
+}
+
+fun calculate_area(rect: Rectangle) -> int {
+    imut width: int = rect->bottom_right->x - rect->top_left->x;
+    imut height: int = rect->bottom_right->y - rect->top_left->y;
+    return width * height;
+}
+
+fun test_nested_structs() -> void {
+    imut top_left: Point = Point { 0, 0 };
+    imut bottom_right: Point = Point { 10, 5 };
+    imut rect: Rectangle = Rectangle { top_left, bottom_right };
+    
+    assert_msg(rect->top_left->x == 0, "Top left x should be 0");
+    assert_msg(rect->top_left->y == 0, "Top left y should be 0");
+    assert_msg(rect->bottom_right->x == 10, "Bottom right x should be 10");
+    assert_msg(rect->bottom_right->y == 5, "Bottom right y should be 5");
+    
+    imut area: int = calculate_area(rect);
+    assert_msg(area == 50, "Rectangle area should be 50");
+    
+    println("[PASS] Nested struct tests passed");
+}
+
+fun test_struct_composition() -> void {
+    imut center: Point = Point { 50, 50 };
+    imut circle: Circle = Circle { center, 10 };
+    
+    assert_msg(circle->center->x == 50, "Circle center x should be 50");
+    assert_msg(circle->center->y == 50, "Circle center y should be 50");
+    assert_msg(circle->radius == 10, "Circle radius should be 10");
+    
+    imut diameter: int = circle->radius * 2;
+    assert_msg(diameter == 20, "Diameter should be 20");
+    
+    imut box_pos: Point = Point { 100, 200 };
+    imut box_size: Point = Point { 50, 30 };
+    imut box: Box = Box { box_pos, box_size };
+    
+    assert_msg(box->position->x == 100, "Box position x should be 100");
+    assert_msg(box->dimensions->y == 30, "Box dimensions y should be 30");
+    
+    println("[PASS] Struct composition tests passed");
+}
+
+fun create_rectangle(x1: int, y1: int, x2: int, y2: int) -> Rectangle {
+    imut p1: Point = Point { x1, y1 };
+    imut p2: Point = Point { x2, y2 };
+    return Rectangle { p1, p2 };
+}
+
+fun test_complex_operations() -> void {
+    imut rect1: Rectangle = create_rectangle(0, 0, 10, 10);
+    imut rect2: Rectangle = create_rectangle(5, 5, 15, 15);
+    
+    imut overlap_x: bool = rect1->bottom_right->x > rect2->top_left->x;
+    imut overlap_y: bool = rect1->bottom_right->y > rect2->top_left->y;
+    
+    assert_msg(overlap_x == true, "Rectangles should overlap in x");
+    assert_msg(overlap_y == true, "Rectangles should overlap in y");
+    
+    imut origin: Point = Point { 0, 0 };
+    imut far_point: Point = Point { 100, 100 };
+    imut distance_x: int = far_point->x - origin->x;
+    imut distance_y: int = far_point->y - origin->y;
+    
+    assert_msg(distance_x == 100, "Distance x should be 100");
+    assert_msg(distance_y == 100, "Distance y should be 100");
+    
+    println("[PASS] Complex operations tests passed");
+}
+
+fun main() -> void {
+    test_basic_structs();
+    test_nested_structs();
+    test_struct_composition();
+    test_complex_operations();
+    
+    println("===========================================");
+    println("All struct tests passed!");
+    println("===========================================");
+}
