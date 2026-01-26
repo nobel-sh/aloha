@@ -5,6 +5,7 @@
 #include "visitor.h"
 #include "ty_spec.h"
 #include "../frontend/location.h"
+#include "operator.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -113,10 +114,10 @@ namespace aloha
     class UnaryExpression : public Expression
     {
     public:
-      std::string m_op;
+      Operator::Unary m_op;
       ExprPtr m_expr;
 
-      UnaryExpression(Location loc, std::string oper, ExprPtr expr);
+      UnaryExpression(Location loc, Operator::Unary oper, ExprPtr expr);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };
@@ -125,10 +126,10 @@ namespace aloha
     {
     public:
       ExprPtr m_left;
-      std::string m_op;
+      Operator::Binary m_op;
       ExprPtr m_right;
 
-      BinaryExpression(Location loc, ExprPtr lhs, std::string oper, ExprPtr rhs);
+      BinaryExpression(Location loc, ExprPtr lhs, Operator::Binary oper, ExprPtr rhs);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };

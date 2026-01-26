@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "../ast/ast.h"
+#include "../ast/operator.h"
 #include "token.h"
 #include <iostream>
 #include <memory>
@@ -481,93 +482,52 @@ namespace aloha
       {"-",
        [](Parser &parser)
        {
+         auto token = *parser.peek();
+         auto op = ast::Operator::token_to_unary_op(token);
+         if (!op.has_value())
+         {
+           parser.report_error("Token '" + token.to_string() + "' cannot be used as a unary operator");
+           parser.advance();
+           // return a fake "NEGATE" operation to continue parsing
+           return std::make_unique<ast::UnaryExpression>(
+               parser.current_location(), ast::Operator::Unary::NEGATE,
+               parser.parse_expression(PREC_PREFIX));
+         }
          parser.advance();
          return std::make_unique<ast::UnaryExpression>(
-             parser.current_location(), "-",
+             parser.current_location(), *op,
              parser.parse_expression(PREC_PREFIX));
        }},
   };
 
+#define MAKE_BINARY_PARSER(prec, fallback_op)                                                       \
+  [](Parser &parser, auto left, const Token &token)                                                 \
+  {                                                                                                 \
+    auto op = aloha::ast::Operator::token_to_binary_op(token);                                      \
+    if (!op.has_value())                                                                            \
+    {                                                                                               \
+      parser.report_error("Token '" + token.to_string() + "' cannot be used as a binary operator"); \
+      op = fallback_op;                                                                             \
+    }                                                                                               \
+    return std::make_unique<ast::BinaryExpression>(                                                 \
+        parser.current_location(), std::move(left), *op,                                            \
+        std::move(parser.parse_expression(prec)));                                                  \
+  }
+
   std::map<std::string, Parser::infix_parser_func> Parser::infix_parsers = {
-      {"+",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left), "+",
-             std::move(parser.parse_expression(PREC_SUM)));
-       }},
-      {"-",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left), "-",
-             std::move(parser.parse_expression(PREC_SUM)));
-       }},
-      {"*",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left), "*",
-             std::move(parser.parse_expression(PREC_PRODUCT)));
-       }},
-      {"/",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left), "/",
-             std::move(parser.parse_expression(PREC_PRODUCT)));
-       }},
-      {"%",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left), "%",
-             std::move(parser.parse_expression(PREC_PRODUCT)));
-       }},
-      {"<",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left), "<",
-             std::move(parser.parse_expression(PREC_COMPARISON)));
-       }},
-      {">",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left), ">",
-             std::move(parser.parse_expression(PREC_COMPARISON)));
-       }},
-      {"==",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left),
-             "==", std::move(parser.parse_expression(PREC_COMPARISON)));
-       }},
-      {"<=",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left),
-             "<=", std::move(parser.parse_expression(PREC_COMPARISON)));
-       }},
-      {">=",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left),
-             ">=", std::move(parser.parse_expression(PREC_COMPARISON)));
-       }},
-      {"!=",
-       [](Parser &parser, auto left)
-       {
-         return std::make_unique<ast::BinaryExpression>(
-             parser.current_location(), std::move(left),
-             "!=", std::move(parser.parse_expression(PREC_COMPARISON)));
-       }},
+      {"+", MAKE_BINARY_PARSER(PREC_SUM, ast::Operator::Binary::PLUS)},
+      {"-", MAKE_BINARY_PARSER(PREC_SUM, ast::Operator::Binary::MINUS)},
+      {"*", MAKE_BINARY_PARSER(PREC_PRODUCT, ast::Operator::Binary::MULTIPLY)},
+      {"/", MAKE_BINARY_PARSER(PREC_PRODUCT, ast::Operator::Binary::DIVIDE)},
+      {"%", MAKE_BINARY_PARSER(PREC_PRODUCT, ast::Operator::Binary::MODULO)},
+      {"<", MAKE_BINARY_PARSER(PREC_COMPARISON, ast::Operator::Binary::LESS)},
+      {">", MAKE_BINARY_PARSER(PREC_COMPARISON, ast::Operator::Binary::GREATER)},
+      {"==", MAKE_BINARY_PARSER(PREC_COMPARISON, ast::Operator::Binary::EQUAL)},
+      {"<=", MAKE_BINARY_PARSER(PREC_COMPARISON, ast::Operator::Binary::LESS_EQUAL)},
+      {">=", MAKE_BINARY_PARSER(PREC_COMPARISON, ast::Operator::Binary::GREATER_EQUAL)},
+      {"!=", MAKE_BINARY_PARSER(PREC_COMPARISON, ast::Operator::Binary::NOT_EQUAL)},
       {"->",
-       [](Parser &parser, auto left)
+       [](Parser &parser, auto left, const Token &token)
        {
          auto field_name = parser.expect_identifier()->m_name;
          return std::make_unique<ast::StructFieldAccess>(
@@ -576,13 +536,19 @@ namespace aloha
 
   };
 
+#undef MAKE_BINARY_PARSER
+
   std::unique_ptr<ast::Expression>
   Parser::parse_expression(int min_precedence)
   {
     auto left = parse_primary();
     while (!is_eof())
     {
-      auto operator_literal = peek()->get_lexeme();
+      auto op_token = peek();
+      if (!op_token)
+        break;
+
+      auto operator_literal = op_token->get_lexeme();
       auto next_precedence = precedence[operator_literal];
       if (next_precedence <= min_precedence)
       {
@@ -594,7 +560,7 @@ namespace aloha
         break;
       }
       advance();
-      left = infix_parser->second(*this, std::move(left));
+      left = infix_parser->second(*this, std::move(left), *op_token);
     }
     return left;
   }

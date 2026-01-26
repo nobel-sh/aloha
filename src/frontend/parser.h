@@ -21,7 +21,7 @@ namespace aloha
     using prefix_parser_func =
         std::function<std::unique_ptr<ast::Expression>(Parser &)>;
     using infix_parser_func = std::function<std::unique_ptr<ast::Expression>(
-        Parser &, std::unique_ptr<ast::Expression>)>;
+        Parser &, std::unique_ptr<ast::Expression>, const Token &)>;
 
     explicit Parser(Lexer &lexer, TySpecArena &arena, DiagnosticEngine &diag);
 

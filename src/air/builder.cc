@@ -1,6 +1,7 @@
 #include "builder.h"
 #include <iostream>
 #include <sstream>
+#include "../error/internal.h"
 
 namespace aloha
 {
@@ -36,26 +37,21 @@ namespace aloha
     }
 
     air::UnaryOpKind op = ast_op_to_air_unop(node->m_op);
+    auto op_str = ast::Operator::string(node->m_op);
     TyId operand_ty = operand->ty;
 
     if (op == air::UnaryOpKind::NEG)
     {
-      if (operand_ty == TyIds::INTEGER)
+      if (operand_ty != TyIds::INTEGER && operand_ty != TyIds::FLOAT)
       {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+                          "Negation operator requires numeric operand");
         current_expr = std::make_unique<air::UnaryOp>(node->loc(), op,
-                                                      std::move(operand), TyIds::INTEGER);
+                                                      std::move(operand), TyIds::ERROR);
         return;
       }
-      else if (operand_ty == TyIds::FLOAT)
-      {
-        current_expr = std::make_unique<air::UnaryOp>(node->loc(), op,
-                                                      std::move(operand), TyIds::FLOAT);
-        return;
-      }
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
-                        "Negation operator requires numeric operand");
       current_expr = std::make_unique<air::UnaryOp>(node->loc(), op,
-                                                    std::move(operand), TyIds::ERROR);
+                                                    std::move(operand), operand_ty);
       return;
     }
     else if (op == air::UnaryOpKind::NOT)
@@ -74,7 +70,7 @@ namespace aloha
     }
 
     diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
-                      "Unknown unary operator '" + node->m_op + "'");
+                      "Unknown unary operator '" + op_str + "'");
     current_expr = std::make_unique<air::UnaryOp>(node->loc(), op,
                                                   std::move(operand), TyIds::ERROR);
   }
@@ -94,6 +90,7 @@ namespace aloha
     TyId right_ty = right->ty;
 
     air::BinaryOpKind op = ast_op_to_air_binop(node->m_op);
+    auto op_str = ast::Operator::string(node->m_op);
 
     if (is_arithmetic_op(op))
     {
@@ -107,7 +104,7 @@ namespace aloha
         return;
       }
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
-                        "Arithmetic operation '" + node->m_op +
+                        "Arithmetic operation '" + op_str +
                             "' requires numeric operands");
       current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
                                                      std::move(left), std::move(right),
@@ -119,7 +116,7 @@ namespace aloha
       if (left_ty != right_ty)
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
-                          "Comparison operation '" + node->m_op +
+                          "Comparison operation '" + op_str +
                               "' requires operands of the same type");
         current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
                                                        std::move(left), std::move(right),
@@ -136,7 +133,7 @@ namespace aloha
       if (left_ty != TyIds::BOOL || right_ty != TyIds::BOOL)
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
-                          "Logical operation '" + node->m_op +
+                          "Logical operation '" + op_str +
                               "' requires boolean operands");
         current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
                                                        std::move(left), std::move(right),
@@ -150,7 +147,7 @@ namespace aloha
     }
 
     diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
-                      "Unknown binary operator '" + node->m_op + "'");
+                      "Unknown binary operator '" + op_str + "'");
     current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
                                                    std::move(left), std::move(right),
                                                    TyIds::ERROR);
@@ -935,48 +932,48 @@ namespace aloha
     return false;
   }
 
-  air::BinaryOpKind AIRBuilder::ast_op_to_air_binop(const std::string &op)
+  air::BinaryOpKind AIRBuilder::ast_op_to_air_binop(const ast::Operator::Binary &op)
   {
-    if (op == "+")
+    switch (op)
+    {
+    case ast::Operator::Binary::PLUS:
       return air::BinaryOpKind::ADD;
-    if (op == "-")
+    case ast::Operator::Binary::MINUS:
       return air::BinaryOpKind::SUB;
-    if (op == "*")
+    case ast::Operator::Binary::MULTIPLY:
       return air::BinaryOpKind::MUL;
-    if (op == "/")
+    case ast::Operator::Binary::DIVIDE:
       return air::BinaryOpKind::DIV;
-    if (op == "%")
+    case ast::Operator::Binary::MODULO:
       return air::BinaryOpKind::MOD;
-    if (op == "==")
+    case ast::Operator::Binary::EQUAL:
       return air::BinaryOpKind::EQ;
-    if (op == "!=")
+    case ast::Operator::Binary::NOT_EQUAL:
       return air::BinaryOpKind::NE;
-    if (op == "<")
+    case ast::Operator::Binary::LESS:
       return air::BinaryOpKind::LT;
-    if (op == "<=")
+    case ast::Operator::Binary::LESS_EQUAL:
       return air::BinaryOpKind::LE;
-    if (op == ">")
+    case ast::Operator::Binary::GREATER:
       return air::BinaryOpKind::GT;
-    if (op == ">=")
+    case ast::Operator::Binary::GREATER_EQUAL:
       return air::BinaryOpKind::GE;
-    if (op == "&&")
-      return air::BinaryOpKind::AND;
-    if (op == "||")
-      return air::BinaryOpKind::OR;
-
-    // unknown operator
-    return air::BinaryOpKind::ADD;
+    default:
+      ALOHA_UNREACHABLE();
+    }
   }
 
-  air::UnaryOpKind AIRBuilder::ast_op_to_air_unop(const std::string &op)
+  air::UnaryOpKind AIRBuilder::ast_op_to_air_unop(const ast::Operator::Unary &op)
   {
-    if (op == "-")
+    switch (op)
+    {
+    case ast::Operator::Unary::NEGATE:
       return air::UnaryOpKind::NEG;
-    if (op == "!")
+    case ast::Operator::Unary::NOT:
       return air::UnaryOpKind::NOT;
-
-    // unknown operator
-    return air::UnaryOpKind::NOT;
+    default:
+      ALOHA_UNREACHABLE();
+    }
   }
 
   bool AIRBuilder::is_arithmetic_op(air::BinaryOpKind op)

@@ -9,6 +9,7 @@
 #include "expr.h"
 #include "stmt.h"
 #include "../frontend/location.h"
+#include "../ast/operator.h"
 #include "../sema/symbol_binder.h"
 #include "../sema/type_resolver.h"
 #include <iostream>
@@ -94,8 +95,8 @@ namespace aloha
 
     bool check_types_compatible(TyId expected, TyId actual, Location loc,
                                 const std::string &context);
-    air::BinaryOpKind ast_op_to_air_binop(const std::string &op);
-    air::UnaryOpKind ast_op_to_air_unop(const std::string &op);
+    air::BinaryOpKind ast_op_to_air_binop(const ast::Operator::Binary &op);
+    air::UnaryOpKind ast_op_to_air_unop(const ast::Operator::Unary &op);
     bool is_arithmetic_op(air::BinaryOpKind op);
     bool is_comparison_op(air::BinaryOpKind op);
     bool is_logical_op(air::BinaryOpKind op);

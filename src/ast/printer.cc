@@ -56,7 +56,7 @@ namespace aloha
         void UnaryExpression::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "UnaryExpression:{\n";
-            os << std::string(indent + 2, ' ') << "Operator: " << m_op << "\n";
+            os << std::string(indent + 2, ' ') << "Operator: " << Operator::string(m_op) << "\n";
             os << std::string(indent + 2, ' ') << "Operand:{\n";
             m_expr->write(os, indent + 4);
             os << std::string(indent + 2, ' ') << "}\n";
@@ -69,7 +69,7 @@ namespace aloha
             os << std::string(indent + 2, ' ') << "Left:{\n";
             m_left->write(os, indent + 4);
             os << std::string(indent + 2, ' ') << "}\n";
-            os << std::string(indent + 2, ' ') << "Operator: " << m_op << "\n";
+            os << std::string(indent + 2, ' ') << "Operator: " << Operator::string(m_op) << "\n";
             os << std::string(indent + 2, ' ') << "Right:{\n";
             m_right->write(os, indent + 4);
             os << std::string(indent + 2, ' ') << "}\n";

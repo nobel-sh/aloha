@@ -49,10 +49,10 @@ namespace aloha
         String::String(Location loc, std::string val)
             : Expression(loc), m_value(std::move(val)) {}
 
-        UnaryExpression::UnaryExpression(Location loc, std::string oper, ExprPtr expr)
+        UnaryExpression::UnaryExpression(Location loc, Operator::Unary oper, ExprPtr expr)
             : Expression(loc), m_op(std::move(oper)), m_expr(std::move(expr)) {}
 
-        BinaryExpression::BinaryExpression(Location loc, ExprPtr lhs, std::string oper,
+        BinaryExpression::BinaryExpression(Location loc, ExprPtr lhs, Operator::Binary oper,
                                            ExprPtr rhs)
             : Expression(loc), m_left(std::move(lhs)), m_op(std::move(oper)),
               m_right(std::move(rhs)) {}
