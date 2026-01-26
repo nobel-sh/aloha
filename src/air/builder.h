@@ -30,6 +30,8 @@ namespace aloha
     SymbolTable &symbol_table;
     const std::unordered_map<AIR::StructId, ResolvedStruct> &resolved_structs;
     const std::unordered_map<FunctionId, ResolvedFunction> &resolved_functions;
+    const TySpecArena &type_arena;
+    TypeResolver &type_resolver;
     AIRBuildError errors;
 
     std::unordered_map<std::string, AIR::TyId> var_types; // variable name -> type
@@ -43,9 +45,12 @@ namespace aloha
     AIRBuilder(AIR::TyTable &table,
                SymbolTable &symbols,
                const std::unordered_map<AIR::StructId, ResolvedStruct> &structs,
-               const std::unordered_map<FunctionId, ResolvedFunction> &funcs)
+               const std::unordered_map<FunctionId, ResolvedFunction> &funcs,
+               const TySpecArena &arena,
+               TypeResolver &resolver)
         : ty_table(table), symbol_table(symbols),
           resolved_structs(structs), resolved_functions(funcs),
+          type_arena(arena), type_resolver(resolver),
           current_function_return_type(AIR::TyIds::VOID) {}
 
     virtual ~AIRBuilder() = default;

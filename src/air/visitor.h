@@ -21,6 +21,7 @@ namespace AIR
     virtual void visit(Call *node) = 0;
     virtual void visit(StructInstantiation *node) = 0;
     virtual void visit(FieldAccess *node) = 0;
+    virtual void visit(ArrayExpr *node) = 0;
 
     // statement visitors
     virtual void visit(VarDecl *node) = 0;

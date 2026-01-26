@@ -37,6 +37,25 @@ namespace AIR
     return ty_id;
   }
 
+  TyId TyTable::register_array(TyId element_type)
+  {
+    auto it = array_type_cache.find(element_type);
+    if (it != array_type_cache.end())
+    {
+      return it->second;
+    }
+
+    TyId array_ty_id = next_ty_id++;
+    std::string array_name = ty_name(element_type) + "[]";
+    auto ty_info = std::make_unique<TyInfo>(array_ty_id, TyKind::ARRAY, array_name);
+    ty_info->type_params.push_back(element_type);
+
+    types[array_ty_id] = std::move(ty_info);
+    array_type_cache[element_type] = array_ty_id;
+
+    return array_ty_id;
+  }
+
   std::optional<TyId> TyTable::lookup_by_name(const std::string &name) const
   {
     auto it = name_to_ty.find(name);
@@ -118,10 +137,29 @@ namespace AIR
     return ty_info && ty_info->kind == TyKind::STRUCT;
   }
 
+  bool TyTable::is_array(TyId id) const
+  {
+    auto ty_info = get_ty_info(id);
+    return ty_info && ty_info->kind == TyKind::ARRAY;
+  }
+
+  std::optional<TyId> TyTable::get_array_element_type(TyId array_ty) const
+  {
+    auto ty_info = get_ty_info(array_ty);
+    if (ty_info && ty_info->kind == TyKind::ARRAY && !ty_info->type_params.empty())
+    {
+      return ty_info->type_params[0];
+    }
+    return std::nullopt;
+  }
+
   bool TyTable::are_compatible(TyId lhs, TyId rhs) const
   {
     // for now, types must be exactly the same
     // todo: handle implicit conversions, subtyping, ...
+
+    // Arrays are structurally typed and canonicalized,
+    // so pointer equality suffices
     return lhs == rhs;
   }
 

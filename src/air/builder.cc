@@ -188,19 +188,44 @@ namespace aloha
     AIR::ExprPtr init_expr;
     AIR::TyId var_ty = AIR::TyIds::VOID;
 
+    if (node->m_type.has_value())
+    {
+      auto ty_opt = type_resolver.resolve_type_spec(node->m_type.value(), type_arena);
+      if (ty_opt.has_value())
+      {
+        var_ty = ty_opt.value();
+      }
+      else
+      {
+        var_ty = AIR::TyIds::ERROR;
+      }
+    }
+
     if (node->m_expression)
     {
       init_expr = lower_expr(node->m_expression.get());
       if (init_expr)
       {
-        var_ty = init_expr->ty;
+        // infer from initializer
+        if (!node->m_type.has_value())
+        {
+          var_ty = init_expr->ty;
+        }
+        // else check from initializer
+        else if (var_ty != AIR::TyIds::ERROR)
+        {
+          check_types_compatible(var_ty, init_expr->ty, node->get_location(), "variable initialization");
+        }
       }
     }
     else
     {
       errors.add_error(node->get_location(),
                        "Variable '" + var_name + "' requires an initializer");
-      var_ty = AIR::TyIds::ERROR;
+      if (var_ty == AIR::TyIds::VOID)
+      {
+        var_ty = AIR::TyIds::ERROR;
+      }
     }
 
     register_variable(var_name, var_ty);
@@ -596,9 +621,41 @@ namespace aloha
 
   void AIRBuilder::visit(Array *node)
   {
-    errors.add_error(node->get_location(),
-                     "Arrays not yet supported in AIR lowering");
-    current_expr.reset();
+    auto array_elements = std::vector<AIR::ExprPtr>{};
+    for (const auto &member : node->m_members)
+    {
+      auto elem = lower_expr(member.get());
+      if (!elem)
+      {
+        current_expr.reset();
+        return;
+      }
+      array_elements.emplace_back(std::move(elem));
+    }
+
+    // Infer array type from first element
+    AIR::TyId array_ty = AIR::TyIds::ERROR;
+    if (!array_elements.empty())
+    {
+      AIR::TyId element_ty = array_elements[0]->ty;
+
+      // Check all elements have the same type
+      for (size_t i = 1; i < array_elements.size(); i++)
+      {
+        if (array_elements[i]->ty != element_ty)
+        {
+          errors.add_error(node->get_location(),
+                           "Array elements must have the same type");
+          current_expr.reset();
+          return;
+        }
+      }
+
+      // Register array type
+      array_ty = ty_table.register_array(element_ty);
+    }
+
+    current_expr = std::make_unique<AIR::ArrayExpr>(node->get_location(), std::move(array_elements), array_ty);
   }
 
   void AIRBuilder::visit(ExpressionStatement *node)

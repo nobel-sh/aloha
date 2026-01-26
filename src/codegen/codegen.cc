@@ -113,9 +113,13 @@ namespace Codegen
       return it->second;
     }
 
-    // Check if it's a struct type we haven't mapped yet
     const AIR::TyInfo *ty_info = ty_table.get_ty_info(ty_id);
-    if (ty_info && ty_info->kind == AIR::TyKind::STRUCT)
+    if (!ty_info)
+    {
+      return nullptr;
+    }
+
+    if (ty_info->is_struct())
     {
       if (ty_info->struct_id.has_value())
       {
@@ -126,6 +130,22 @@ namespace Codegen
           return struct_it->second;
         }
       }
+    }
+    else if (ty_info->is_array())
+    {
+      if (ty_info->type_params.empty())
+      {
+        return nullptr;
+      }
+
+      AIR::TyId element_ty_id = ty_info->type_params[0];
+      llvm::Type *element_llvm_type = get_llvm_type(element_ty_id);
+      if (!element_llvm_type)
+      {
+        return nullptr;
+      }
+
+      return element_llvm_type->getPointerTo();
     }
 
     return nullptr;
@@ -331,6 +351,10 @@ namespace Codegen
   llvm::AllocaInst *CodeGenerator::create_entry_block_alloca(
       llvm::Function *func, const std::string &var_name, llvm::Type *type)
   {
+    if (func->empty())
+    {
+      return nullptr; // No entry block yet
+    }
     llvm::IRBuilder<> tmp_builder(&func->getEntryBlock(),
                                   func->getEntryBlock().begin());
     return tmp_builder.CreateAlloca(type, nullptr, var_name);
@@ -680,6 +704,67 @@ namespace Codegen
     current_value = builder->CreateLoad(field_type, field_ptr, node->field_name);
   }
 
+  void CodeGenerator::visit(AIR::ArrayExpr *node)
+  {
+    if (node->elements.empty())
+    {
+      report_error("Empty arrays not yet supported", node->loc);
+      current_value = nullptr;
+      return;
+    }
+
+    if (!current_function)
+    {
+      report_error("Array literals only supported inside functions", node->loc);
+      current_value = nullptr;
+      return;
+    }
+
+    node->elements[0]->accept(*this);
+    if (!current_value)
+    {
+      report_error("Failed to generate first array element", node->loc);
+      return;
+    }
+
+    llvm::Type *element_type = current_value->getType();
+    size_t array_size = node->elements.size();
+
+    llvm::ArrayType *array_type = llvm::ArrayType::get(element_type, array_size);
+
+    llvm::AllocaInst *array_alloca = create_entry_block_alloca(
+        current_function, "array_tmp", array_type);
+
+    if (!array_alloca)
+    {
+      report_error("Failed to allocate array storage", node->loc);
+      current_value = nullptr;
+      return;
+    }
+
+    size_t index = 0;
+    for (const auto &element : node->elements)
+    {
+      element->accept(*this);
+      if (!current_value)
+      {
+        report_error("Failed to generate array element at index " + std::to_string(index), element->loc);
+        return;
+      }
+
+      llvm::Value *index_val = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), index);
+      llvm::Value *element_ptr = builder->CreateGEP(
+          array_type, array_alloca,
+          {llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0), index_val},
+          "element_ptr");
+
+      builder->CreateStore(current_value, element_ptr);
+      index++;
+    }
+
+    current_value = array_alloca;
+  }
+
   void CodeGenerator::visit(AIR::VarDecl *node)
   {
     if (node->initializer)
@@ -693,7 +778,17 @@ namespace Codegen
         return;
       }
 
-      llvm::Type *var_type = get_llvm_type(node->var_ty);
+      // For arrays or if type is ERROR, use the value's type directly
+      llvm::Type *var_type = nullptr;
+      if (node->var_ty == AIR::TyIds::ERROR)
+      {
+        var_type = init_value->getType();
+      }
+      else
+      {
+        var_type = get_llvm_type(node->var_ty);
+      }
+
       if (!var_type)
       {
         report_error("Cannot resolve variable type", node->loc);
@@ -702,6 +797,12 @@ namespace Codegen
 
       llvm::AllocaInst *alloca = create_entry_block_alloca(
           current_function, node->name, var_type);
+
+      if (!alloca)
+      {
+        report_error("Failed to create variable storage", node->loc);
+        return;
+      }
 
       builder->CreateStore(init_value, alloca);
 

@@ -1,4 +1,5 @@
 #include "type_resolver.h"
+#include "../error/compiler_error.h"
 #include <algorithm>
 #include <iostream>
 
@@ -47,44 +48,65 @@ namespace aloha
     return true;
   }
 
-  std::optional<AIR::TyId> TypeResolver::resolve_type_name(const std::string &name, Location loc)
+  std::optional<AIR::TyId> TypeResolver::resolve_type_spec(TySpecId ty_spec_id, const TySpecArena &type_arena)
   {
-    if (name == "int")
+
+    const TySpec &spec = type_arena[ty_spec_id];
+    const Location loc = spec.loc;
+    if (ty_spec_id >= type_arena.nodes.size())
     {
-      return AIR::TyIds::INTEGER;
-    }
-    else if (name == "float")
-    {
-      return AIR::TyIds::FLOAT;
-    }
-    else if (name == "string")
-    {
-      return AIR::TyIds::STRING;
-    }
-    else if (name == "bool")
-    {
-      return AIR::TyIds::BOOL;
-    }
-    else if (name == "void")
-    {
-      return AIR::TyIds::VOID;
+      ALOHA_ICE("TySpecId out of bound in TypeResolver::resolve_type_spec");
     }
 
-    // check for struct types
-    auto struct_opt = symbol_table.lookup_struct(name);
-    if (struct_opt.has_value())
+    switch (spec.kind)
     {
-      return struct_opt->type_id;
+    case TySpec::Kind::Builtin:
+      switch (spec.builtin)
+      {
+      case TySpec::Builtin::Int:
+        return AIR::TyIds::INTEGER;
+      case TySpec::Builtin::Float:
+        return AIR::TyIds::FLOAT;
+      case TySpec::Builtin::String:
+        return AIR::TyIds::STRING;
+      case TySpec::Builtin::Bool:
+        return AIR::TyIds::BOOL;
+      case TySpec::Builtin::Void:
+        return AIR::TyIds::VOID;
+      }
+      return std::nullopt;
+
+    case TySpec::Kind::Named:
+    {
+      auto struct_opt = symbol_table.lookup_struct(spec.name);
+      if (struct_opt.has_value())
+      {
+        return struct_opt->type_id;
+      }
+
+      std::string suggestion = suggest_type_name(spec.name);
+      if (!suggestion.empty())
+      {
+        errors.add_error(loc, "Unknown type '" + spec.name + "'. Did you mean '" + suggestion + "'?");
+      }
+      else
+      {
+        errors.add_error(loc, "Unknown type '" + spec.name + "'");
+      }
+      return std::nullopt;
     }
 
-    std::string suggestion = suggest_type_name(name);
-    if (!suggestion.empty())
+    case TySpec::Kind::Array:
     {
-      errors.add_error(loc, "Unknown type '" + name + "'. Did you mean '" + suggestion + "'?");
+      auto element_ty_opt = resolve_type_spec(spec.element, type_arena);
+      if (!element_ty_opt.has_value())
+      {
+        return std::nullopt;
+      }
+
+      AIR::TyId array_ty = ty_table.register_array(element_ty_opt.value());
+      return array_ty;
     }
-    else
-    {
-      errors.add_error(loc, "Unknown type '" + name + "'");
     }
 
     return std::nullopt;
@@ -109,9 +131,7 @@ namespace aloha
 
     for (const auto &field : struct_decl->m_fields)
     {
-      std::string type_name = type_arena.to_string(field.m_type);
-
-      auto ty_id_opt = resolve_type_name(type_name, struct_decl->get_location());
+      auto ty_id_opt = resolve_type_spec(field.m_type, type_arena);
       if (!ty_id_opt.has_value())
       {
         continue;
@@ -142,8 +162,7 @@ namespace aloha
 
     FunctionId func_id = func_opt->id;
 
-    std::string return_type_name = type_arena.to_string(func->m_return_type);
-    auto return_ty_id_opt = resolve_type_name(return_type_name, func->get_location());
+    auto return_ty_id_opt = resolve_type_spec(func->m_return_type, type_arena);
     if (!return_ty_id_opt.has_value())
     {
       return;
@@ -152,8 +171,7 @@ namespace aloha
     std::vector<AIR::TyId> param_types;
     for (const auto &param : func->m_parameters)
     {
-      std::string type_name = type_arena.to_string(param.m_type);
-      auto ty_id_opt = resolve_type_name(type_name, func->get_location());
+      auto ty_id_opt = resolve_type_spec(param.m_type, type_arena);
       if (!ty_id_opt.has_value())
       {
         return;

@@ -240,6 +240,16 @@ namespace AIR
     void accept(AIRVisitor &visitor) override { visitor.visit(this); }
   };
 
+  class ArrayExpr : public Expr
+  {
+  public:
+    std::vector<ExprPtr> elements;
+    ArrayExpr(const Location &loc, std::vector<ExprPtr> elements, TyId array_ty)
+        : Expr(loc, array_ty), elements(std::move(elements)) {}
+
+    void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+  };
+
 } // namespace AIR
 
 #endif // AIR_EXPR_H_

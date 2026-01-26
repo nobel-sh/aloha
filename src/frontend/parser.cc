@@ -741,7 +741,6 @@ ParseTy Parser::parse_type()
     advance();
     auto lexeme = token->get_lexeme();
 
-    // Check for builtin types
     if (lexeme == "int")
     {
       return type_arena->builtin(loc, aloha::TySpec::Builtin::Int);
@@ -764,9 +763,27 @@ ParseTy Parser::parse_type()
     }
     else
     {
-      // Named type (struct, etc.)
       return type_arena->named(loc, lexeme);
     }
+  }
+  else if (match(TokenKind::LEFT_BRACKET))
+  {
+    advance();
+    ParseTy element_type = parse_type();
+    consume(TokenKind::SEMICOLON, "Expected ';' after array element type");
+    uint64_t size = 0;
+    if (match(TokenKind::INT))
+    {
+      size = std::stoull(peek()->get_lexeme());
+      advance();
+    }
+    else
+    {
+      report_error("Expected array size as integer literal");
+    }
+
+    consume(TokenKind::RIGHT_BRACKET, "Expected ']' after array type");
+    return type_arena->array(loc, element_type, size);
   }
 
   report_error("Expected type");

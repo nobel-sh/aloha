@@ -35,6 +35,7 @@ namespace AIR
     BOOL,
     VOID,
     STRUCT,
+    ARRAY,
     // add more
   };
 
@@ -62,6 +63,8 @@ namespace AIR
 
     bool is_struct() const { return kind == TyKind::STRUCT; }
 
+    bool is_array() const { return kind == TyKind::ARRAY; }
+
     bool is_error() const { return kind == TyKind::ERROR; }
   };
 
@@ -70,6 +73,7 @@ namespace AIR
   private:
     std::unordered_map<TyId, std::unique_ptr<TyInfo>> types;
     std::unordered_map<std::string, TyId> name_to_ty;
+    std::unordered_map<TyId, TyId> array_type_cache; // element_type -> array_type
     TyId next_ty_id;
     StructId next_struct_id;
 
@@ -79,6 +83,8 @@ namespace AIR
     TyId register_builtin(const std::string &name, TyKind kind, TyId id);
 
     TyId register_struct(const std::string &name, StructId struct_id);
+
+    TyId register_array(TyId element_type);
 
     std::optional<TyId> lookup_by_name(const std::string &name) const;
 
@@ -97,6 +103,9 @@ namespace AIR
     bool is_string(TyId id) const;
     bool is_void(TyId id) const;
     bool is_struct(TyId id) const;
+    bool is_array(TyId id) const;
+
+    std::optional<TyId> get_array_element_type(TyId array_ty) const;
 
     bool are_compatible(TyId lhs, TyId rhs) const;
   };

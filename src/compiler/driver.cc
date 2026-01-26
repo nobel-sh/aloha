@@ -293,7 +293,9 @@ namespace AlohaPipeline
           *ty_table,
           symbol_binder->get_symbol_table(),
           type_resolver->get_resolved_structs(),
-          type_resolver->get_resolved_functions());
+          type_resolver->get_resolved_functions(),
+          type_arena,
+          *type_resolver);
 
       air_module = air_builder->build(ast.get());
       if (!air_module)

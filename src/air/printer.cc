@@ -138,6 +138,19 @@ namespace AIR
         indent -= 2;
     }
 
+    void Printer::visit(ArrayExpr *node)
+    {
+        write_indent();
+        os << "ArrayExpr: (ty=" << ty_name(node->ty) << ", elements=" << node->elements.size() << ")\n";
+
+        indent += 2;
+        for (const auto &elem : node->elements)
+        {
+            elem->accept(*this);
+        }
+        indent -= 2;
+    }
+
     void Printer::visit(VarDecl *node)
     {
         write_indent();

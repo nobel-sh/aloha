@@ -17,6 +17,7 @@ namespace AIR
   class Call;
   class StructInstantiation;
   class FieldAccess;
+  class ArrayExpr;
 
   // statement nodes
   class VarDecl;

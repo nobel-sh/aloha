@@ -92,6 +92,7 @@ namespace Codegen
     void visit(AIR::Call *node) override;
     void visit(AIR::StructInstantiation *node) override;
     void visit(AIR::FieldAccess *node) override;
+    void visit(AIR::ArrayExpr *node) override;
 
     // Statements
     void visit(AIR::VarDecl *node) override;

@@ -73,8 +73,8 @@ namespace aloha
 
     bool resolve(Program *program, const TySpecArena &type_arena);
 
-    // resolve a type name to tyId
-    std::optional<AIR::TyId> resolve_type_name(const std::string &name, Location loc);
+    // resolve a ast::TySpec to AIR::TyId
+    std::optional<AIR::TyId> resolve_type_spec(TySpecId ty_spec_id, const TySpecArena &type_arena);
 
     const std::unordered_map<AIR::StructId, ResolvedStruct> &get_resolved_structs() const
     {
