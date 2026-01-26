@@ -10,8 +10,8 @@
 
 Parser::Parser(Lexer &lexer, aloha::TySpecArena &arena, aloha::DiagnosticEngine &diag)
     : lexer(&lexer),
-      current_token(TokenKind::EOF_TOKEN, Location(1, 1)),
-      next_token(TokenKind::EOF_TOKEN, Location(1, 1)),
+      current_token(TokenKind::EOF_TOKEN, Location()),
+      next_token(TokenKind::EOF_TOKEN, Location()),
       diagnostics(diag),
       type_arena(&arena)
 {

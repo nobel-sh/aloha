@@ -10,8 +10,7 @@ namespace aloha
   {
     if (!program)
     {
-      diagnostics.error(DiagnosticPhase::TypeResolution, Location(0, 0), "Null program passed to TypeResolver");
-      return false;
+      ALOHA_ICE("Null program passed to TypeResolver::resolve");
     }
 
     for (const auto &node : program->m_nodes)

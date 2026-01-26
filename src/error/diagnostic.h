@@ -35,7 +35,9 @@ namespace aloha
 
         Diagnostic(DiagnosticSeverity sev, DiagnosticPhase ph,
                    Location loc, std::string msg)
-            : severity(sev), phase(ph), location(loc), message(std::move(msg)) {}
+            : severity(sev), phase(ph), location(loc), message(std::move(msg))
+        {
+        }
     };
 
 } // namespace aloha

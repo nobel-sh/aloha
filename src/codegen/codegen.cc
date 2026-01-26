@@ -5,6 +5,7 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Verifier.h>
 #include <iostream>
+#include "../error/internal.h"
 
 namespace Codegen
 {
@@ -24,8 +25,7 @@ namespace Codegen
   {
     if (!air_module)
     {
-      report_error("Cannot generate code for null module", Location(0, 0));
-      return nullptr;
+      ALOHA_ICE("Null module passed to CodeGenerator::generate");
     }
 
     current_air_module = air_module;

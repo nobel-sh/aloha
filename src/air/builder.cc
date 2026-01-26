@@ -739,13 +739,12 @@ namespace aloha
   {
     if (!program)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, Location(0, 0), "Null program passed to AIRBuilder");
-      return nullptr;
+      ALOHA_ICE("Null program passed to AIRBuilder::build");
     }
 
     (void)resolved_functions;
 
-    auto module = std::make_unique<AIR::Module>(Location(0, 0), "");
+    auto module = std::make_unique<AIR::Module>(Location(), "");
 
     for (const auto &node : program->m_nodes)
     {

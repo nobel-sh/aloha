@@ -82,7 +82,7 @@ namespace aloha
   bool ImportResolver::inject_prelude()
   {
     std::string prelude_path = "stdlib/prelude.alo";
-    Location prelude_loc(0, 0);
+    Location prelude_loc;
 
     std::string file_path = resolve_import_path(prelude_path, prelude_loc);
     if (file_path.empty())

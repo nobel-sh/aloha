@@ -1,5 +1,6 @@
 #include "symbol_binder.h"
 #include <iostream>
+#include "../error/diagnostic.h"
 
 namespace aloha
 {
@@ -8,8 +9,7 @@ namespace aloha
   {
     if (!program)
     {
-      diagnostics.error(DiagnosticPhase::SymbolBinding, Location(0, 0), "Null program passed to SymbolBinder");
-      return false;
+      ALOHA_ICE("Null program passed to SymbolBinder::bind");
     }
 
     bind_declarations(program, type_arena);
