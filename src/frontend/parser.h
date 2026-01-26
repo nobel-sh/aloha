@@ -2,7 +2,7 @@
 #define PARSER_H_
 
 #include "../ast/ast.h"
-#include "../error/compiler_error.h"
+#include "../error/diagnostic_engine.h"
 #include "../ast/ty_spec.h"
 #include "lexer.h"
 #include "token.h"
@@ -22,11 +22,11 @@ public:
   using infix_parser_func = std::function<std::unique_ptr<aloha::Expression>(
       Parser &, std::unique_ptr<aloha::Expression>)>;
 
-  explicit Parser(Lexer &lexer, aloha::TySpecArena &arena);
+  explicit Parser(Lexer &lexer, aloha::TySpecArena &arena, aloha::DiagnosticEngine &diag);
 
   std::unique_ptr<aloha::Program> parse();
   void dump(aloha::Program *p, const aloha::TySpecArena &arena) const;
-  const std::vector<std::string> &get_errors() const;
+  bool has_errors() const;
 
   // exposed for testing
   std::unique_ptr<aloha::StatementBlock> parse_statements();
@@ -37,7 +37,7 @@ private:
   Lexer *lexer;
   Token current_token;
   Token next_token;
-  Aloha::ParserError errors;
+  aloha::DiagnosticEngine &diagnostics;
   aloha::TySpecArena *type_arena; // Points to Program's type_arena during parsing
   void report_error(const std::string &message);
   static std::map<std::string, prefix_parser_func> prefix_parsers;

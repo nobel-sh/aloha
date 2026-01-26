@@ -1,6 +1,6 @@
 fun test_basic_array() -> int {
     imut nums = [1, 2, 3, 4, 2];
-    imut foo = nums[4];
+    imut foo = nums[2]; 
     return foo;
 }
 

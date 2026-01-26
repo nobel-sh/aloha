@@ -8,10 +8,11 @@
 #include <utility>
 #include <vector>
 
-Parser::Parser(Lexer &lexer, aloha::TySpecArena &arena)
+Parser::Parser(Lexer &lexer, aloha::TySpecArena &arena, aloha::DiagnosticEngine &diag)
     : lexer(&lexer),
       current_token(TokenKind::EOF_TOKEN, Location(1, 1)),
       next_token(TokenKind::EOF_TOKEN, Location(1, 1)),
+      diagnostics(diag),
       type_arena(&arena)
 {
   // Initialize with first two tokens
@@ -53,12 +54,9 @@ void Parser::consume(const T &value, std::string message)
   {
     peek()->dump();
     report_error(message);
-    if (!this->get_errors().empty())
+    if (diagnostics.has_errors())
     {
-      for (auto x : this->get_errors())
-      {
-        std::cerr << x << std::endl;
-      }
+      diagnostics.print_all();
       exit(1);
     }
   }
@@ -86,13 +84,12 @@ bool Parser::match(TokenKind value, bool use_next)
 }
 void Parser::report_error(const std::string &message)
 {
-  const std::string loc_message = message + " at :" + peek()->loc.to_string();
-  errors.add_error(loc_message);
+  diagnostics.error(aloha::DiagnosticPhase::Parser, peek()->loc, message);
 }
 
-const std::vector<std::string> &Parser::get_errors() const
+bool Parser::has_errors() const
 {
-  return errors.get_errors();
+  return diagnostics.has_errors();
 }
 
 std::unique_ptr<aloha::Program> Parser::parse()

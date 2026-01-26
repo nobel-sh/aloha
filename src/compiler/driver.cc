@@ -29,31 +29,12 @@ namespace AlohaPipeline
 
   bool CompilerDriver::has_errors() const
   {
-    return has_compilation_errors;
+    return diagnostics.has_errors();
   }
 
   void CompilerDriver::print_errors() const
   {
-    if (symbol_binder && symbol_binder->get_errors().has_errors())
-    {
-      symbol_binder->get_errors().print();
-    }
-    if (import_resolver && import_resolver->get_errors().has_errors())
-    {
-      import_resolver->get_errors().print();
-    }
-    if (type_resolver && type_resolver->get_errors().has_errors())
-    {
-      type_resolver->get_errors().print();
-    }
-    if (air_builder && air_builder->get_errors().has_errors())
-    {
-      air_builder->get_errors().print();
-    }
-    if (codegen && codegen->has_errors())
-    {
-      codegen->get_error_reporter().print();
-    }
+    diagnostics.print_all();
   }
 
   void CompilerDriver::log(const std::string &message) const
@@ -149,12 +130,13 @@ namespace AlohaPipeline
       }
 
       lexer = std::make_unique<Lexer>(source, options.input_file);
-      parser = std::make_unique<Parser>(*lexer, type_arena);
+      parser = std::make_unique<Parser>(*lexer, type_arena, diagnostics);
 
       ast = parser->parse();
-      if (!ast)
+      if (!ast || diagnostics.has_errors())
       {
         std::cerr << "Error: Parsing failed" << std::endl;
+        diagnostics.print_all();
         return false;
       }
 
@@ -175,12 +157,12 @@ namespace AlohaPipeline
 
     try
     {
-      symbol_binder = std::make_unique<aloha::SymbolBinder>(*ty_table);
+      symbol_binder = std::make_unique<aloha::SymbolBinder>(*ty_table, diagnostics);
 
-      if (!symbol_binder->bind(ast.get(), type_arena))
+      if (!symbol_binder->bind(ast.get(), type_arena) || diagnostics.has_errors())
       {
         std::cerr << "Error: Symbol binding failed" << std::endl;
-        symbol_binder->get_errors().print();
+        diagnostics.print_all();
         has_compilation_errors = true;
         return false;
       }
@@ -204,12 +186,12 @@ namespace AlohaPipeline
     try
     {
       import_resolver = std::make_unique<aloha::ImportResolver>(
-          *ty_table, symbol_binder->get_symbol_table(), type_arena, options.input_file);
+          *ty_table, symbol_binder->get_symbol_table(), type_arena, diagnostics, options.input_file);
 
-      if (!import_resolver->resolve_imports(ast.get()))
+      if (!import_resolver->resolve_imports(ast.get()) || diagnostics.has_errors())
       {
         std::cerr << "Error: Import resolution failed" << std::endl;
-        import_resolver->get_errors().print();
+        diagnostics.print_all();
         has_compilation_errors = true;
         return false;
       }
@@ -242,12 +224,12 @@ namespace AlohaPipeline
     try
     {
       type_resolver = std::make_unique<aloha::TypeResolver>(
-          *ty_table, symbol_binder->get_symbol_table());
+          *ty_table, symbol_binder->get_symbol_table(), diagnostics);
 
-      if (!type_resolver->resolve(ast.get(), type_arena))
+      if (!type_resolver->resolve(ast.get(), type_arena) || diagnostics.has_errors())
       {
         std::cerr << "Error: Type resolution failed" << std::endl;
-        type_resolver->get_errors().print();
+        diagnostics.print_all();
         has_compilation_errors = true;
         return false;
       }
@@ -257,10 +239,10 @@ namespace AlohaPipeline
         const auto &imported_asts = import_resolver->get_imported_asts();
         for (const auto &imported_ast : imported_asts)
         {
-          if (!type_resolver->resolve(imported_ast.get(), type_arena))
+          if (!type_resolver->resolve(imported_ast.get(), type_arena) || diagnostics.has_errors())
           {
             std::cerr << "Error: Type resolution failed in imported file" << std::endl;
-            type_resolver->get_errors().print();
+            diagnostics.print_all();
             has_compilation_errors = true;
             return false;
           }
@@ -295,13 +277,14 @@ namespace AlohaPipeline
           type_resolver->get_resolved_structs(),
           type_resolver->get_resolved_functions(),
           type_arena,
-          *type_resolver);
+          *type_resolver,
+          diagnostics);
 
       air_module = air_builder->build(ast.get());
-      if (!air_module)
+      if (!air_module || diagnostics.has_errors())
       {
         std::cerr << "Error: AIR building failed" << std::endl;
-        air_builder->get_errors().print();
+        diagnostics.print_all();
         has_compilation_errors = true;
         return false;
       }
@@ -312,10 +295,10 @@ namespace AlohaPipeline
         for (const auto &imported_ast : imported_asts)
         {
           auto imported_module = air_builder->build(imported_ast.get());
-          if (!imported_module)
+          if (!imported_module || diagnostics.has_errors())
           {
             std::cerr << "Error: AIR building failed in imported file" << std::endl;
-            air_builder->get_errors().print();
+            diagnostics.print_all();
             has_compilation_errors = true;
             return false;
           }
@@ -349,13 +332,13 @@ namespace AlohaPipeline
 
     try
     {
-      codegen = std::make_unique<Codegen::CodeGenerator>(*ty_table);
+      codegen = std::make_unique<Codegen::CodeGenerator>(*ty_table, diagnostics);
 
       llvm_module = codegen->generate(air_module.get());
-      if (!llvm_module)
+      if (!llvm_module || diagnostics.has_errors())
       {
         std::cerr << "Error: Code generation failed" << std::endl;
-        codegen->get_error_reporter().print();
+        diagnostics.print_all();
         has_compilation_errors = true;
         return false;
       }

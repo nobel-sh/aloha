@@ -6,7 +6,7 @@
 #include "../frontend/lexer.h"
 #include "../frontend/parser.h"
 #include "../sema/symbol_binder.h"
-#include "../error/compiler_error.h"
+#include "../error/diagnostic_engine.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,6 +22,7 @@ namespace aloha
     ImportResolver(AIR::TyTable &ty_table,
                    SymbolTable &main_symbol_table,
                    aloha::TySpecArena &type_arena,
+                   aloha::DiagnosticEngine &diag,
                    const std::string &current_file_path,
                    bool skip_prelude_injection = false);
 
@@ -31,8 +32,7 @@ namespace aloha
 
     bool inject_prelude();
 
-    Aloha::TyError &get_errors() { return errors; }
-    const Aloha::TyError &get_errors() const { return errors; }
+    bool has_errors() const { return diagnostics.has_errors(); }
 
     const std::vector<std::string> &get_import_paths() const
     {
@@ -48,7 +48,7 @@ namespace aloha
     AIR::TyTable &ty_table;
     SymbolTable &main_symbol_table;
     aloha::TySpecArena &type_arena;
-    Aloha::TyError errors;
+    aloha::DiagnosticEngine &diagnostics;
 
     bool skip_prelude_injection;
     std::filesystem::path current_file_dir;

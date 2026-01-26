@@ -1,5 +1,5 @@
 #include "type_resolver.h"
-#include "../error/compiler_error.h"
+#include "../error/internal.h"
 #include <algorithm>
 #include <iostream>
 
@@ -10,7 +10,7 @@ namespace aloha
   {
     if (!program)
     {
-      errors.add_error(Location(0, 0), "Null program passed to TypeResolver");
+      diagnostics.error(DiagnosticPhase::TypeResolution, Location(0, 0), "Null program passed to TypeResolver");
       return false;
     }
 
@@ -30,7 +30,7 @@ namespace aloha
       }
     }
 
-    if (!errors.has_errors())
+    if (!diagnostics.has_errors())
     {
       for (const auto &[struct_id, resolved_struct] : resolved_structs)
       {
@@ -39,9 +39,9 @@ namespace aloha
       }
     }
 
-    if (errors.has_errors())
+    if (diagnostics.has_errors())
     {
-      errors.print();
+      diagnostics.print_all();
       return false;
     }
 
@@ -87,11 +87,11 @@ namespace aloha
       std::string suggestion = suggest_type_name(spec.name);
       if (!suggestion.empty())
       {
-        errors.add_error(loc, "Unknown type '" + spec.name + "'. Did you mean '" + suggestion + "'?");
+        diagnostics.error(DiagnosticPhase::TypeResolution, loc, "Unknown type '" + spec.name + "'. Did you mean '" + suggestion + "'?");
       }
       else
       {
-        errors.add_error(loc, "Unknown type '" + spec.name + "'");
+        diagnostics.error(DiagnosticPhase::TypeResolution, loc, "Unknown type '" + spec.name + "'");
       }
       return std::nullopt;
     }
@@ -119,15 +119,15 @@ namespace aloha
     auto struct_opt = symbol_table.lookup_struct(struct_name);
     if (!struct_opt.has_value())
     {
-      errors.add_error(struct_decl->get_location(),
-                       "Internal error: struct '" + struct_name + "' not in symbol table");
+      diagnostics.error(DiagnosticPhase::TypeResolution, struct_decl->loc(),
+                        "Internal error: struct '" + struct_name + "' not in symbol table");
       return;
     }
 
     AIR::StructId struct_id = struct_opt->struct_id;
     AIR::TyId struct_type_id = struct_opt->type_id;
 
-    ResolvedStruct resolved(struct_id, struct_type_id, struct_name, struct_decl->get_location());
+    ResolvedStruct resolved(struct_id, struct_type_id, struct_name, struct_decl->loc());
 
     for (const auto &field : struct_decl->m_fields)
     {
@@ -137,10 +137,10 @@ namespace aloha
         continue;
       }
 
-      resolved.fields.emplace_back(field.m_name, ty_id_opt.value(), struct_decl->get_location());
+      resolved.fields.emplace_back(field.m_name, ty_id_opt.value(), struct_decl->loc());
     }
 
-    if (!errors.has_errors())
+    if (!diagnostics.has_errors())
     {
       resolved.is_resolved = true;
     }
@@ -155,8 +155,8 @@ namespace aloha
     auto func_opt = symbol_table.lookup_function(func_name);
     if (!func_opt.has_value())
     {
-      errors.add_error(func->get_location(),
-                       "Internal error: function '" + func_name + "' not in symbol table");
+      diagnostics.error(DiagnosticPhase::TypeResolution, func->loc(),
+                        "Internal error: function '" + func_name + "' not in symbol table");
       return;
     }
 
@@ -180,7 +180,7 @@ namespace aloha
     }
 
     ResolvedFunction resolved(func_id, func_name, return_ty_id_opt.value(),
-                              param_types, func->m_is_extern, func->get_location());
+                              param_types, func->m_is_extern, func->loc());
 
     resolved_functions.insert({func_id, std::move(resolved)});
   }
@@ -193,7 +193,7 @@ namespace aloha
     // check if we're already visiting this struct
     if (visiting.find(struct_id) != visiting.end())
     {
-      errors.add_error(loc, "Circular dependency detected in struct '" + struct_name + "'");
+      diagnostics.error(DiagnosticPhase::TypeResolution, loc, "Circular dependency detected in struct '" + struct_name + "'");
       return true;
     }
 

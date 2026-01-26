@@ -87,7 +87,9 @@ void Lexer::consume_token(size_t n)
 
 void Lexer::add_error(const std::string &message)
 {
-  errors.add_error(current_loc, message);
+  has_errors = true;
+  std::cerr << source_file << ":" << current_loc.line << ":" << current_loc.col
+            << ": lexer error: " << message << "\n";
 }
 
 void Lexer::handle_single_line_comment()

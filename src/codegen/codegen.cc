@@ -8,11 +8,12 @@
 
 namespace Codegen
 {
-  CodeGenerator::CodeGenerator(AIR::TyTable &ty_table)
+  CodeGenerator::CodeGenerator(AIR::TyTable &ty_table, aloha::DiagnosticEngine &diag)
       : context(std::make_unique<llvm::LLVMContext>()),
         module(std::make_unique<llvm::Module>("aloha_module", *context)),
         builder(std::make_unique<llvm::IRBuilder<>>(*context)),
         ty_table(ty_table),
+        diagnostics(diag),
         current_value(nullptr),
         current_function(nullptr),
         current_air_module(nullptr)
@@ -42,7 +43,7 @@ namespace Codegen
 
     if (has_errors())
     {
-      error_reporter.print();
+      diagnostics.print_all();
       return nullptr;
     }
 

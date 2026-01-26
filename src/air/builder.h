@@ -4,7 +4,7 @@
 #include "../ty/ty.h"
 #include "../ast/ast.h"
 #include "../ast/visitor.h"
-#include "../error/compiler_error.h"
+#include "../error/diagnostic_engine.h"
 #include "air.h"
 #include "expr.h"
 #include "stmt.h"
@@ -21,8 +21,6 @@
 namespace aloha
 {
 
-  using AIRBuildError = Aloha::AIRError;
-
   class AIRBuilder : public ASTVisitor
   {
   private:
@@ -32,7 +30,7 @@ namespace aloha
     const std::unordered_map<FunctionId, ResolvedFunction> &resolved_functions;
     const TySpecArena &type_arena;
     TypeResolver &type_resolver;
-    AIRBuildError errors;
+    DiagnosticEngine &diagnostics;
 
     std::unordered_map<std::string, AIR::TyId> var_types; // variable name -> type
     std::unordered_map<std::string, VarId> var_ids;       // variable name -> varId for current scope
@@ -47,17 +45,18 @@ namespace aloha
                const std::unordered_map<AIR::StructId, ResolvedStruct> &structs,
                const std::unordered_map<FunctionId, ResolvedFunction> &funcs,
                const TySpecArena &arena,
-               TypeResolver &resolver)
+               TypeResolver &resolver,
+               DiagnosticEngine &diag)
         : ty_table(table), symbol_table(symbols),
           resolved_structs(structs), resolved_functions(funcs),
-          type_arena(arena), type_resolver(resolver),
+          type_arena(arena), type_resolver(resolver), diagnostics(diag),
           current_function_return_type(AIR::TyIds::VOID) {}
 
     virtual ~AIRBuilder() = default;
 
     std::unique_ptr<AIR::Module> build(Program *program);
 
-    const AIRBuildError &get_errors() const { return errors; }
+    bool has_errors() const { return diagnostics.has_errors(); }
 
     void visit(Integer *node) override;
     void visit(Float *node) override;

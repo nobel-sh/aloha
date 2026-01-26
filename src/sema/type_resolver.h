@@ -3,7 +3,7 @@
 
 #include "../ty/ty.h"
 #include "../ast/ast.h"
-#include "../error/compiler_error.h"
+#include "../error/diagnostic_engine.h"
 #include "../frontend/location.h"
 #include "symbol_binder.h"
 #include <iostream>
@@ -53,14 +53,12 @@ namespace aloha
         : id(fid), name(n), return_type(ret), param_types(params), is_extern(ext), location(loc) {}
   };
 
-  using TypeResolutionError = Aloha::TyError;
-
   class TypeResolver
   {
   private:
     AIR::TyTable &ty_table;
     SymbolTable &symbol_table;
-    TypeResolutionError errors;
+    DiagnosticEngine &diagnostics;
 
     std::unordered_map<AIR::StructId, ResolvedStruct> resolved_structs;
     std::unordered_map<FunctionId, ResolvedFunction> resolved_functions;
@@ -68,8 +66,8 @@ namespace aloha
     std::unordered_set<AIR::StructId> resolving_structs;
 
   public:
-    TypeResolver(AIR::TyTable &table, SymbolTable &symbols)
-        : ty_table(table), symbol_table(symbols) {}
+    TypeResolver(AIR::TyTable &table, SymbolTable &symbols, DiagnosticEngine &diag)
+        : ty_table(table), symbol_table(symbols), diagnostics(diag) {}
 
     bool resolve(Program *program, const TySpecArena &type_arena);
 
@@ -86,7 +84,7 @@ namespace aloha
       return resolved_functions;
     }
 
-    const TypeResolutionError &get_errors() const { return errors; }
+    bool has_errors() const { return diagnostics.has_errors(); }
 
   private:
     void resolve_struct_fields(StructDecl *struct_decl, const TySpecArena &type_arena);

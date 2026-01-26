@@ -10,12 +10,13 @@ namespace aloha
   ImportResolver::ImportResolver(AIR::TyTable &ty_table,
                                  SymbolTable &main_symbol_table,
                                  aloha::TySpecArena &type_arena,
+                                 aloha::DiagnosticEngine &diag,
                                  const std::string &current_file_path,
                                  bool skip_prelude_injection)
       : ty_table(ty_table),
         main_symbol_table(main_symbol_table),
         type_arena(type_arena),
-        errors(),
+        diagnostics(diag),
         skip_prelude_injection(skip_prelude_injection),
         currently_importing(new std::unordered_set<std::string>()),
         already_imported(new std::unordered_set<std::string>()),
@@ -86,7 +87,7 @@ namespace aloha
     std::string file_path = resolve_import_path(prelude_path, prelude_loc);
     if (file_path.empty())
     {
-      errors.add_error(prelude_loc, "Cannot find prelude: '" + prelude_path + "'");
+      diagnostics.error(DiagnosticPhase::SymbolBinding, prelude_loc, "Cannot find prelude: '" + prelude_path + "'");
       return false;
     }
 
@@ -99,7 +100,7 @@ namespace aloha
 
     if (currently_importing->count(normalized_path) > 0)
     {
-      errors.add_error(prelude_loc, "Circular import detected in prelude: '" + prelude_path + "'");
+      diagnostics.error(DiagnosticPhase::SymbolBinding, prelude_loc, "Circular import detected in prelude: '" + prelude_path + "'");
       return false;
     }
 
@@ -162,7 +163,7 @@ namespace aloha
     std::string file_path = resolve_import_path(import_path, import_loc);
     if (file_path.empty())
     {
-      errors.add_error(import_loc, "Cannot find import: '" + import_path + "'");
+      diagnostics.error(DiagnosticPhase::SymbolBinding, import_loc, "Cannot find import: '" + import_path + "'");
       return false;
     }
 
@@ -175,7 +176,7 @@ namespace aloha
 
     if (currently_importing->count(normalized_path) > 0)
     {
-      errors.add_error(import_loc, "Circular import detected: '" + import_path + "'");
+      diagnostics.error(DiagnosticPhase::SymbolBinding, import_loc, "Circular import detected: '" + import_path + "'");
       return false;
     }
 
@@ -222,7 +223,7 @@ namespace aloha
       std::ifstream file(file_path);
       if (!file.is_open())
       {
-        errors.add_error(import_loc, "Cannot open import file: '" + file_path + "'");
+        diagnostics.error(DiagnosticPhase::SymbolBinding, import_loc, "Cannot open import file: '" + file_path + "'");
         return false;
       }
 
@@ -236,16 +237,16 @@ namespace aloha
       }
 
       Lexer lexer(source, file_path);
-      Parser parser(lexer, type_arena);
+      Parser parser(lexer, type_arena, diagnostics);
 
       std::unique_ptr<aloha::Program> imported_ast = parser.parse();
-      if (!imported_ast)
+      if (!imported_ast || diagnostics.has_errors())
       {
-        errors.add_error(import_loc, "Failed to parse import: '" + file_path + "'");
+        diagnostics.error(DiagnosticPhase::SymbolBinding, import_loc, "Failed to parse import: '" + file_path + "'");
         return false;
       }
 
-      ImportResolver nested_resolver(ty_table, main_symbol_table, type_arena, file_path, true);
+      ImportResolver nested_resolver(ty_table, main_symbol_table, type_arena, diagnostics, file_path, true);
 
       // share import tracking sets with nested resolver
       nested_resolver.currently_importing = this->currently_importing;
@@ -254,23 +255,16 @@ namespace aloha
 
       if (!nested_resolver.resolve_imports(imported_ast.get()))
       {
-        for (const auto &error : nested_resolver.get_errors().get_errors())
-        {
-          errors.add_error(import_loc, error.message);
-        }
         return false;
       }
 
       // collect definitions from the imported file directly into the main symbol table
-      SymbolBinder imported_def_collector(ty_table);
+      SymbolBinder imported_def_collector(ty_table, diagnostics);
       imported_def_collector.set_symbol_table(&main_symbol_table);
 
       if (!imported_def_collector.bind(imported_ast.get(), type_arena))
       {
-        for (const auto &error : imported_def_collector.get_errors().get_errors())
-        {
-          errors.add_error(import_loc, "In import '" + file_path + "': " + error.message);
-        }
+        // Errors already reported to diagnostics
         return false;
       }
 
@@ -292,7 +286,7 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      errors.add_error(import_loc, "Exception while processing import '" + file_path + "': " + std::string(e.what()));
+      diagnostics.error(DiagnosticPhase::SymbolBinding, import_loc, "Exception while processing import '" + file_path + "': " + std::string(e.what()));
       return false;
     }
   }

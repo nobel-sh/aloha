@@ -5,6 +5,7 @@
 #include "../frontend/parser.h"
 #include "../ast/ty_spec.h"
 #include "../ty/ty.h"
+#include "../error/diagnostic_engine.h"
 #include "../sema/symbol_binder.h"
 #include "../modules/import_resolver.h"
 #include "../sema/type_resolver.h"
@@ -53,6 +54,7 @@ namespace AlohaPipeline
   private:
     CompilerOptions options;
 
+    aloha::DiagnosticEngine diagnostics;
     aloha::TySpecArena type_arena; // shared type_spec arena
 
     std::unique_ptr<Lexer> lexer;

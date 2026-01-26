@@ -4,7 +4,7 @@
 #include "../air/air.h"
 #include "../air/expr.h"
 #include "../air/stmt.h"
-#include "../error/compiler_error.h"
+#include "../error/diagnostic_engine.h"
 #include "../ty/ty.h"
 
 #include <llvm/IR/IRBuilder.h>
@@ -21,8 +21,6 @@
 
 namespace Codegen
 {
-  using CodegenErrorReporter = Aloha::CodegenError;
-
   class CodeGenerator : public AIR::AIRVisitor
   {
   private:
@@ -34,7 +32,7 @@ namespace Codegen
     // Type system bridge
     AIR::TyTable &ty_table;
 
-    CodegenErrorReporter error_reporter;
+    aloha::DiagnosticEngine &diagnostics;
 
     // Type mapping: TyId -> LLVM Type*
     std::unordered_map<AIR::TyId, llvm::Type *> type_map;
@@ -54,14 +52,13 @@ namespace Codegen
     AIR::Module *current_air_module;  // Current AIR module being processed
 
   public:
-    explicit CodeGenerator(AIR::TyTable &ty_table);
+    explicit CodeGenerator(AIR::TyTable &ty_table, aloha::DiagnosticEngine &diag);
     ~CodeGenerator() = default;
 
     // entry point
     std::unique_ptr<llvm::Module> generate(AIR::Module *air_module);
 
-    bool has_errors() const { return error_reporter.has_errors(); }
-    const CodegenErrorReporter &get_error_reporter() const { return error_reporter; }
+    bool has_errors() const { return diagnostics.has_errors(); }
 
     llvm::Module *get_module() const { return module.get(); }
 
@@ -110,7 +107,7 @@ namespace Codegen
 
     void report_error(const std::string &message, const Location &location)
     {
-      error_reporter.add_error(location, message);
+      diagnostics.error(aloha::DiagnosticPhase::Codegen, location, message);
     }
   };
 

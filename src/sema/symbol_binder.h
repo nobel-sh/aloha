@@ -5,7 +5,7 @@
 #include "../ty/ty.h"
 #include "../ast/ast.h"
 #include "../frontend/location.h"
-#include "../error/compiler_error.h"
+#include "../error/diagnostic_engine.h"
 #include "../ast/ty_spec.h"
 #include <memory>
 
@@ -18,12 +18,12 @@ namespace aloha
     AIR::TyTable &ty_table;
     SymbolTable symbol_table;
     SymbolTable *symbol_table_ptr; // allow using external symbol table for imports
-    Aloha::TyError errors;
+    DiagnosticEngine &diagnostics;
     Scope *current_scope;
 
   public:
-    explicit SymbolBinder(AIR::TyTable &table)
-        : ty_table(table), symbol_table_ptr(&symbol_table), current_scope(nullptr) {}
+    explicit SymbolBinder(AIR::TyTable &table, DiagnosticEngine &diag)
+        : ty_table(table), symbol_table_ptr(&symbol_table), diagnostics(diag), current_scope(nullptr) {}
 
     // set an external symbol table for import processing
     void set_symbol_table(SymbolTable *table)
@@ -36,7 +36,7 @@ namespace aloha
     SymbolTable &get_symbol_table() { return *symbol_table_ptr; }
     const SymbolTable &get_symbol_table() const { return *symbol_table_ptr; }
 
-    const Aloha::TyError &get_errors() const { return errors; }
+    bool has_errors() const { return diagnostics.has_errors(); }
 
   private:
     // register all struct names and function names

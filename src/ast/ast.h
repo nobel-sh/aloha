@@ -25,7 +25,7 @@ namespace aloha
     virtual ~Node() = default;
     virtual void write(std::ostream &os, unsigned long indent = 0) const = 0;
     virtual void accept(ASTVisitor &visitor) = 0;
-    virtual Location get_location() const { return m_loc; }
+    virtual Location loc() const { return m_loc; }
 
   public:
     Location m_loc;

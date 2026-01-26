@@ -8,20 +8,20 @@ namespace aloha
   {
     if (!program)
     {
-      errors.add_error(Location(0, 0), "Null program passed to SymbolBinder");
+      diagnostics.error(DiagnosticPhase::SymbolBinding, Location(0, 0), "Null program passed to SymbolBinder");
       return false;
     }
 
     bind_declarations(program, type_arena);
 
-    if (!errors.has_errors())
+    if (!diagnostics.has_errors())
     {
       bind_function_bodies(program);
     }
 
-    if (errors.has_errors())
+    if (diagnostics.has_errors())
     {
-      errors.print();
+      diagnostics.print_all();
       return false;
     }
 
@@ -46,7 +46,7 @@ namespace aloha
   void SymbolBinder::bind_struct_declaration(StructDecl *struct_decl)
   {
     const std::string &name = struct_decl->m_name;
-    Location loc = struct_decl->get_location();
+    Location loc = struct_decl->loc();
 
     if (check_duplicate_struct(name, loc))
     {
@@ -62,7 +62,7 @@ namespace aloha
   void SymbolBinder::bind_function_declaration(Function *func, const TySpecArena &type_arena)
   {
     const std::string &name = func->m_name->m_name;
-    Location loc = func->get_location();
+    Location loc = func->loc();
 
     if (check_duplicate_function(name, loc))
     {
@@ -77,7 +77,7 @@ namespace aloha
       auto param_ty_opt = ty_table.lookup_by_name(type_arena.to_string(param.m_type));
       if (!param_ty_opt.has_value())
       {
-        errors.add_error(loc, "Unknown parameter type: " + type_arena.to_string(param.m_type));
+        diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Unknown parameter type: " + type_arena.to_string(param.m_type));
         param_types.push_back(AIR::TyIds::ERROR);
       }
       else
@@ -90,7 +90,7 @@ namespace aloha
     AIR::TyId return_ty = AIR::TyIds::ERROR;
     if (!return_ty_opt.has_value())
     {
-      errors.add_error(loc, "Unknown return type: " + type_arena.to_string(func->m_return_type));
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Unknown return type: " + type_arena.to_string(func->m_return_type));
     }
     else
     {
@@ -120,7 +120,7 @@ namespace aloha
     for (const auto &param : func->m_parameters)
     {
       VarId var_id = symbol_table_ptr->allocate_var_id();
-      Location loc = func->get_location(); // parameters don't have individual locations
+      Location loc = func->loc(); // parameters don't have individual locations
 
       if (check_duplicate_variable(param.m_name, loc, current_scope))
       {
@@ -149,7 +149,7 @@ namespace aloha
     if (auto decl = dynamic_cast<Declaration *>(stmt))
     {
       const std::string &name = decl->m_variable_name;
-      Location loc = decl->get_location();
+      Location loc = decl->loc();
 
       if (check_duplicate_variable(name, loc, scope))
       {
@@ -215,7 +215,7 @@ namespace aloha
   {
     if (symbol_table_ptr->lookup_function(name).has_value())
     {
-      errors.add_error(loc, "Duplicate function declaration: '" + name + "'");
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate function declaration: '" + name + "'");
       return true;
     }
     return false;
@@ -226,7 +226,7 @@ namespace aloha
   {
     if (symbol_table_ptr->lookup_struct(name).has_value())
     {
-      errors.add_error(loc, "Duplicate struct declaration: '" + name + "'");
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate struct declaration: '" + name + "'");
       return true;
     }
     return false;
@@ -239,8 +239,7 @@ namespace aloha
     // shadowing is allowed in nested scopes
     if (scope && scope->has_variable_local(name))
     {
-      errors.add_error(loc, "Duplicate variable declaration in same scope: '" +
-                                name + "'");
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate variable declaration in same scope: '" + name + "'");
       return true;
     }
     return false;

@@ -2,7 +2,7 @@
 #define SEMA_SYMBOL_TABLE_H_
 
 #include "../ty/ty.h"
-#include "../error/compiler_error.h"
+#include "../error/internal.h"
 #include "../frontend/location.h"
 #include <cstdint>
 #include <iostream>
