@@ -24,25 +24,25 @@ namespace aloha
   class AIRBuilder : public ASTVisitor
   {
   private:
-    AIR::TyTable &ty_table;
+    TyTable &ty_table;
     SymbolTable &symbol_table;
-    const std::unordered_map<AIR::StructId, ResolvedStruct> &resolved_structs;
+    const std::unordered_map<StructId, ResolvedStruct> &resolved_structs;
     const std::unordered_map<FunctionId, ResolvedFunction> &resolved_functions;
     const TySpecArena &type_arena;
     TypeResolver &type_resolver;
     DiagnosticEngine &diagnostics;
 
-    std::unordered_map<std::string, AIR::TyId> var_types; // variable name -> type
-    std::unordered_map<std::string, VarId> var_ids;       // variable name -> varId for current scope
-    AIR::TyId current_function_return_type;               // for checking return statements
+    std::unordered_map<std::string, TyId> var_types; // variable name -> type
+    std::unordered_map<std::string, VarId> var_ids;  // variable name -> varId for current scope
+    TyId current_function_return_type;               // for checking return statements
 
-    AIR::ExprPtr current_expr;
-    AIR::StmtPtr current_stmt;
+    air::ExprPtr current_expr;
+    air::StmtPtr current_stmt;
 
   public:
-    AIRBuilder(AIR::TyTable &table,
+    AIRBuilder(TyTable &table,
                SymbolTable &symbols,
-               const std::unordered_map<AIR::StructId, ResolvedStruct> &structs,
+               const std::unordered_map<StructId, ResolvedStruct> &structs,
                const std::unordered_map<FunctionId, ResolvedFunction> &funcs,
                const TySpecArena &arena,
                TypeResolver &resolver,
@@ -50,63 +50,63 @@ namespace aloha
         : ty_table(table), symbol_table(symbols),
           resolved_structs(structs), resolved_functions(funcs),
           type_arena(arena), type_resolver(resolver), diagnostics(diag),
-          current_function_return_type(AIR::TyIds::VOID) {}
+          current_function_return_type(TyIds::VOID) {}
 
     virtual ~AIRBuilder() = default;
 
-    std::unique_ptr<AIR::Module> build(Program *program);
+    std::unique_ptr<air::Module> build(ast::Program *program);
 
     bool has_errors() const { return diagnostics.has_errors(); }
 
-    void visit(Integer *node) override;
-    void visit(Float *node) override;
-    void visit(Boolean *node) override;
-    void visit(String *node) override;
-    void visit(UnaryExpression *node) override;
-    void visit(BinaryExpression *node) override;
-    void visit(Identifier *node) override;
-    void visit(Declaration *node) override;
-    void visit(Assignment *node) override;
-    void visit(FunctionCall *node) override;
-    void visit(ReturnStatement *node) override;
-    void visit(IfStatement *node) override;
-    void visit(WhileLoop *node) override;
-    void visit(ForLoop *node) override;
-    void visit(Function *node) override;
-    void visit(StructDecl *node) override;
-    void visit(StructInstantiation *node) override;
-    void visit(StructFieldAccess *node) override;
-    void visit(StructFieldAssignment *node) override;
-    void visit(Array *node) override;
-    void visit(ArrayAccess *node) override;
-    void visit(ExpressionStatement *node) override;
-    void visit(StatementBlock *node) override;
-    void visit(Program *node) override;
-    void visit(Import *node) override;
+    void visit(ast::Integer *node) override;
+    void visit(ast::Float *node) override;
+    void visit(ast::Boolean *node) override;
+    void visit(ast::String *node) override;
+    void visit(ast::UnaryExpression *node) override;
+    void visit(ast::BinaryExpression *node) override;
+    void visit(ast::Identifier *node) override;
+    void visit(ast::Declaration *node) override;
+    void visit(ast::Assignment *node) override;
+    void visit(ast::FunctionCall *node) override;
+    void visit(ast::ReturnStatement *node) override;
+    void visit(ast::IfStatement *node) override;
+    void visit(ast::WhileLoop *node) override;
+    void visit(ast::ForLoop *node) override;
+    void visit(ast::Function *node) override;
+    void visit(ast::StructDecl *node) override;
+    void visit(ast::StructInstantiation *node) override;
+    void visit(ast::StructFieldAccess *node) override;
+    void visit(ast::StructFieldAssignment *node) override;
+    void visit(ast::Array *node) override;
+    void visit(ast::ArrayAccess *node) override;
+    void visit(ast::ExpressionStatement *node) override;
+    void visit(ast::StatementBlock *node) override;
+    void visit(ast::Program *node) override;
+    void visit(ast::Import *node) override;
 
   private:
-    AIR::FunctionPtr lower_function(Function *func);
-    AIR::StructDeclPtr lower_struct(StructDecl *struct_decl);
+    air::FunctionPtr lower_function(ast::Function *func);
+    air::StructDeclPtr lower_struct(ast::StructDecl *struct_decl);
 
-    AIR::ExprPtr lower_expr(Expression *expr);
-    AIR::StmtPtr lower_stmt(Statement *stmt);
-    std::vector<AIR::StmtPtr> lower_block(StatementBlock *block);
+    air::ExprPtr lower_expr(ast::Expression *expr);
+    air::StmtPtr lower_stmt(ast::Statement *stmt);
+    std::vector<air::StmtPtr> lower_block(ast::StatementBlock *block);
 
-    bool check_types_compatible(AIR::TyId expected, AIR::TyId actual, Location loc,
+    bool check_types_compatible(TyId expected, TyId actual, Location loc,
                                 const std::string &context);
-    AIR::BinaryOpKind ast_op_to_air_binop(const std::string &op);
-    AIR::UnaryOpKind ast_op_to_air_unop(const std::string &op);
-    bool is_arithmetic_op(AIR::BinaryOpKind op);
-    bool is_comparison_op(AIR::BinaryOpKind op);
-    bool is_logical_op(AIR::BinaryOpKind op);
+    air::BinaryOpKind ast_op_to_air_binop(const std::string &op);
+    air::UnaryOpKind ast_op_to_air_unop(const std::string &op);
+    bool is_arithmetic_op(air::BinaryOpKind op);
+    bool is_comparison_op(air::BinaryOpKind op);
+    bool is_logical_op(air::BinaryOpKind op);
 
-    void register_variable(const std::string &name, AIR::TyId type);
+    void register_variable(const std::string &name, TyId type);
     void register_variable_id(const std::string &name, VarId id);
-    std::optional<AIR::TyId> lookup_variable_type(const std::string &name);
+    std::optional<TyId> lookup_variable_type(const std::string &name);
     std::optional<VarId> lookup_variable_id(const std::string &name);
 
     const ResolvedStruct *lookup_resolved_struct(const std::string &name);
-    const ResolvedStruct *lookup_resolved_struct_by_id(AIR::StructId struct_id);
+    const ResolvedStruct *lookup_resolved_struct_by_id(StructId struct_id);
   };
 
 } // namespace aloha

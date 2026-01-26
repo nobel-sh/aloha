@@ -19,23 +19,23 @@ namespace aloha
   struct ResolvedField
   {
     std::string name;
-    AIR::TyId type_id;
+    TyId type_id;
     Location location;
 
-    ResolvedField(const std::string &n, AIR::TyId tid, Location loc)
+    ResolvedField(const std::string &n, TyId tid, Location loc)
         : name(n), type_id(tid), location(loc) {}
   };
 
   struct ResolvedStruct
   {
-    AIR::StructId struct_id;
-    AIR::TyId type_id;
+    StructId struct_id;
+    TyId type_id;
     std::string name;
     std::vector<ResolvedField> fields;
     Location location;
     bool is_resolved;
 
-    ResolvedStruct(AIR::StructId sid, AIR::TyId tid, const std::string &n, Location loc)
+    ResolvedStruct(StructId sid, TyId tid, const std::string &n, Location loc)
         : struct_id(sid), type_id(tid), name(n), location(loc), is_resolved(false) {}
   };
 
@@ -43,38 +43,38 @@ namespace aloha
   {
     FunctionId id;
     std::string name;
-    AIR::TyId return_type;
-    std::vector<AIR::TyId> param_types;
+    TyId return_type;
+    std::vector<TyId> param_types;
     bool is_extern;
     Location location;
 
-    ResolvedFunction(FunctionId fid, const std::string &n, AIR::TyId ret,
-                     std::vector<AIR::TyId> params, bool ext, Location loc)
+    ResolvedFunction(FunctionId fid, const std::string &n, TyId ret,
+                     std::vector<TyId> params, bool ext, Location loc)
         : id(fid), name(n), return_type(ret), param_types(params), is_extern(ext), location(loc) {}
   };
 
   class TypeResolver
   {
   private:
-    AIR::TyTable &ty_table;
+    TyTable &ty_table;
     SymbolTable &symbol_table;
     DiagnosticEngine &diagnostics;
 
-    std::unordered_map<AIR::StructId, ResolvedStruct> resolved_structs;
+    std::unordered_map<StructId, ResolvedStruct> resolved_structs;
     std::unordered_map<FunctionId, ResolvedFunction> resolved_functions;
 
-    std::unordered_set<AIR::StructId> resolving_structs;
+    std::unordered_set<StructId> resolving_structs;
 
   public:
-    TypeResolver(AIR::TyTable &table, SymbolTable &symbols, DiagnosticEngine &diag)
+    TypeResolver(TyTable &table, SymbolTable &symbols, DiagnosticEngine &diag)
         : ty_table(table), symbol_table(symbols), diagnostics(diag) {}
 
-    bool resolve(Program *program, const TySpecArena &type_arena);
+    bool resolve(ast::Program *program, const TySpecArena &type_arena);
 
-    // resolve a ast::TySpec to AIR::TyId
-    std::optional<AIR::TyId> resolve_type_spec(TySpecId ty_spec_id, const TySpecArena &type_arena);
+    // resolve a ast::TySpec to TyId
+    std::optional<TyId> resolve_type_spec(TySpecId ty_spec_id, const TySpecArena &type_arena);
 
-    const std::unordered_map<AIR::StructId, ResolvedStruct> &get_resolved_structs() const
+    const std::unordered_map<StructId, ResolvedStruct> &get_resolved_structs() const
     {
       return resolved_structs;
     }
@@ -87,12 +87,12 @@ namespace aloha
     bool has_errors() const { return diagnostics.has_errors(); }
 
   private:
-    void resolve_struct_fields(StructDecl *struct_decl, const TySpecArena &type_arena);
-    void resolve_function_signature(Function *func, const TySpecArena &type_arena);
+    void resolve_struct_fields(ast::StructDecl *struct_decl, const TySpecArena &type_arena);
+    void resolve_function_signature(ast::Function *func, const TySpecArena &type_arena);
 
     // circular dependency detection for structs
-    bool check_circular_dependency(AIR::StructId struct_id, const std::string &struct_name,
-                                   std::unordered_set<AIR::StructId> &visiting, Location loc);
+    bool check_circular_dependency(StructId struct_id, const std::string &struct_name,
+                                   std::unordered_set<StructId> &visiting, Location loc);
 
     std::string suggest_type_name(const std::string &name) const;
     bool is_primitive_type(const std::string &name) const;

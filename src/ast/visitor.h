@@ -3,34 +3,37 @@
 
 #include "decl.h"
 
-class ASTVisitor
+namespace aloha
 {
-public:
-  virtual void visit(aloha::Integer *node) = 0;
-  virtual void visit(aloha::Float *node) = 0;
-  virtual void visit(aloha::Boolean *node) = 0;
-  virtual void visit(aloha::String *node) = 0;
-  virtual void visit(aloha::UnaryExpression *node) = 0;
-  virtual void visit(aloha::BinaryExpression *node) = 0;
-  virtual void visit(aloha::Identifier *node) = 0;
-  virtual void visit(aloha::Declaration *node) = 0;
-  virtual void visit(aloha::Assignment *node) = 0;
-  virtual void visit(aloha::FunctionCall *node) = 0;
-  virtual void visit(aloha::ReturnStatement *node) = 0;
-  virtual void visit(aloha::IfStatement *node) = 0;
-  virtual void visit(aloha::WhileLoop *node) = 0;
-  virtual void visit(aloha::ForLoop *node) = 0;
-  virtual void visit(aloha::Function *node) = 0;
-  virtual void visit(aloha::StructDecl *node) = 0;
-  virtual void visit(aloha::StructInstantiation *node) = 0;
-  virtual void visit(aloha::StructFieldAccess *node) = 0;
-  virtual void visit(aloha::StructFieldAssignment *node) = 0;
-  virtual void visit(aloha::Array *node) = 0;
-  virtual void visit(aloha::ArrayAccess *node) = 0;
-  virtual void visit(aloha::ExpressionStatement *node) = 0;
-  virtual void visit(aloha::StatementBlock *node) = 0;
-  virtual void visit(aloha::Program *node) = 0;
-  virtual void visit(aloha::Import *node) = 0;
-};
+  class ASTVisitor
+  {
+  public:
+    virtual void visit(ast::Integer *node) = 0;
+    virtual void visit(ast::Float *node) = 0;
+    virtual void visit(ast::Boolean *node) = 0;
+    virtual void visit(ast::String *node) = 0;
+    virtual void visit(ast::UnaryExpression *node) = 0;
+    virtual void visit(ast::BinaryExpression *node) = 0;
+    virtual void visit(ast::Identifier *node) = 0;
+    virtual void visit(ast::Declaration *node) = 0;
+    virtual void visit(ast::Assignment *node) = 0;
+    virtual void visit(ast::FunctionCall *node) = 0;
+    virtual void visit(ast::ReturnStatement *node) = 0;
+    virtual void visit(ast::IfStatement *node) = 0;
+    virtual void visit(ast::WhileLoop *node) = 0;
+    virtual void visit(ast::ForLoop *node) = 0;
+    virtual void visit(ast::Function *node) = 0;
+    virtual void visit(ast::StructDecl *node) = 0;
+    virtual void visit(ast::StructInstantiation *node) = 0;
+    virtual void visit(ast::StructFieldAccess *node) = 0;
+    virtual void visit(ast::StructFieldAssignment *node) = 0;
+    virtual void visit(ast::Array *node) = 0;
+    virtual void visit(ast::ArrayAccess *node) = 0;
+    virtual void visit(ast::ExpressionStatement *node) = 0;
+    virtual void visit(ast::StatementBlock *node) = 0;
+    virtual void visit(ast::Program *node) = 0;
+    virtual void visit(ast::Import *node) = 0;
+  };
+} // namespace aloha
 
 #endif // ASTVISITOR_H_

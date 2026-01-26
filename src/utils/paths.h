@@ -4,22 +4,23 @@
 #include <string>
 #include <filesystem>
 
-namespace aloha::utils
+namespace aloha
 {
-
-    struct StdlibPaths
+    namespace utils
     {
-        std::filesystem::path root;
-        std::filesystem::path source_dir;
-        std::filesystem::path library_file;
-    };
+        struct StdlibPaths
+        {
+            std::filesystem::path root;
+            std::filesystem::path source_dir;
+            std::filesystem::path library_file;
+        };
 
-    std::filesystem::path get_aloha_root();
+        std::filesystem::path get_aloha_root();
 
-    StdlibPaths get_stdlib_paths();
+        StdlibPaths get_stdlib_paths();
 
-    std::string get_stdlib_archive();
-
-} // namespace aloha::utils
+        std::string get_stdlib_archive();
+    } // namespace utils
+} // namespace aloha
 
 #endif // ALOHA_UTILS_PATHS_H

@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace AIR
+namespace aloha
 {
   using TyId = uint32_t;
 
@@ -25,6 +25,8 @@ namespace AIR
   }
 
   using StructId = uint32_t;
+  using FunctionId = uint32_t;
+  using VarId = uint32_t;
 
   enum class TyKind
   {
@@ -110,6 +112,6 @@ namespace AIR
     bool are_compatible(TyId lhs, TyId rhs) const;
   };
 
-} // namespace AIR
+} // namespace air
 
 #endif // AIR_TY_H_

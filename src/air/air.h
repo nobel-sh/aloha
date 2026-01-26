@@ -9,41 +9,44 @@
 #include <string>
 #include <vector>
 
-namespace AIR
+namespace aloha
 {
-
-  class Node
+  namespace air
   {
-  public:
-    Location loc;
 
-    explicit Node(const Location &loc) : loc(loc) {}
-    virtual ~Node() = default;
+    class Node
+    {
+    public:
+      Location loc;
 
-    virtual void accept(AIRVisitor &visitor) = 0;
-  };
+      explicit Node(const Location &loc) : loc(loc) {}
+      virtual ~Node() = default;
 
-  class Expr : public Node
-  {
-  public:
-    TyId ty;
+      virtual void accept(AIRVisitor &visitor) = 0;
+    };
 
-    Expr(const Location &loc, TyId ty) : Node(loc), ty(ty) {}
-    virtual ~Expr() = default;
-  };
+    class Expr : public Node
+    {
+    public:
+      TyId ty;
 
-  class Stmt : public Node
-  {
-  public:
-    explicit Stmt(const Location &loc) : Node(loc) {}
-    virtual ~Stmt() = default;
-  };
+      Expr(const Location &loc, TyId ty) : Node(loc), ty(ty) {}
+      virtual ~Expr() = default;
+    };
 
-  using ExprPtr = std::unique_ptr<Expr>;
-  using StmtPtr = std::unique_ptr<Stmt>;
-  using FunctionPtr = std::unique_ptr<Function>;
-  using StructDeclPtr = std::unique_ptr<StructDecl>;
+    class Stmt : public Node
+    {
+    public:
+      explicit Stmt(const Location &loc) : Node(loc) {}
+      virtual ~Stmt() = default;
+    };
 
-} // namespace AIR
+    using ExprPtr = std::unique_ptr<Expr>;
+    using StmtPtr = std::unique_ptr<Stmt>;
+    using FunctionPtr = std::unique_ptr<Function>;
+    using StructDeclPtr = std::unique_ptr<StructDecl>;
+
+  } // namespace air
+} // namespace aloha
 
 #endif // AIR_AIR_H_

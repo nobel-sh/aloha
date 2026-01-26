@@ -1,7 +1,7 @@
 #include "ty.h"
 #include <stdexcept>
 
-namespace AIR
+namespace aloha
 {
 
   TyTable::TyTable()
@@ -163,4 +163,4 @@ namespace AIR
     return lhs == rhs;
   }
 
-} // namespace AIR
+} // namespace aloha

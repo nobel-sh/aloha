@@ -16,13 +16,13 @@
 #error "Unsupported platform. Currently only Linux is supported."
 #endif
 
-namespace AlohaPipeline
+namespace aloha
 {
 
   CompilerDriver::CompilerDriver(const CompilerOptions &options)
       : options(options), has_compilation_errors(false)
   {
-    ty_table = std::make_unique<AIR::TyTable>();
+    ty_table = std::make_unique<TyTable>();
   }
 
   CompilerDriver::~CompilerDriver() = default;
@@ -90,7 +90,7 @@ namespace AlohaPipeline
     std::cout << "\n========================================\n";
     std::cout << "AIR MODULE\n";
     std::cout << "========================================\n";
-    AIR::Printer printer(std::cout, ty_table.get());
+    air::Printer printer(std::cout, ty_table.get());
     printer.print(air_module.get());
     std::cout << "========================================\n\n";
   }
@@ -332,7 +332,7 @@ namespace AlohaPipeline
 
     try
     {
-      codegen = std::make_unique<Codegen::CodeGenerator>(*ty_table, diagnostics);
+      codegen = std::make_unique<CodeGenerator>(*ty_table, diagnostics);
 
       llvm_module = codegen->generate(air_module.get());
       if (!llvm_module || diagnostics.has_errors())
@@ -561,4 +561,4 @@ namespace AlohaPipeline
     return 0;
   }
 
-} // namespace CompilerPipeline
+} // namespace aloha

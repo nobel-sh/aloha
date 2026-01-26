@@ -7,7 +7,7 @@
 namespace aloha
 {
 
-  ImportResolver::ImportResolver(AIR::TyTable &ty_table,
+  ImportResolver::ImportResolver(TyTable &ty_table,
                                  SymbolTable &main_symbol_table,
                                  aloha::TySpecArena &type_arena,
                                  aloha::DiagnosticEngine &diag,
@@ -118,7 +118,7 @@ namespace aloha
     return success;
   }
 
-  bool ImportResolver::resolve_imports(aloha::Program *ast)
+  bool ImportResolver::resolve_imports(ast::Program *ast)
   {
     if (!ast)
     {
@@ -138,7 +138,7 @@ namespace aloha
 
     for (const auto &node : ast->m_nodes)
     {
-      if (auto *import_node = dynamic_cast<aloha::Import *>(node.get()))
+      if (auto *import_node = dynamic_cast<ast::Import *>(node.get()))
       {
         if (!resolve_import(import_node))
         {
@@ -150,7 +150,7 @@ namespace aloha
     return success;
   }
 
-  bool ImportResolver::resolve_import(aloha::Import *import_node)
+  bool ImportResolver::resolve_import(ast::Import *import_node)
   {
     if (!import_node)
     {
@@ -239,7 +239,7 @@ namespace aloha
       Lexer lexer(source, file_path);
       Parser parser(lexer, type_arena, diagnostics);
 
-      std::unique_ptr<aloha::Program> imported_ast = parser.parse();
+      std::unique_ptr<ast::Program> imported_ast = parser.parse();
       if (!imported_ast || diagnostics.has_errors())
       {
         diagnostics.error(DiagnosticPhase::SymbolBinding, import_loc, "Failed to parse import: '" + file_path + "'");

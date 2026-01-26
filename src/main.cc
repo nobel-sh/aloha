@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 {
   try
   {
-    AlohaPipeline::CompilerOptions options;
+    aloha::CompilerOptions options;
 
     if (argc < 2)
     {
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
       }
     }
 
-    AlohaPipeline::CompilerDriver driver(options);
+    aloha::CompilerDriver driver(options);
     return driver.compile();
   }
   catch (const std::exception &e)

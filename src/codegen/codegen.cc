@@ -7,9 +7,9 @@
 #include <iostream>
 #include "../error/internal.h"
 
-namespace Codegen
+namespace aloha
 {
-  CodeGenerator::CodeGenerator(AIR::TyTable &ty_table, aloha::DiagnosticEngine &diag)
+  CodeGenerator::CodeGenerator(TyTable &ty_table, aloha::DiagnosticEngine &diag)
       : context(std::make_unique<llvm::LLVMContext>()),
         module(std::make_unique<llvm::Module>("aloha_module", *context)),
         builder(std::make_unique<llvm::IRBuilder<>>(*context)),
@@ -21,7 +21,7 @@ namespace Codegen
   {
   }
 
-  std::unique_ptr<llvm::Module> CodeGenerator::generate(AIR::Module *air_module)
+  std::unique_ptr<llvm::Module> CodeGenerator::generate(air::Module *air_module)
   {
     if (!air_module)
     {
@@ -62,12 +62,12 @@ namespace Codegen
   void CodeGenerator::generate_types()
   {
     // primitive types
-    type_map[AIR::TyIds::INTEGER] = llvm::Type::getInt64Ty(*context);
-    type_map[AIR::TyIds::FLOAT] = llvm::Type::getDoubleTy(*context);
-    type_map[AIR::TyIds::BOOL] = llvm::Type::getInt1Ty(*context);
-    type_map[AIR::TyIds::VOID] = llvm::Type::getVoidTy(*context);
-    type_map[AIR::TyIds::STRING] = llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
-    type_map[AIR::TyIds::ERROR] = llvm::Type::getVoidTy(*context); // Placeholder
+    type_map[TyIds::INTEGER] = llvm::Type::getInt64Ty(*context);
+    type_map[TyIds::FLOAT] = llvm::Type::getDoubleTy(*context);
+    type_map[TyIds::BOOL] = llvm::Type::getInt1Ty(*context);
+    type_map[TyIds::VOID] = llvm::Type::getVoidTy(*context);
+    type_map[TyIds::STRING] = llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
+    type_map[TyIds::ERROR] = llvm::Type::getVoidTy(*context); // Placeholder
 
     generate_struct_types();
   }
@@ -106,7 +106,7 @@ namespace Codegen
     }
   }
 
-  llvm::Type *CodeGenerator::get_llvm_type(AIR::TyId ty_id)
+  llvm::Type *CodeGenerator::get_llvm_type(TyId ty_id)
   {
     auto it = type_map.find(ty_id);
     if (it != type_map.end())
@@ -114,7 +114,7 @@ namespace Codegen
       return it->second;
     }
 
-    const AIR::TyInfo *ty_info = ty_table.get_ty_info(ty_id);
+    const TyInfo *ty_info = ty_table.get_ty_info(ty_id);
     if (!ty_info)
     {
       return nullptr;
@@ -139,7 +139,7 @@ namespace Codegen
         return nullptr;
       }
 
-      AIR::TyId element_ty_id = ty_info->type_params[0];
+      TyId element_ty_id = ty_info->type_params[0];
       llvm::Type *element_llvm_type = get_llvm_type(element_ty_id);
       if (!element_llvm_type)
       {
@@ -194,7 +194,7 @@ namespace Codegen
     }
   }
 
-  llvm::FunctionType *CodeGenerator::get_function_type(AIR::Function *func)
+  llvm::FunctionType *CodeGenerator::get_function_type(air::Function *func)
   {
     // Get return type
     llvm::Type *return_type = get_llvm_type(func->return_ty);
@@ -236,7 +236,7 @@ namespace Codegen
     }
   }
 
-  void CodeGenerator::generate_function(AIR::Function *func)
+  void CodeGenerator::generate_function(air::Function *func)
   {
     llvm::Function *llvm_func = function_map[func->func_id];
     if (!llvm_func)
@@ -277,7 +277,7 @@ namespace Codegen
     llvm::BasicBlock *current_block = builder->GetInsertBlock();
     if (current_block && !current_block->getTerminator())
     {
-      if (func->return_ty == AIR::TyIds::VOID)
+      if (func->return_ty == TyIds::VOID)
       {
         builder->CreateRetVoid();
       }
@@ -310,7 +310,7 @@ namespace Codegen
     auto it = std::find_if(
         current_air_module->functions.begin(),
         current_air_module->functions.end(),
-        [](const std::unique_ptr<AIR::Function> &f)
+        [](const std::unique_ptr<air::Function> &f)
         { return f->name == "main"; });
 
     if (it == current_air_module->functions.end())
@@ -318,7 +318,7 @@ namespace Codegen
       return; // No main function to wrap
     }
 
-    AIR::Function *main_func = it->get();
+    air::Function *main_func = it->get();
 
     llvm::FunctionType *main_wrapper_type = llvm::FunctionType::get(
         llvm::Type::getInt32Ty(*context), false);
@@ -339,7 +339,7 @@ namespace Codegen
     }
     llvm::Value *ret_value = builder->CreateCall(llvm_main_func, {});
 
-    if (main_func->return_ty == AIR::TyIds::VOID)
+    if (main_func->return_ty == TyIds::VOID)
     {
       builder->CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
     }
@@ -361,18 +361,18 @@ namespace Codegen
     return tmp_builder.CreateAlloca(type, nullptr, var_name);
   }
 
-  void CodeGenerator::visit(AIR::IntegerLiteral *node)
+  void CodeGenerator::visit(air::IntegerLiteral *node)
   {
     uint64_t value = static_cast<uint64_t>(node->value);
     current_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value, true);
   }
 
-  void CodeGenerator::visit(AIR::FloatLiteral *node)
+  void CodeGenerator::visit(air::FloatLiteral *node)
   {
     current_value = llvm::ConstantFP::get(*context, llvm::APFloat(node->value));
   }
 
-  void CodeGenerator::visit(AIR::StringLiteral *node)
+  void CodeGenerator::visit(air::StringLiteral *node)
   {
     llvm::Constant *str_constant = llvm::ConstantDataArray::getString(*context, node->value);
     llvm::GlobalVariable *global_str = new llvm::GlobalVariable(
@@ -389,12 +389,12 @@ namespace Codegen
         str_constant->getType(), global_str, indices);
   }
 
-  void CodeGenerator::visit(AIR::BoolLiteral *node)
+  void CodeGenerator::visit(air::BoolLiteral *node)
   {
     current_value = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), node->value ? 1 : 0);
   }
 
-  void CodeGenerator::visit(AIR::VarRef *node)
+  void CodeGenerator::visit(air::VarRef *node)
   {
     auto it = variable_map.find(node->var_id);
     if (it == variable_map.end())
@@ -416,18 +416,18 @@ namespace Codegen
     OTHER
   };
 
-  NumericKind get_numeric_kind(AIR::TyId ty_id)
+  NumericKind get_numeric_kind(TyId ty_id)
   {
-    if (ty_id == AIR::TyIds::INTEGER)
+    if (ty_id == TyIds::INTEGER)
       return NumericKind::INTEGER;
-    if (ty_id == AIR::TyIds::FLOAT)
+    if (ty_id == TyIds::FLOAT)
       return NumericKind::FLOAT;
-    if (ty_id == AIR::TyIds::BOOL)
+    if (ty_id == TyIds::BOOL)
       return NumericKind::BOOL;
     return NumericKind::OTHER;
   }
 
-  void CodeGenerator::visit(AIR::BinaryOp *node)
+  void CodeGenerator::visit(air::BinaryOp *node)
   {
     current_value = nullptr; // set on success
 
@@ -447,7 +447,7 @@ namespace Codegen
 
     switch (node->op)
     {
-    case AIR::BinaryOpKind::ADD:
+    case air::BinaryOpKind::ADD:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateAdd(left, right, "addtmp");
       else if (kind == NumericKind::FLOAT)
@@ -456,7 +456,7 @@ namespace Codegen
         report_error("Unsupported type for addition", node->loc);
       break;
 
-    case AIR::BinaryOpKind::SUB:
+    case air::BinaryOpKind::SUB:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateSub(left, right, "subtmp");
       else if (kind == NumericKind::FLOAT)
@@ -465,7 +465,7 @@ namespace Codegen
         report_error("Unsupported type for subtraction", node->loc);
       break;
 
-    case AIR::BinaryOpKind::MUL:
+    case air::BinaryOpKind::MUL:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateMul(left, right, "multmp");
       else if (kind == NumericKind::FLOAT)
@@ -474,7 +474,7 @@ namespace Codegen
         report_error("Unsupported type for multiplication", node->loc);
       break;
 
-    case AIR::BinaryOpKind::DIV:
+    case air::BinaryOpKind::DIV:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateSDiv(left, right, "divtmp"); // signed division
       else if (kind == NumericKind::FLOAT)
@@ -483,7 +483,7 @@ namespace Codegen
         report_error("Unsupported type for division", node->loc);
       break;
 
-    case AIR::BinaryOpKind::MOD:
+    case air::BinaryOpKind::MOD:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateSRem(left, right, "modtmp"); // signed remainder
       else if (kind == NumericKind::FLOAT)
@@ -492,7 +492,7 @@ namespace Codegen
         report_error("Unsupported type for modulo", node->loc);
       break;
 
-    case AIR::BinaryOpKind::EQ:
+    case air::BinaryOpKind::EQ:
       if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL)
         current_value = builder->CreateICmpEQ(left, right, "eqtmp");
       else if (kind == NumericKind::FLOAT)
@@ -501,7 +501,7 @@ namespace Codegen
         report_error("Unsupported type for equality comparison", node->loc);
       break;
 
-    case AIR::BinaryOpKind::NE:
+    case air::BinaryOpKind::NE:
       if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL)
         current_value = builder->CreateICmpNE(left, right, "netmp");
       else if (kind == NumericKind::FLOAT)
@@ -510,7 +510,7 @@ namespace Codegen
         report_error("Unsupported type for inequality comparison", node->loc);
       break;
 
-    case AIR::BinaryOpKind::LT:
+    case air::BinaryOpKind::LT:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateICmpSLT(left, right, "lttmp");
       else if (kind == NumericKind::FLOAT)
@@ -519,7 +519,7 @@ namespace Codegen
         report_error("Unsupported type for less-than comparison", node->loc);
       break;
 
-    case AIR::BinaryOpKind::LE:
+    case air::BinaryOpKind::LE:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateICmpSLE(left, right, "letmp");
       else if (kind == NumericKind::FLOAT)
@@ -528,7 +528,7 @@ namespace Codegen
         report_error("Unsupported type for less-equal comparison", node->loc);
       break;
 
-    case AIR::BinaryOpKind::GT:
+    case air::BinaryOpKind::GT:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateICmpSGT(left, right, "gttmp");
       else if (kind == NumericKind::FLOAT)
@@ -537,7 +537,7 @@ namespace Codegen
         report_error("Unsupported type for greater-than comparison", node->loc);
       break;
 
-    case AIR::BinaryOpKind::GE:
+    case air::BinaryOpKind::GE:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateICmpSGE(left, right, "getmp");
       else if (kind == NumericKind::FLOAT)
@@ -546,11 +546,11 @@ namespace Codegen
         report_error("Unsupported type for greater-equal comparison", node->loc);
       break;
 
-    case AIR::BinaryOpKind::AND:
+    case air::BinaryOpKind::AND:
       current_value = builder->CreateAnd(left, right, "andtmp");
       break;
 
-    case AIR::BinaryOpKind::OR:
+    case air::BinaryOpKind::OR:
       current_value = builder->CreateOr(left, right, "ortmp");
       break;
 
@@ -560,7 +560,7 @@ namespace Codegen
     }
   }
 
-  void CodeGenerator::visit(AIR::UnaryOp *node)
+  void CodeGenerator::visit(air::UnaryOp *node)
   {
     current_value = nullptr; // set on success
 
@@ -577,7 +577,7 @@ namespace Codegen
 
     switch (node->op)
     {
-    case AIR::UnaryOpKind::NEG:
+    case air::UnaryOpKind::NEG:
       if (kind == NumericKind::INTEGER)
         current_value = builder->CreateNeg(operand, "negtmp");
       else if (kind == NumericKind::FLOAT)
@@ -586,7 +586,7 @@ namespace Codegen
         report_error("Unsupported type for negation", node->loc);
       break;
 
-    case AIR::UnaryOpKind::NOT:
+    case air::UnaryOpKind::NOT:
       current_value = builder->CreateNot(operand, "nottmp");
       break;
 
@@ -596,7 +596,7 @@ namespace Codegen
     }
   }
 
-  void CodeGenerator::visit(AIR::Call *node)
+  void CodeGenerator::visit(air::Call *node)
   {
     llvm::Function *callee = function_map[node->func_id];
     if (!callee)
@@ -628,7 +628,7 @@ namespace Codegen
     }
   }
 
-  void CodeGenerator::visit(AIR::StructInstantiation *node)
+  void CodeGenerator::visit(air::StructInstantiation *node)
   {
     llvm::StructType *struct_type = struct_map[node->struct_id];
     if (!struct_type)
@@ -658,7 +658,7 @@ namespace Codegen
     current_value = builder->CreateLoad(struct_type, struct_alloca, "struct_val");
   }
 
-  void CodeGenerator::visit(AIR::FieldAccess *node)
+  void CodeGenerator::visit(air::FieldAccess *node)
   {
     node->object->accept(*this);
     llvm::Value *object = current_value;
@@ -670,7 +670,7 @@ namespace Codegen
       return;
     }
 
-    const AIR::TyInfo *obj_ty_info = ty_table.get_ty_info(node->object->ty);
+    const TyInfo *obj_ty_info = ty_table.get_ty_info(node->object->ty);
     if (!obj_ty_info || !obj_ty_info->is_struct())
     {
       report_error("Field access on non-struct type", node->loc);
@@ -705,7 +705,7 @@ namespace Codegen
     current_value = builder->CreateLoad(field_type, field_ptr, node->field_name);
   }
 
-  void CodeGenerator::visit(AIR::ArrayExpr *node)
+  void CodeGenerator::visit(air::ArrayExpr *node)
   {
     if (node->elements.empty())
     {
@@ -766,7 +766,7 @@ namespace Codegen
     current_value = array_alloca;
   }
 
-  void CodeGenerator::visit(AIR::ArrayAccess *node)
+  void CodeGenerator::visit(air::ArrayAccess *node)
   {
     node->array_expr->accept(*this);
     llvm::Value *array = current_value;
@@ -802,7 +802,7 @@ namespace Codegen
     current_value = builder->CreateLoad(element_type, element_ptr, "array_elem");
   }
 
-  void CodeGenerator::visit(AIR::VarDecl *node)
+  void CodeGenerator::visit(air::VarDecl *node)
   {
     if (node->initializer)
     {
@@ -817,7 +817,7 @@ namespace Codegen
 
       // For arrays or if type is ERROR, use the value's type directly
       llvm::Type *var_type = nullptr;
-      if (node->var_ty == AIR::TyIds::ERROR)
+      if (node->var_ty == TyIds::ERROR)
       {
         var_type = init_value->getType();
       }
@@ -852,7 +852,7 @@ namespace Codegen
     }
   }
 
-  void CodeGenerator::visit(AIR::Assignment *node)
+  void CodeGenerator::visit(air::Assignment *node)
   {
     node->value->accept(*this);
     llvm::Value *value = current_value;
@@ -873,7 +873,7 @@ namespace Codegen
     builder->CreateStore(value, it->second);
   }
 
-  void CodeGenerator::visit(AIR::FieldAssignment *node)
+  void CodeGenerator::visit(air::FieldAssignment *node)
   {
     node->object->accept(*this);
     llvm::Value *object = current_value;
@@ -893,7 +893,7 @@ namespace Codegen
       return;
     }
 
-    const AIR::TyInfo *obj_ty_info = ty_table.get_ty_info(node->object->ty);
+    const TyInfo *obj_ty_info = ty_table.get_ty_info(node->object->ty);
     if (!obj_ty_info || !obj_ty_info->is_struct())
     {
       report_error("Field assignment on non-struct type", node->loc);
@@ -923,7 +923,7 @@ namespace Codegen
     builder->CreateStore(value, field_ptr);
   }
 
-  void CodeGenerator::visit(AIR::Return *node)
+  void CodeGenerator::visit(air::Return *node)
   {
     if (node->value)
     {
@@ -941,7 +941,7 @@ namespace Codegen
     }
   }
 
-  void CodeGenerator::visit(AIR::If *node)
+  void CodeGenerator::visit(air::If *node)
   {
     node->condition->accept(*this);
     llvm::Value *cond = current_value;
@@ -1013,28 +1013,27 @@ namespace Codegen
     }
   }
 
-  void CodeGenerator::visit(AIR::ExprStmt *node)
+  void CodeGenerator::visit(air::ExprStmt *node)
   {
     node->expression->accept(*this);
     // result is discarded for expression statements
   }
 
-  void CodeGenerator::visit(AIR::Function *node)
+  void CodeGenerator::visit(air::Function *node)
   {
     // Functions are generated in generate_function_bodies()
     // This visitor method is not used directly
   }
 
-  void CodeGenerator::visit(AIR::StructDecl *node)
+  void CodeGenerator::visit(air::StructDecl *node)
   {
     // Structs are generated in generate_struct_types()
     // This visitor method is not used directly
   }
 
-  void CodeGenerator::visit(AIR::Module *node)
+  void CodeGenerator::visit(air::Module *node)
   {
     // Module traversal is handled in generate()
     // This visitor method is not used directly
   }
-
-} // namespace Codegen
+} // namespace aloha

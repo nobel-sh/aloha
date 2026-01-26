@@ -32,25 +32,25 @@ namespace aloha
   {
     FunctionId id;
     std::string name;
-    AIR::TyId return_type;
-    std::vector<AIR::TyId> param_types;
+    TyId return_type;
+    std::vector<TyId> param_types;
     bool is_extern;
     Location location;
 
-    FunctionSymbol(FunctionId id, const std::string &name, AIR::TyId ret_ty,
-                   std::vector<AIR::TyId> params, bool is_extern, Location loc)
+    FunctionSymbol(FunctionId id, const std::string &name, TyId ret_ty,
+                   std::vector<TyId> params, bool is_extern, Location loc)
         : id(id), name(name), return_type(ret_ty), param_types(params),
           is_extern(is_extern), location(loc) {}
   };
 
   struct StructSymbol
   {
-    AIR::StructId struct_id;
-    AIR::TyId type_id;
+    StructId struct_id;
+    TyId type_id;
     std::string name;
     Location location;
 
-    StructSymbol(AIR::StructId sid, AIR::TyId tid, const std::string &name,
+    StructSymbol(StructId sid, TyId tid, const std::string &name,
                  Location loc)
         : struct_id(sid), type_id(tid), name(name), location(loc) {}
   };
@@ -112,16 +112,16 @@ namespace aloha
     }
 
     void register_function(FunctionId id, const std::string &name,
-                           AIR::TyId return_type,
-                           std::vector<AIR::TyId> param_types, bool is_extern,
+                           TyId return_type,
+                           std::vector<TyId> param_types, bool is_extern,
                            Location loc)
     {
       functions.emplace(name, FunctionSymbol(id, name, return_type, param_types,
                                              is_extern, loc));
     }
 
-    void register_struct(const std::string &name, AIR::StructId struct_id,
-                         AIR::TyId type_id, Location loc)
+    void register_struct(const std::string &name, StructId struct_id,
+                         TyId type_id, Location loc)
     {
       structs.emplace(name, StructSymbol(struct_id, type_id, name, loc));
     }

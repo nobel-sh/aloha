@@ -19,9 +19,9 @@
 #include <unordered_map>
 #include <vector>
 
-namespace Codegen
+namespace aloha
 {
-  class CodeGenerator : public AIR::AIRVisitor
+  class CodeGenerator : public air::AIRVisitor
   {
   private:
     // LLVM infrastructure
@@ -30,33 +30,33 @@ namespace Codegen
     std::unique_ptr<llvm::IRBuilder<>> builder;
 
     // Type system bridge
-    AIR::TyTable &ty_table;
+    TyTable &ty_table;
 
     aloha::DiagnosticEngine &diagnostics;
 
     // Type mapping: TyId -> LLVM Type*
-    std::unordered_map<AIR::TyId, llvm::Type *> type_map;
+    std::unordered_map<TyId, llvm::Type *> type_map;
 
     // Struct mapping: StructId -> LLVM StructType*
-    std::unordered_map<AIR::StructId, llvm::StructType *> struct_map;
+    std::unordered_map<StructId, llvm::StructType *> struct_map;
 
     // Function mapping: FunctionId -> LLVM Function*
-    std::unordered_map<AIR::FunctionId, llvm::Function *> function_map;
+    std::unordered_map<FunctionId, llvm::Function *> function_map;
 
     // Variable mapping: VarId -> LLVM AllocaInst*
-    std::unordered_map<AIR::VarId, llvm::AllocaInst *> variable_map;
+    std::unordered_map<VarId, llvm::AllocaInst *> variable_map;
 
     // Current codegen state
     llvm::Value *current_value;       // Result of expression codegen
     llvm::Function *current_function; // Currently generating function
-    AIR::Module *current_air_module;  // Current AIR module being processed
+    air::Module *current_air_module;  // Current AIR module being processed
 
   public:
-    explicit CodeGenerator(AIR::TyTable &ty_table, aloha::DiagnosticEngine &diag);
+    explicit CodeGenerator(TyTable &ty_table, aloha::DiagnosticEngine &diag);
     ~CodeGenerator() = default;
 
     // entry point
-    std::unique_ptr<llvm::Module> generate(AIR::Module *air_module);
+    std::unique_ptr<llvm::Module> generate(air::Module *air_module);
 
     bool has_errors() const { return diagnostics.has_errors(); }
 
@@ -64,46 +64,46 @@ namespace Codegen
 
   private:
     void generate_types();
-    llvm::Type *get_llvm_type(AIR::TyId ty_id);
+    llvm::Type *get_llvm_type(TyId ty_id);
     void generate_struct_types();
 
     void declare_functions();
-    llvm::FunctionType *get_function_type(AIR::Function *func);
+    llvm::FunctionType *get_function_type(air::Function *func);
     void generate_main_wrapper();
 
     void generate_function_bodies();
-    void generate_function(AIR::Function *func);
+    void generate_function(air::Function *func);
 
     llvm::AllocaInst *create_entry_block_alloca(llvm::Function *func,
                                                 const std::string &var_name,
                                                 llvm::Type *type);
 
     // Expressions
-    void visit(AIR::IntegerLiteral *node) override;
-    void visit(AIR::FloatLiteral *node) override;
-    void visit(AIR::StringLiteral *node) override;
-    void visit(AIR::BoolLiteral *node) override;
-    void visit(AIR::VarRef *node) override;
-    void visit(AIR::BinaryOp *node) override;
-    void visit(AIR::UnaryOp *node) override;
-    void visit(AIR::Call *node) override;
-    void visit(AIR::StructInstantiation *node) override;
-    void visit(AIR::FieldAccess *node) override;
-    void visit(AIR::ArrayExpr *node) override;
-    void visit(AIR::ArrayAccess *node) override;
+    void visit(air::IntegerLiteral *node) override;
+    void visit(air::FloatLiteral *node) override;
+    void visit(air::StringLiteral *node) override;
+    void visit(air::BoolLiteral *node) override;
+    void visit(air::VarRef *node) override;
+    void visit(air::BinaryOp *node) override;
+    void visit(air::UnaryOp *node) override;
+    void visit(air::Call *node) override;
+    void visit(air::StructInstantiation *node) override;
+    void visit(air::FieldAccess *node) override;
+    void visit(air::ArrayExpr *node) override;
+    void visit(air::ArrayAccess *node) override;
 
     // Statements
-    void visit(AIR::VarDecl *node) override;
-    void visit(AIR::Assignment *node) override;
-    void visit(AIR::FieldAssignment *node) override;
-    void visit(AIR::Return *node) override;
-    void visit(AIR::If *node) override;
-    void visit(AIR::ExprStmt *node) override;
+    void visit(air::VarDecl *node) override;
+    void visit(air::Assignment *node) override;
+    void visit(air::FieldAssignment *node) override;
+    void visit(air::Return *node) override;
+    void visit(air::If *node) override;
+    void visit(air::ExprStmt *node) override;
 
     // Top-level declarations
-    void visit(AIR::Function *node) override;
-    void visit(AIR::StructDecl *node) override;
-    void visit(AIR::Module *node) override;
+    void visit(air::Function *node) override;
+    void visit(air::StructDecl *node) override;
+    void visit(air::Module *node) override;
 
     void report_error(const std::string &message, const Location &location)
     {
@@ -111,6 +111,6 @@ namespace Codegen
     }
   };
 
-} // namespace Codegen
+} // namespace aloha
 
 #endif // CODEGEN_CODEGEN_H_

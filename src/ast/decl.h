@@ -4,32 +4,35 @@
 // forward declarations for ast nodes
 namespace aloha
 {
-    // class Number;
-    class Integer;
-    class Float;
-    class Boolean;
-    class String;
-    class UnaryExpression;
-    class BinaryExpression;
-    class Identifier;
-    class Declaration;
-    class Assignment;
-    class FunctionCall;
-    class ReturnStatement;
-    class IfStatement;
-    class WhileLoop;
-    class ForLoop;
-    class Function;
-    class StructDecl;
-    class StructInstantiation;
-    class StructFieldAccess;
-    class StructFieldAssignment;
-    class ExpressionStatement;
-    class Array;
-    class ArrayAccess;
-    class StatementBlock;
-    class Program;
-    class Import;
-}; // namespace aloha
+    namespace ast
+    {
+        // class Number;
+        class Integer;
+        class Float;
+        class Boolean;
+        class String;
+        class UnaryExpression;
+        class BinaryExpression;
+        class Identifier;
+        class Declaration;
+        class Assignment;
+        class FunctionCall;
+        class ReturnStatement;
+        class IfStatement;
+        class WhileLoop;
+        class ForLoop;
+        class Function;
+        class StructDecl;
+        class StructInstantiation;
+        class StructFieldAccess;
+        class StructFieldAssignment;
+        class ExpressionStatement;
+        class Array;
+        class ArrayAccess;
+        class StatementBlock;
+        class Program;
+        class Import;
+    } // namespace ast
+} // namespace aloha
 
 #endif // AST_DECL_H_

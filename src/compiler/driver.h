@@ -11,22 +11,12 @@
 #include "../sema/type_resolver.h"
 #include "../air/builder.h"
 #include "../codegen/codegen.h"
-
-// forward declarations
-namespace aloha
-{
-  class SymbolBinder;
-  class ImportResolver;
-  class TypeResolver;
-  class AIRBuilder;
-}
 #include <memory>
 #include <string>
 #include <llvm/IR/Module.h>
 
-namespace AlohaPipeline
+namespace aloha
 {
-
   struct CompilerOptions
   {
     std::string input_file;
@@ -59,15 +49,15 @@ namespace AlohaPipeline
 
     std::unique_ptr<Lexer> lexer;
     std::unique_ptr<Parser> parser;
-    std::unique_ptr<AIR::TyTable> ty_table;
-    std::unique_ptr<aloha::SymbolBinder> symbol_binder;
-    std::unique_ptr<aloha::ImportResolver> import_resolver;
-    std::unique_ptr<aloha::TypeResolver> type_resolver;
-    std::unique_ptr<aloha::AIRBuilder> air_builder;
-    std::unique_ptr<Codegen::CodeGenerator> codegen;
+    std::unique_ptr<TyTable> ty_table;
+    std::unique_ptr<SymbolBinder> symbol_binder;
+    std::unique_ptr<ImportResolver> import_resolver;
+    std::unique_ptr<TypeResolver> type_resolver;
+    std::unique_ptr<AIRBuilder> air_builder;
+    std::unique_ptr<CodeGenerator> codegen;
 
-    std::unique_ptr<aloha::Program> ast;
-    std::unique_ptr<AIR::Module> air_module;
+    std::unique_ptr<ast::Program> ast;
+    std::unique_ptr<air::Module> air_module;
     std::unique_ptr<llvm::Module> llvm_module;
 
     bool has_compilation_errors;
@@ -92,7 +82,6 @@ namespace AlohaPipeline
     void dump_air() const;
     void dump_llvm_ir() const;
   };
-
-} // namespace AlohaPipeline
+} // namespace aloha
 
 #endif // DRIVER_H_

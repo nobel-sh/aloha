@@ -9,52 +9,55 @@
 #include <ostream>
 #include <string>
 
-namespace AIR
+namespace aloha
 {
-
-    class Printer : public AIRVisitor
+    namespace air
     {
-    public:
-        explicit Printer(std::ostream &os, const TyTable *ty_table = nullptr);
 
-        void print(Module *module);
+        class Printer : public AIRVisitor
+        {
+        public:
+            explicit Printer(std::ostream &os, const TyTable *ty_table = nullptr);
 
-        // expression visitors
-        void visit(IntegerLiteral *node) override;
-        void visit(FloatLiteral *node) override;
-        void visit(StringLiteral *node) override;
-        void visit(BoolLiteral *node) override;
-        void visit(VarRef *node) override;
-        void visit(BinaryOp *node) override;
-        void visit(UnaryOp *node) override;
-        void visit(Call *node) override;
-        void visit(StructInstantiation *node) override;
-        void visit(FieldAccess *node) override;
-        void visit(ArrayExpr *node) override;
-        void visit(ArrayAccess *node) override;
+            void print(Module *module);
 
-        // statement visitors
-        void visit(VarDecl *node) override;
-        void visit(Assignment *node) override;
-        void visit(FieldAssignment *node) override;
-        void visit(Return *node) override;
-        void visit(If *node) override;
-        void visit(ExprStmt *node) override;
+            // expression visitors
+            void visit(IntegerLiteral *node) override;
+            void visit(FloatLiteral *node) override;
+            void visit(StringLiteral *node) override;
+            void visit(BoolLiteral *node) override;
+            void visit(VarRef *node) override;
+            void visit(BinaryOp *node) override;
+            void visit(UnaryOp *node) override;
+            void visit(Call *node) override;
+            void visit(StructInstantiation *node) override;
+            void visit(FieldAccess *node) override;
+            void visit(ArrayExpr *node) override;
+            void visit(ArrayAccess *node) override;
 
-        // declaration visitors
-        void visit(Function *node) override;
-        void visit(StructDecl *node) override;
-        void visit(Module *node) override;
+            // statement visitors
+            void visit(VarDecl *node) override;
+            void visit(Assignment *node) override;
+            void visit(FieldAssignment *node) override;
+            void visit(Return *node) override;
+            void visit(If *node) override;
+            void visit(ExprStmt *node) override;
 
-    private:
-        std::ostream &os;
-        const TyTable *ty_table;
-        unsigned long indent;
+            // declaration visitors
+            void visit(Function *node) override;
+            void visit(StructDecl *node) override;
+            void visit(Module *node) override;
 
-        void write_indent();
-        std::string ty_name(TyId ty) const;
-    };
+        private:
+            std::ostream &os;
+            const TyTable *ty_table;
+            unsigned long indent;
 
-} // namespace AIR
+            void write_indent();
+            std::string ty_name(TyId ty) const;
+        };
+
+    } // namespace air
+} // namespace aloha
 
 #endif // AIR_PRINTER_H_

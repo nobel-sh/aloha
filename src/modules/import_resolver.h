@@ -19,7 +19,7 @@ namespace aloha
   class ImportResolver
   {
   public:
-    ImportResolver(AIR::TyTable &ty_table,
+    ImportResolver(TyTable &ty_table,
                    SymbolTable &main_symbol_table,
                    aloha::TySpecArena &type_arena,
                    aloha::DiagnosticEngine &diag,
@@ -28,7 +28,7 @@ namespace aloha
 
     ~ImportResolver();
 
-    bool resolve_imports(aloha::Program *ast);
+    bool resolve_imports(ast::Program *ast);
 
     bool inject_prelude();
 
@@ -39,16 +39,16 @@ namespace aloha
       return resolved_import_paths;
     }
 
-    const std::vector<std::unique_ptr<aloha::Program>> &get_imported_asts() const
+    const std::vector<std::unique_ptr<ast::Program>> &get_imported_asts() const
     {
       return imported_asts;
     }
 
   private:
-    AIR::TyTable &ty_table;
+    TyTable &ty_table;
     SymbolTable &main_symbol_table;
-    aloha::TySpecArena &type_arena;
-    aloha::DiagnosticEngine &diagnostics;
+    TySpecArena &type_arena;
+    DiagnosticEngine &diagnostics;
 
     bool skip_prelude_injection;
     std::filesystem::path current_file_dir;
@@ -61,9 +61,9 @@ namespace aloha
 
     std::vector<std::string> resolved_import_paths;
 
-    std::vector<std::unique_ptr<aloha::Program>> imported_asts;
+    std::vector<std::unique_ptr<ast::Program>> imported_asts;
 
-    bool resolve_import(aloha::Import *import_node);
+    bool resolve_import(ast::Import *import_node);
 
     std::string resolve_import_path(const std::string &import_path,
                                     const Location &loc);

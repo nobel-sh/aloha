@@ -6,7 +6,7 @@
 namespace aloha
 {
 
-  bool TypeResolver::resolve(Program *program, const TySpecArena &type_arena)
+  bool TypeResolver::resolve(ast::Program *program, const TySpecArena &type_arena)
   {
     if (!program)
     {
@@ -15,7 +15,7 @@ namespace aloha
 
     for (const auto &node : program->m_nodes)
     {
-      if (auto struct_decl = dynamic_cast<StructDecl *>(node.get()))
+      if (auto struct_decl = dynamic_cast<ast::StructDecl *>(node.get()))
       {
         resolve_struct_fields(struct_decl, type_arena);
       }
@@ -23,7 +23,7 @@ namespace aloha
 
     for (const auto &node : program->m_nodes)
     {
-      if (auto func = dynamic_cast<Function *>(node.get()))
+      if (auto func = dynamic_cast<ast::Function *>(node.get()))
       {
         resolve_function_signature(func, type_arena);
       }
@@ -33,7 +33,7 @@ namespace aloha
     {
       for (const auto &[struct_id, resolved_struct] : resolved_structs)
       {
-        std::unordered_set<AIR::StructId> visiting;
+        std::unordered_set<StructId> visiting;
         check_circular_dependency(struct_id, resolved_struct.name, visiting, resolved_struct.location);
       }
     }
@@ -47,7 +47,7 @@ namespace aloha
     return true;
   }
 
-  std::optional<AIR::TyId> TypeResolver::resolve_type_spec(TySpecId ty_spec_id, const TySpecArena &type_arena)
+  std::optional<TyId> TypeResolver::resolve_type_spec(TySpecId ty_spec_id, const TySpecArena &type_arena)
   {
 
     const TySpec &spec = type_arena[ty_spec_id];
@@ -63,15 +63,15 @@ namespace aloha
       switch (spec.builtin)
       {
       case TySpec::Builtin::Int:
-        return AIR::TyIds::INTEGER;
+        return TyIds::INTEGER;
       case TySpec::Builtin::Float:
-        return AIR::TyIds::FLOAT;
+        return TyIds::FLOAT;
       case TySpec::Builtin::String:
-        return AIR::TyIds::STRING;
+        return TyIds::STRING;
       case TySpec::Builtin::Bool:
-        return AIR::TyIds::BOOL;
+        return TyIds::BOOL;
       case TySpec::Builtin::Void:
-        return AIR::TyIds::VOID;
+        return TyIds::VOID;
       }
       return std::nullopt;
 
@@ -103,7 +103,7 @@ namespace aloha
         return std::nullopt;
       }
 
-      AIR::TyId array_ty = ty_table.register_array(element_ty_opt.value());
+      TyId array_ty = ty_table.register_array(element_ty_opt.value());
       return array_ty;
     }
     }
@@ -111,7 +111,7 @@ namespace aloha
     return std::nullopt;
   }
 
-  void TypeResolver::resolve_struct_fields(StructDecl *struct_decl, const TySpecArena &type_arena)
+  void TypeResolver::resolve_struct_fields(ast::StructDecl *struct_decl, const TySpecArena &type_arena)
   {
     const std::string &struct_name = struct_decl->m_name;
 
@@ -123,8 +123,8 @@ namespace aloha
       return;
     }
 
-    AIR::StructId struct_id = struct_opt->struct_id;
-    AIR::TyId struct_type_id = struct_opt->type_id;
+    StructId struct_id = struct_opt->struct_id;
+    TyId struct_type_id = struct_opt->type_id;
 
     ResolvedStruct resolved(struct_id, struct_type_id, struct_name, struct_decl->loc());
 
@@ -147,7 +147,7 @@ namespace aloha
     resolved_structs.insert({struct_id, std::move(resolved)});
   }
 
-  void TypeResolver::resolve_function_signature(Function *func, const TySpecArena &type_arena)
+  void TypeResolver::resolve_function_signature(ast::Function *func, const TySpecArena &type_arena)
   {
     const std::string &func_name = func->m_name->m_name;
 
@@ -167,7 +167,7 @@ namespace aloha
       return;
     }
 
-    std::vector<AIR::TyId> param_types;
+    std::vector<TyId> param_types;
     for (const auto &param : func->m_parameters)
     {
       auto ty_id_opt = resolve_type_spec(param.m_type, type_arena);
@@ -184,9 +184,9 @@ namespace aloha
     resolved_functions.insert({func_id, std::move(resolved)});
   }
 
-  bool TypeResolver::check_circular_dependency(AIR::StructId struct_id,
+  bool TypeResolver::check_circular_dependency(StructId struct_id,
                                                const std::string &struct_name,
-                                               std::unordered_set<AIR::StructId> &visiting,
+                                               std::unordered_set<StructId> &visiting,
                                                Location loc)
   {
     // check if we're already visiting this struct
@@ -210,12 +210,12 @@ namespace aloha
     for (const auto &field : resolved.fields)
     {
       auto ty_info = ty_table.get_ty_info(field.type_id);
-      if (ty_info && ty_info->kind == AIR::TyKind::STRUCT)
+      if (ty_info && ty_info->kind == TyKind::STRUCT)
       {
         // recursively check for circular dependency
         if (ty_info->struct_id.has_value())
         {
-          AIR::StructId field_struct_id = ty_info->struct_id.value();
+          StructId field_struct_id = ty_info->struct_id.value();
           if (check_circular_dependency(field_struct_id, field.name, visiting, field.location))
           {
             return true;
