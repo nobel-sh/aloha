@@ -250,6 +250,17 @@ namespace AIR
     void accept(AIRVisitor &visitor) override { visitor.visit(this); }
   };
 
+  class ArrayAccess : public Expr
+  {
+  public:
+    ExprPtr array_expr;
+    ExprPtr index_expr;
+
+    ArrayAccess(const Location &loc, ExprPtr array_expr, ExprPtr index_expr, TyId element_ty)
+        : Expr(loc, element_ty), array_expr(std::move(array_expr)), index_expr(std::move(index_expr)) {}
+    void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+  };
+
 } // namespace AIR
 
 #endif // AIR_EXPR_H_

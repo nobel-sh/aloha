@@ -202,6 +202,27 @@ namespace AIR
         indent -= 2;
     }
 
+    void Printer::visit(ArrayAccess *node)
+    {
+        write_indent();
+        os << "ArrayAccess: (ty=" << ty_name(node->ty) << ")\n";
+
+        indent += 2;
+        write_indent();
+        os << "Array:\n";
+        indent += 2;
+        node->array_expr->accept(*this);
+        indent -= 2;
+
+        write_indent();
+        os << "Index:\n";
+        indent += 2;
+        node->index_expr->accept(*this);
+        indent -= 2;
+
+        indent -= 2;
+    }
+
     void Printer::visit(Return *node)
     {
         write_indent();

@@ -1,8 +1,10 @@
 fun test_basic_array() -> int {
-    imut nums: [int; 5] = [1, 2, 3, 4, 2];
-    return 0;
+    imut nums = [1, 2, 3, 4, 2];
+    imut foo = nums[4];
+    return foo;
 }
 
 fun main() -> void {
-    test_basic_array();
+    imut bar = test_basic_array();
+    printlnInt(bar);
 }

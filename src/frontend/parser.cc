@@ -654,6 +654,10 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary()
     {
       return parse_struct_instantiation();
     }
+    if (match(TokenKind::LEFT_BRACKET, true))
+    {
+      return parse_array_access();
+    }
     advance();
     if (is_reserved_ident(*token))
     {
@@ -671,6 +675,18 @@ std::unique_ptr<aloha::Expression> Parser::parse_primary()
   }
   report_error("Unexpected token in primary expression");
   return nullptr;
+}
+
+std::unique_ptr<aloha::Expression> Parser::parse_array_access()
+{
+  std::cout << "parsing array access\n";
+  Location loc = current_location();
+  std::cout << "current loc: " << loc.to_string() << "\n";
+  auto array_expr = expect_identifier();
+  consume(TokenKind::LEFT_BRACKET, "Expected '[' for array access");
+  auto index_expr = parse_expression(0);
+  consume(TokenKind::RIGHT_BRACKET, "Expected ']' after array index");
+  return std::make_unique<aloha::ArrayAccess>(loc, std::move(array_expr), std::move(index_expr));
 }
 
 std::unique_ptr<aloha::Expression> Parser::parse_function_call()

@@ -26,6 +26,7 @@ namespace aloha
     class StructFieldAssignment;
     class ExpressionStatement;
     class Array;
+    class ArrayAccess;
     class StatementBlock;
     class Program;
     class Import;

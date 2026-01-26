@@ -266,6 +266,18 @@ namespace aloha
         os << std::string(indent, ' ') << "}\n";
     }
 
+    void ArrayAccess::write(std::ostream &os, unsigned long indent) const
+    {
+        os << std::string(indent, ' ') << "ArrayAccess:{\n";
+        os << std::string(indent + 2, ' ') << "Array:{\n";
+        m_array_expr->write(os, indent + 4);
+        os << std::string(indent + 2, ' ') << "}\n";
+        os << std::string(indent + 2, ' ') << "Index:{\n";
+        m_index_expr->write(os, indent + 4);
+        os << std::string(indent + 2, ' ') << "}\n";
+        os << std::string(indent, ' ') << "}\n";
+    }
+
     void Program::write(std::ostream &os, unsigned long indent) const
     {
         os << std::string(indent, ' ') << "Program:{\n";

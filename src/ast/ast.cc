@@ -25,6 +25,7 @@ namespace aloha
     void StructDecl::accept(ASTVisitor &visitor) { visitor.visit(this); }
     void StructInstantiation::accept(ASTVisitor &visitor) { visitor.visit(this); }
     void Array::accept(ASTVisitor &visitor) { visitor.visit(this); }
+    void ArrayAccess::accept(ASTVisitor &visitor) { visitor.visit(this); }
     void Program::accept(ASTVisitor &visitor) { visitor.visit(this); }
     void Import::accept(ASTVisitor &visitor) { visitor.visit(this); }
 
@@ -143,6 +144,10 @@ namespace aloha
 
     Array::Array(Location loc, std::vector<ExprPtr> members)
         : Expression(loc), m_members(std::move(members)), m_size(m_members.size()) {}
+
+    ArrayAccess::ArrayAccess(Location loc, ExprPtr array_expr, ExprPtr index_expr)
+        : Expression(loc), m_array_expr(std::move(array_expr)),
+          m_index_expr(std::move(index_expr)) {}
 
     bool StatementBlock::is_empty() const { return m_statements.empty(); }
 

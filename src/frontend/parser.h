@@ -90,6 +90,8 @@ private:
   std::unique_ptr<aloha::Expression> parse_primary();
   std::unique_ptr<aloha::Expression> parse_function_call();
   std::unique_ptr<aloha::Statement> parse_expression_statement();
+
+  std::unique_ptr<aloha::Expression> parse_array_access();
 };
 
 #endif // PARSER_H_

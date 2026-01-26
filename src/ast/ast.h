@@ -326,6 +326,17 @@ namespace aloha
     void accept(ASTVisitor &visitor) override;
   };
 
+  class ArrayAccess : public Expression
+  {
+  public:
+    ExprPtr m_array_expr;
+    ExprPtr m_index_expr;
+
+    ArrayAccess(Location loc, ExprPtr array_expr, ExprPtr index_expr);
+    void write(std::ostream &os, unsigned long indent = 0) const override;
+    void accept(ASTVisitor &visitor) override;
+  };
+
   class Program : public Node
   {
   public:

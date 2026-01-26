@@ -765,6 +765,42 @@ namespace Codegen
     current_value = array_alloca;
   }
 
+  void CodeGenerator::visit(AIR::ArrayAccess *node)
+  {
+    node->array_expr->accept(*this);
+    llvm::Value *array = current_value;
+
+    if (!array)
+    {
+      report_error("Failed to generate array for access", node->loc);
+      current_value = nullptr;
+      return;
+    }
+
+    node->index_expr->accept(*this);
+    llvm::Value *index = current_value;
+
+    if (!index)
+    {
+      report_error("Failed to generate index for array access", node->loc);
+      current_value = nullptr;
+      return;
+    }
+
+    llvm::Type *element_type = get_llvm_type(node->ty);
+    if (!element_type)
+    {
+      report_error("Cannot resolve array element type", node->loc);
+      current_value = nullptr;
+      return;
+    }
+
+    llvm::Value *element_ptr = builder->CreateGEP(
+        element_type, array, index, "element_ptr");
+
+    current_value = builder->CreateLoad(element_type, element_ptr, "array_elem");
+  }
+
   void CodeGenerator::visit(AIR::VarDecl *node)
   {
     if (node->initializer)

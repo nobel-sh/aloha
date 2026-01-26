@@ -533,6 +533,56 @@ namespace aloha
                                                       field_name, field_index, field_ty);
   }
 
+  void AIRBuilder::visit(ArrayAccess *node)
+  {
+    auto array_expr = lower_expr(node->m_array_expr.get());
+    if (!array_expr)
+    {
+      current_expr.reset();
+      return;
+    }
+
+    auto index_expr = lower_expr(node->m_index_expr.get());
+    if (!index_expr)
+    {
+      current_expr.reset();
+      return;
+    }
+
+    if (!ty_table.is_array(array_expr->ty))
+    {
+      errors.add_error(node->get_location(),
+                       "Array access requires array type");
+      current_expr = std::make_unique<AIR::ArrayAccess>(node->get_location(),
+                                                        std::move(array_expr),
+                                                        std::move(index_expr), AIR::TyIds::ERROR);
+      return;
+    }
+
+    if (index_expr->ty != AIR::TyIds::INTEGER)
+    {
+      errors.add_error(node->get_location(),
+                       "Array index must be of type integer");
+      current_expr = std::make_unique<AIR::ArrayAccess>(node->get_location(),
+                                                        std::move(array_expr),
+                                                        std::move(index_expr), AIR::TyIds::ERROR);
+      return;
+    }
+
+    auto element_ty = ty_table.get_array_element_type(array_expr->ty);
+    if (!element_ty.has_value())
+    {
+      ALOHA_ICE(
+          "Internal error: unable to get array element type" + node->get_location().to_string());
+      current_expr.reset();
+      return;
+    }
+
+    current_expr = std::make_unique<AIR::ArrayAccess>(node->get_location(),
+                                                      std::move(array_expr),
+                                                      std::move(index_expr), element_ty.value());
+  }
+
   void AIRBuilder::visit(StructFieldAssignment *node)
   {
     auto struct_expr = lower_expr(node->m_struct_expr.get());

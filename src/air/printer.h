@@ -31,6 +31,7 @@ namespace AIR
         void visit(StructInstantiation *node) override;
         void visit(FieldAccess *node) override;
         void visit(ArrayExpr *node) override;
+        void visit(ArrayAccess *node) override;
 
         // statement visitors
         void visit(VarDecl *node) override;

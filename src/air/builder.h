@@ -79,6 +79,7 @@ namespace aloha
     void visit(StructFieldAccess *node) override;
     void visit(StructFieldAssignment *node) override;
     void visit(Array *node) override;
+    void visit(ArrayAccess *node) override;
     void visit(ExpressionStatement *node) override;
     void visit(StatementBlock *node) override;
     void visit(Program *node) override;

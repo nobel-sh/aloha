@@ -26,6 +26,7 @@ public:
   virtual void visit(aloha::StructFieldAccess *node) = 0;
   virtual void visit(aloha::StructFieldAssignment *node) = 0;
   virtual void visit(aloha::Array *node) = 0;
+  virtual void visit(aloha::ArrayAccess *node) = 0;
   virtual void visit(aloha::ExpressionStatement *node) = 0;
   virtual void visit(aloha::StatementBlock *node) = 0;
   virtual void visit(aloha::Program *node) = 0;
