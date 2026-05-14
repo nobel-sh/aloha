@@ -1,0 +1,30 @@
+fun abs_or_zero(value: int) -> int {
+    if (value > 0) {
+        return value;
+    } else {
+        return -value;
+    }
+}
+
+fun nested_return(value: int) -> int {
+    if (value < 0) {
+        return -1;
+    } else {
+        if (value == 0) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
+fun void_without_return() -> void {
+    imut value: int = 42;
+}
+
+fun main() -> void {
+    assert_msg(abs_or_zero(-3) == 3, "both if branches should satisfy return checking");
+    assert_msg(nested_return(0) == 0, "nested if branches should satisfy return checking");
+    void_without_return();
+    println("All return path tests passed!");
+}

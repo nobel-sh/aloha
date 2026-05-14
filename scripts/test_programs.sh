@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# File naming conventions:
-#   test_*.alo  - Tests that should compile successfully
-#   error_*.alo - Tests that should fail compilation (expected errors)
-#                 Optional marker: // expect-error: diagnostic substring
-#   skip_*.alo  - Tests to skip (work in progress, etc.)
+# Directory conventions:
+#   tests/integration/pass/*.alo  - Tests that should compile successfully
+#   tests/integration/error/*.alo - Tests that should fail compilation
+#                                   Optional marker: // expect-error: diagnostic substring
 
 set -e
 
@@ -29,7 +28,9 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPILER="$PROJECT_DIR/build/aloha"
-EXAMPLES_DIR="$PROJECT_DIR/tests/integration"
+INTEGRATION_DIR="$PROJECT_DIR/tests/integration"
+PASS_DIR="$INTEGRATION_DIR/pass"
+ERROR_DIR="$INTEGRATION_DIR/error"
 TEMP_DIR=$(mktemp -d)
 # Set ALOHA_DEV so compiler can find stdlib when running test from /tmp
 export ALOHA_DEV="$PROJECT_DIR"
@@ -37,7 +38,6 @@ export ALOHA_DEV="$PROJECT_DIR"
 # Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
@@ -73,73 +73,79 @@ if [ ! -f "$COMPILER" ]; then
     exit 1
 fi
 
-# Copy all .alo files from subdirectories
-find "$EXAMPLES_DIR" -name "*.alo" -exec cp {} "$TEMP_DIR/" \;
-
 if [ -f "$SCRIPT_DIR/stdlib.o" ]; then
     cp "$SCRIPT_DIR/stdlib.o" "$TEMP_DIR/"
 fi
 
-cd "$TEMP_DIR"
-
 total=0
 passed=0
 failed=0
-skipped=0
 
-for file in *.alo; do
-    if [[ "$file" == skip_* ]]; then
-        echo -e "${YELLOW}⊘ Skipping $file (marked as skip)${NC}"
-        skipped=$((skipped + 1))
-        continue
-    fi
+run_error_test() {
+    local file="$1"
+    local name
+    name="$(basename "$file")"
 
     total=$((total + 1))
 
-    if [[ "$file" == error_* ]]; then
-        echo -n "Testing $file (expect error)... "
-        expected_error=$(grep -m 1 'expect-error:' "$file" | sed 's/.*expect-error:[[:space:]]*//')
+    echo -n "Testing error/$name (expect error)... "
+    expected_error=$(grep -m 1 'expect-error:' "$file" | sed 's/.*expect-error:[[:space:]]*//')
 
-        if compile_output=$("$COMPILER" "$file" 2>&1); then
-            # Compilation succeeded when it should have failed
-            echo -e "${RED}✗ UNEXPECTED SUCCESS${NC}"
-            echo "  Expected compilation to fail but it succeeded"
+    if compile_output=$("$COMPILER" "$file" --no-link 2>&1); then
+        echo -e "${RED}✗ UNEXPECTED SUCCESS${NC}"
+        echo "  Expected compilation to fail but it succeeded"
+        failed=$((failed + 1))
+    else
+        if [[ -n "$expected_error" ]] && ! echo "$compile_output" | grep -Fq "$expected_error"; then
+            echo -e "${RED}✗ WRONG ERROR${NC}"
+            echo "  Expected diagnostic containing: $expected_error"
+            echo "$compile_output" | grep -E "Error|error|Expected" | head -3
             failed=$((failed + 1))
-        else
-            if [[ -n "$expected_error" ]] && ! echo "$compile_output" | grep -Fq "$expected_error"; then
-                echo -e "${RED}✗ WRONG ERROR${NC}"
-                echo "  Expected diagnostic containing: $expected_error"
-                echo "$compile_output" | grep -E "Error|error|Expected" | head -3
-                failed=$((failed + 1))
-                continue
-            fi
-
-            # Compilation failed as expected
-            echo -e "${BLUE}✓ FAIL AS EXPECTED${NC}"
-            passed=$((passed + 1))
+            return
         fi
-        continue
+
+        echo -e "${BLUE}✓ FAIL AS EXPECTED${NC}"
+        passed=$((passed + 1))
     fi
+}
 
-    echo -n "Testing $file... "
+run_pass_test() {
+    local file="$1"
+    local name
+    name="$(basename "$file")"
 
-    if ! compile_output=$("$COMPILER" "$file" 2>&1); then
+    total=$((total + 1))
+
+    echo -n "Testing pass/$name... "
+
+    local work_file="$TEMP_DIR/$name"
+    cp "$file" "$work_file"
+
+    if ! compile_output=$("$COMPILER" "$work_file" 2>&1); then
         echo -e "${RED}✗ COMPILATION FAILED${NC}"
         echo "$compile_output" | grep -E "Error|error|Expected" | head -3
         failed=$((failed + 1))
-        continue
+        return
     fi
 
     if ! echo "$compile_output" | grep -q "Linking successful"; then
         echo -e "${RED}✗ LINKING FAILED${NC}"
         echo "$compile_output" | grep -E "error" | head -2
         failed=$((failed + 1))
-        continue
+        return
     fi
 
     echo -e "${GREEN}✓ PASS${NC}"
     passed=$((passed + 1))
-done
+}
+
+while IFS= read -r file; do
+    run_error_test "$file"
+done < <(find "$ERROR_DIR" -maxdepth 1 -name "*.alo" -type f | sort)
+
+while IFS= read -r file; do
+    run_pass_test "$file"
+done < <(find "$PASS_DIR" -maxdepth 1 -name "*.alo" -type f | sort)
 
 echo ""
 echo "================================================"
@@ -149,9 +155,6 @@ echo -e "Total:   $total"
 echo -e "${GREEN}Passed:  $passed${NC}"
 if [ $failed -gt 0 ]; then
     echo -e "${RED}Failed:  $failed${NC}"
-fi
-if [ $skipped -gt 0 ]; then
-    echo -e "${YELLOW}Skipped: $skipped${NC}"
 fi
 echo "================================================"
 

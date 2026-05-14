@@ -1,0 +1,11 @@
+// expect-error: Function 'missing_branch_return' must return a value on all paths
+
+fun missing_branch_return(value: int) -> int {
+    if (value > 0) {
+        return value;
+    }
+}
+
+fun main() -> void {
+    missing_branch_return(1);
+}

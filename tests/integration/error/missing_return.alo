@@ -1,0 +1,9 @@
+// expect-error: Function 'missing_return' must return a value on all paths
+
+fun missing_return() -> int {
+    imut value: int = 1;
+}
+
+fun main() -> void {
+    missing_return();
+}

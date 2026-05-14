@@ -1,0 +1,5 @@
+// expect-error: Logical operation '&&' requires boolean operands
+
+fun main() -> void {
+    imut value: bool = 1 && true;
+}
