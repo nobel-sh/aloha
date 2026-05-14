@@ -225,19 +225,17 @@ namespace aloha
       }
     }
 
-    register_variable(var_name, var_ty);
-
-    VarId var_id = 0;
-    for (const auto &[id, var_symbol] : symbol_table.variables)
+    auto var_id = find_variable_id_for_declaration(node);
+    if (!var_id.has_value())
     {
-      if (var_symbol.name == var_name)
-      {
-        var_id = id;
-        register_variable_id(var_name, id);
-        break;
-      }
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Internal error: variable '" + var_name + "' has no VarId");
+      var_id = 0;
     }
-    current_stmt = std::make_unique<air::VarDecl>(node->m_loc, var_name, var_id,
+
+    register_variable(var_name, var_id.value(), var_ty);
+
+    current_stmt = std::make_unique<air::VarDecl>(node->m_loc, var_name, var_id.value(),
                                                   node->m_is_mutable, var_ty,
                                                   std::move(init_expr));
   }
@@ -857,9 +855,8 @@ namespace aloha
 
     const FunctionSymbol &func_symbol = func_opt.value();
 
-    // clear variable types and ids for new function
-    var_types.clear();
-    var_ids.clear();
+    variable_scopes.clear();
+    push_scope();
 
     // set current function return type for return statement checking
     current_function_return_type = func_symbol.return_type;
@@ -871,24 +868,18 @@ namespace aloha
       const auto &param = func->m_parameters[i];
       TyId param_ty = func_symbol.param_types[i];
 
-      // look up parameter's varId from symbol table
-      // parameters are registered as variables during def collection
-      VarId param_var_id = 0;
-      for (const auto &[var_id, var_symbol] : symbol_table.variables)
+      auto param_var_id = find_parameter_var_id(param.m_name, func->m_loc);
+      if (!param_var_id.has_value())
       {
-        if (var_symbol.name == param.m_name)
-        {
-          param_var_id = var_id;
-          break;
-        }
+        diagnostics.error(DiagnosticPhase::AIRBuilding, func->m_loc,
+                          "Internal error: parameter '" + param.m_name + "' has no VarId");
+        param_var_id = 0;
       }
 
       // create air::Param with all required fields
-      params.emplace_back(param.m_name, param_var_id, param_ty, false, func->m_loc);
+      params.emplace_back(param.m_name, param_var_id.value(), param_ty, false, func->m_loc);
 
-      // register parameter in variable type and id maps
-      register_variable(param.m_name, param_ty);
-      register_variable_id(param.m_name, param_var_id);
+      register_variable(param.m_name, param_var_id.value(), param_ty);
     }
 
     // lower function body if not extern
@@ -946,6 +937,8 @@ namespace aloha
   {
     std::vector<air::StmtPtr> stmts;
 
+    push_scope();
+
     for (const auto &stmt : block->m_statements)
     {
       auto air_stmt = lower_stmt(stmt.get());
@@ -954,6 +947,8 @@ namespace aloha
         stmts.emplace_back(std::move(air_stmt));
       }
     }
+
+    pop_scope();
 
     return stmts;
   }
@@ -1094,33 +1089,86 @@ namespace aloha
     return false;
   }
 
-  void AIRBuilder::register_variable(const std::string &name, TyId type)
+  void AIRBuilder::push_scope()
   {
-    var_types[name] = type;
+    variable_scopes.emplace_back();
   }
 
-  void AIRBuilder::register_variable_id(const std::string &name, VarId id)
+  void AIRBuilder::pop_scope()
   {
-    var_ids[name] = id;
+    if (!variable_scopes.empty())
+    {
+      variable_scopes.pop_back();
+    }
+  }
+
+  void AIRBuilder::register_variable(const std::string &name, VarId id, TyId type)
+  {
+    if (variable_scopes.empty())
+    {
+      push_scope();
+    }
+
+    variable_scopes.back()[name] = VarBinding{id, type};
+  }
+
+  std::optional<VarId> AIRBuilder::find_variable_id_for_declaration(const ast::Declaration *decl) const
+  {
+    for (const auto &[id, var_symbol] : symbol_table.variables)
+    {
+      if (var_symbol.name == decl->m_variable_name &&
+          var_symbol.location.line == decl->m_loc.line &&
+          var_symbol.location.col == decl->m_loc.col &&
+          var_symbol.location.file_path == decl->m_loc.file_path)
+      {
+        return id;
+      }
+    }
+
+    return std::nullopt;
+  }
+
+  std::optional<VarId> AIRBuilder::find_parameter_var_id(const std::string &name, Location loc) const
+  {
+    for (const auto &[id, var_symbol] : symbol_table.variables)
+    {
+      if (var_symbol.name == name &&
+          var_symbol.location.line == loc.line &&
+          var_symbol.location.col == loc.col &&
+          var_symbol.location.file_path == loc.file_path)
+      {
+        return id;
+      }
+    }
+
+    return std::nullopt;
   }
 
   std::optional<TyId> AIRBuilder::lookup_variable_type(const std::string &name)
   {
-    auto it = var_types.find(name);
-    if (it != var_types.end())
+    for (auto it = variable_scopes.rbegin(); it != variable_scopes.rend(); ++it)
     {
-      return it->second;
+      auto binding = it->find(name);
+      if (binding != it->end())
+      {
+        return binding->second.type;
+      }
     }
+
     return std::nullopt;
   }
 
   std::optional<VarId> AIRBuilder::lookup_variable_id(const std::string &name)
   {
-    auto it = var_ids.find(name);
-    if (it != var_ids.end())
+    for (auto it = variable_scopes.rbegin(); it != variable_scopes.rend(); ++it)
     {
-      return it->second;
+      auto binding = it->find(name);
+      if (binding != it->end())
+      {
+        return binding->second.id;
+      }
     }
+
     return std::nullopt;
   }
 

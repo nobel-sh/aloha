@@ -1,0 +1,29 @@
+fun test_shadowing_in_if() -> void {
+    imut value: int = 10;
+
+    if (true) {
+        imut value: int = 20;
+        assert_msg(value == 20, "inner value should shadow outer value");
+    }
+
+    assert_msg(value == 10, "outer value should remain visible after inner block");
+}
+
+fun test_shadowing_in_while() -> void {
+    imut value: int = 5;
+    mut count: int = 0;
+
+    while (count < 1) {
+        imut value: int = 30;
+        assert_msg(value == 30, "while block should use inner value");
+        count = count + 1;
+    }
+
+    assert_msg(value == 5, "outer value should remain visible after while block");
+}
+
+fun main() -> void {
+    test_shadowing_in_if();
+    test_shadowing_in_while();
+    println("All scoping tests passed!");
+}

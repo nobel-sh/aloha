@@ -1,0 +1,9 @@
+// expect-error: Undefined variable 'inner'
+
+fun main() -> void {
+    if (true) {
+        imut inner: int = 42;
+    }
+
+    imut value: int = inner;
+}

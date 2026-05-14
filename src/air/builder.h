@@ -33,8 +33,13 @@ namespace aloha
     TypeResolver &type_resolver;
     DiagnosticEngine &diagnostics;
 
-    std::unordered_map<std::string, TyId> var_types; // variable name -> type
-    std::unordered_map<std::string, VarId> var_ids;  // variable name -> varId for current scope
+    struct VarBinding
+    {
+      VarId id;
+      TyId type;
+    };
+
+    std::vector<std::unordered_map<std::string, VarBinding>> variable_scopes;
     TyId current_function_return_type;               // for checking return statements
     unsigned loop_depth = 0;
 
@@ -106,8 +111,11 @@ namespace aloha
     bool block_definitely_returns(const ast::StatementBlock *block) const;
     bool stmt_definitely_returns(const ast::Statement *stmt) const;
 
-    void register_variable(const std::string &name, TyId type);
-    void register_variable_id(const std::string &name, VarId id);
+    void push_scope();
+    void pop_scope();
+    void register_variable(const std::string &name, VarId id, TyId type);
+    std::optional<VarId> find_variable_id_for_declaration(const ast::Declaration *decl) const;
+    std::optional<VarId> find_parameter_var_id(const std::string &name, Location loc) const;
     std::optional<TyId> lookup_variable_type(const std::string &name);
     std::optional<VarId> lookup_variable_id(const std::string &name);
 
