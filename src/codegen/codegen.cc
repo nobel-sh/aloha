@@ -66,7 +66,7 @@ namespace aloha
     type_map[TyIds::FLOAT] = llvm::Type::getDoubleTy(*context);
     type_map[TyIds::BOOL] = llvm::Type::getInt1Ty(*context);
     type_map[TyIds::VOID] = llvm::Type::getVoidTy(*context);
-    type_map[TyIds::STRING] = llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
+    type_map[TyIds::STRING] = llvm::PointerType::get(*context, 0);
     type_map[TyIds::ERROR] = llvm::Type::getVoidTy(*context); // Placeholder
 
     generate_struct_types();
@@ -146,7 +146,7 @@ namespace aloha
         return nullptr;
       }
 
-      return element_llvm_type->getPointerTo();
+      return llvm::PointerType::get(*context, 0);
     }
 
     return nullptr;

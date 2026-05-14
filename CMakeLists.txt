@@ -17,8 +17,9 @@ endif()
 find_package(LLVM REQUIRED CONFIG)
 find_package(ZLIB REQUIRED)
 find_package(LibEdit REQUIRED)
-find_package(Terminfo REQUIRED)
 find_package(zstd REQUIRED)
+
+find_library(TINFO_LIBRARY NAMES tinfo ncursesw ncurses REQUIRED)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -58,6 +59,7 @@ target_link_libraries(aloha_core
     ${LLVM_COMPONENT_LIBS}
     ZLIB::ZLIB
     LibEdit::LibEdit
+    ${TINFO_LIBRARY}
 )
 
 add_executable(aloha src/main.cc)

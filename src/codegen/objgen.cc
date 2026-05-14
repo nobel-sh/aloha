@@ -49,11 +49,11 @@ void emit_object_file(llvm::Module *module, const std::string &output_path)
   InitializeNativeTargetAsmParser();
   InitializeNativeTargetAsmPrinter();
 
-  std::string target_triple = sys::getDefaultTargetTriple();
+  llvm::Triple target_triple(sys::getDefaultTargetTriple());
   module->setTargetTriple(target_triple);
 
   std::string error;
-  auto target = TargetRegistry::lookupTarget(target_triple, error);
+  auto target = TargetRegistry::lookupTarget(target_triple.str(), error);
   if (!target)
   {
     throw std::runtime_error("Failed to lookup target: " + error);
