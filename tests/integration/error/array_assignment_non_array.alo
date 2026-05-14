@@ -1,0 +1,6 @@
+// expect-error: Array assignment requires array type
+
+fun main() -> void {
+    mut value: int = 1;
+    value[0] = 9;
+}

@@ -1,0 +1,6 @@
+// expect-error: Array index must be of type integer
+
+fun main() -> void {
+    mut values = [1, 2, 3];
+    values[true] = 9;
+}

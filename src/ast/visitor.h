@@ -17,6 +17,7 @@ namespace aloha
     virtual void visit(ast::Identifier *node) = 0;
     virtual void visit(ast::Declaration *node) = 0;
     virtual void visit(ast::Assignment *node) = 0;
+    virtual void visit(ast::ArrayAssignment *node) = 0;
     virtual void visit(ast::FunctionCall *node) = 0;
     virtual void visit(ast::ReturnStatement *node) = 0;
     virtual void visit(ast::BreakStatement *node) = 0;

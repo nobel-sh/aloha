@@ -1,0 +1,6 @@
+// expect-error: Type mismatch in array assignment: expected 'int', got 'bool'
+
+fun main() -> void {
+    mut values = [1, 2, 3];
+    values[0] = true;
+}

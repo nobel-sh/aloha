@@ -25,6 +25,7 @@ namespace aloha
     // statement nodes
     class VarDecl;
     class Assignment;
+    class ArrayAssignment;
     class FieldAssignment;
     class Return;
     class Break;

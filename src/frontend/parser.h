@@ -77,6 +77,7 @@ namespace aloha
     std::unique_ptr<ast::Statement> parse_struct_field_assignment();
     std::unique_ptr<ast::Statement> parse_variable_declaration();
     std::unique_ptr<ast::Statement> parse_variable_assignment();
+    std::unique_ptr<ast::Statement> parse_array_assignment();
     std::unique_ptr<ast::Statement> parse_return_statement();
     std::unique_ptr<ast::Statement> parse_break_statement();
     std::unique_ptr<ast::Statement> parse_continue_statement();

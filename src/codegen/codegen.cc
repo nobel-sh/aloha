@@ -933,6 +933,46 @@ namespace aloha
     builder->CreateStore(value, it->second);
   }
 
+  void CodeGenerator::visit(air::ArrayAssignment *node)
+  {
+    auto array_it = variable_map.find(node->m_array_var_id);
+    if (array_it == variable_map.end())
+    {
+      report_error("Array assignment to undefined variable: '" + node->m_array_name + "'", node->m_loc);
+      return;
+    }
+
+    node->m_index->accept(*this);
+    llvm::Value *index = current_value;
+    if (!index)
+    {
+      report_error("Failed to generate index for array assignment", node->m_loc);
+      return;
+    }
+
+    node->m_value->accept(*this);
+    llvm::Value *value = current_value;
+    if (!value)
+    {
+      report_error("Failed to generate value for array assignment", node->m_loc);
+      return;
+    }
+
+    llvm::Type *element_type = get_llvm_type(node->m_element_ty);
+    if (!element_type)
+    {
+      report_error("Cannot resolve array element type", node->m_loc);
+      return;
+    }
+
+    llvm::Value *array_ptr = builder->CreateLoad(array_it->second->getAllocatedType(),
+                                                 array_it->second, "array_ptr");
+    llvm::Value *element_ptr = builder->CreateGEP(
+        element_type, array_ptr, index, "element_ptr");
+
+    builder->CreateStore(value, element_ptr);
+  }
+
   void CodeGenerator::visit(air::FieldAssignment *node)
   {
     node->m_object->accept(*this);

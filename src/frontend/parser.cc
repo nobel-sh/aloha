@@ -285,6 +285,10 @@ namespace aloha
 
     if (match(TokenKind::IDENT))
     {
+      if (match(TokenKind::LEFT_BRACKET, true))
+      {
+        return parse_array_assignment();
+      }
       if (match(TokenKind::EQUAL, true))
       {
         return parse_variable_assignment();
@@ -383,6 +387,19 @@ namespace aloha
     std::unique_ptr<ast::Expression> expression = parse_expression(0);
     return std::make_unique<ast::Assignment>(loc, std::move(identifier->m_name),
                                              std::move(expression));
+  }
+
+  std::unique_ptr<ast::Statement> Parser::parse_array_assignment()
+  {
+    Location loc = current_location();
+    auto identifier = expect_identifier();
+    consume(TokenKind::LEFT_BRACKET, "Expected '[' for array assignment");
+    auto index_expr = parse_expression(0);
+    consume(TokenKind::RIGHT_BRACKET, "Expected ']' after array index");
+    consume(TokenKind::EQUAL, "Expected '=' in array assignment");
+    auto value = parse_expression(0);
+    return std::make_unique<ast::ArrayAssignment>(loc, std::move(identifier->m_name),
+                                                  std::move(index_expr), std::move(value));
   }
 
   std::unique_ptr<ast::Statement> Parser::parse_struct_field_assignment()
@@ -670,9 +687,7 @@ namespace aloha
 
   std::unique_ptr<ast::Expression> Parser::parse_array_access()
   {
-    std::cout << "parsing array access\n";
     Location loc = current_location();
-    std::cout << "current loc: " << loc.to_string() << "\n";
     auto array_expr = expect_identifier();
     consume(TokenKind::LEFT_BRACKET, "Expected '[' for array access");
     auto index_expr = parse_expression(0);

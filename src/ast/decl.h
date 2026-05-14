@@ -16,6 +16,7 @@ namespace aloha
         class Identifier;
         class Declaration;
         class Assignment;
+        class ArrayAssignment;
         class FunctionCall;
         class ReturnStatement;
         class BreakStatement;

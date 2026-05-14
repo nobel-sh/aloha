@@ -97,6 +97,7 @@ namespace aloha
     // Statements
     void visit(air::VarDecl *node) override;
     void visit(air::Assignment *node) override;
+    void visit(air::ArrayAssignment *node) override;
     void visit(air::FieldAssignment *node) override;
     void visit(air::Return *node) override;
     void visit(air::Break *node) override;

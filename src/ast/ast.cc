@@ -18,6 +18,7 @@ namespace aloha
         void StructFieldAssignment::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Declaration::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Assignment::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void ArrayAssignment::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void FunctionCall::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void ReturnStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void BreakStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
@@ -83,6 +84,11 @@ namespace aloha
         Assignment::Assignment(Location loc, std::string var_name, ExprPtr expr)
             : Statement(loc), m_variable_name(std::move(var_name)),
               m_expression(std::move(expr)) {}
+
+        ArrayAssignment::ArrayAssignment(Location loc, std::string array_name,
+                                         ExprPtr index_expr, ExprPtr value)
+            : Statement(loc), m_array_name(std::move(array_name)),
+              m_index_expr(std::move(index_expr)), m_value(std::move(value)) {}
 
         FunctionCall::FunctionCall(Location loc, std::unique_ptr<Identifier> func_name,
                                    std::vector<ExprPtr> args)

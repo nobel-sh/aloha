@@ -44,6 +44,23 @@ namespace aloha
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
 
+    class ArrayAssignment : public Stmt
+    {
+    public:
+      std::string m_array_name;
+      VarId m_array_var_id;
+      TyId m_element_ty;
+      ExprPtr m_index;
+      ExprPtr m_value;
+
+      ArrayAssignment(const Location &loc, const std::string &array_name,
+                      VarId array_var_id, TyId element_ty, ExprPtr index, ExprPtr value)
+          : Stmt(loc), m_array_name(array_name), m_array_var_id(array_var_id),
+            m_element_ty(element_ty), m_index(std::move(index)), m_value(std::move(value)) {}
+
+      void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+    };
+
     class FieldAssignment : public Stmt
     {
     public:

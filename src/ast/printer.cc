@@ -133,6 +133,19 @@ namespace aloha
             os << std::string(indent, ' ') << "}\n";
         }
 
+        void ArrayAssignment::write(std::ostream &os, unsigned long indent) const
+        {
+            os << std::string(indent, ' ') << "ArrayAssignment:{\n";
+            os << std::string(indent + 2, ' ') << "Array: " << m_array_name << "\n";
+            os << std::string(indent + 2, ' ') << "Index:{\n";
+            m_index_expr->write(os, indent + 4);
+            os << std::string(indent + 2, ' ') << "}\n";
+            os << std::string(indent + 2, ' ') << "Value:{\n";
+            m_value->write(os, indent + 4);
+            os << std::string(indent + 2, ' ') << "}\n";
+            os << std::string(indent, ' ') << "}\n";
+        }
+
         void FunctionCall::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "FunctionCall:{\n";

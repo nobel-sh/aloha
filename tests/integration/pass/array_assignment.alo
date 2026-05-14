@@ -1,0 +1,28 @@
+fun test_array_element_assignment() -> void {
+    mut values = [1, 2, 3];
+    values[1] = 42;
+
+    assert_msg(values[0] == 1, "first element should stay unchanged");
+    assert_msg(values[1] == 42, "second element should be updated");
+    assert_msg(values[2] == 3, "third element should stay unchanged");
+}
+
+fun test_array_assignment_in_loop() -> void {
+    mut values = [0, 0, 0];
+    mut i: int = 0;
+
+    while (i < 3) {
+        values[i] = i + 10;
+        i = i + 1;
+    }
+
+    assert_msg(values[0] == 10, "loop should update element 0");
+    assert_msg(values[1] == 11, "loop should update element 1");
+    assert_msg(values[2] == 12, "loop should update element 2");
+}
+
+fun main() -> void {
+    test_array_element_assignment();
+    test_array_assignment_in_loop();
+    println("All array assignment tests passed!");
+}

@@ -29,6 +29,7 @@ namespace aloha
       // statement visitors
       virtual void visit(VarDecl *node) = 0;
       virtual void visit(Assignment *node) = 0;
+      virtual void visit(ArrayAssignment *node) = 0;
       virtual void visit(FieldAssignment *node) = 0;
       virtual void visit(Return *node) = 0;
       virtual void visit(Break *node) = 0;

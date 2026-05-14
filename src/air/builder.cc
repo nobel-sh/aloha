@@ -280,6 +280,73 @@ namespace aloha
                                                      std::move(value_expr));
   }
 
+  void AIRBuilder::visit(ast::ArrayAssignment *node)
+  {
+    const std::string &array_name = node->m_array_name;
+
+    auto binding_opt = lookup_variable(array_name);
+    if (!binding_opt.has_value())
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Undefined variable '" + array_name + "'");
+    }
+
+    auto index_expr = lower_expr(node->m_index_expr.get());
+    auto value_expr = lower_expr(node->m_value.get());
+    if (!index_expr || !value_expr)
+    {
+      current_stmt.reset();
+      return;
+    }
+
+    if (!binding_opt.has_value())
+    {
+      current_stmt = std::make_unique<air::ArrayAssignment>(
+          node->m_loc, array_name, 0, TyIds::ERROR, std::move(index_expr),
+          std::move(value_expr));
+      return;
+    }
+
+    const VarBinding &binding = binding_opt.value();
+
+    if (!binding.is_mutable)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Cannot assign to element of immutable array '" + array_name + "'");
+    }
+
+    if (!ty_table.is_array(binding.type))
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Array assignment requires array type");
+      current_stmt = std::make_unique<air::ArrayAssignment>(
+          node->m_loc, array_name, binding.id, TyIds::ERROR, std::move(index_expr),
+          std::move(value_expr));
+      return;
+    }
+
+    if (index_expr->m_ty != TyIds::INTEGER)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Array index must be of type integer");
+    }
+
+    auto element_ty = ty_table.get_array_element_type(binding.type);
+    if (!element_ty.has_value())
+    {
+      ALOHA_ICE("Internal error: unable to get array element type" + node->m_loc.to_string());
+      current_stmt.reset();
+      return;
+    }
+
+    check_types_compatible(element_ty.value(), value_expr->m_ty,
+                           node->m_loc, "array assignment");
+
+    current_stmt = std::make_unique<air::ArrayAssignment>(
+        node->m_loc, array_name, binding.id, element_ty.value(), std::move(index_expr),
+        std::move(value_expr));
+  }
+
   void AIRBuilder::visit(ast::FunctionCall *node)
   {
     const std::string &func_name = node->m_func_name->m_name;

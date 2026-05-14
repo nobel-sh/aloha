@@ -182,6 +182,28 @@ namespace aloha
             indent -= 2;
         }
 
+        void Printer::visit(ArrayAssignment *node)
+        {
+            write_indent();
+            os << "ArrayAssignment: " << node->m_array_name
+               << " (id=" << node->m_array_var_id
+               << ", element_ty=" << ty_name(node->m_element_ty) << ")\n";
+
+            indent += 2;
+            write_indent();
+            os << "Index:\n";
+            indent += 2;
+            node->m_index->accept(*this);
+            indent -= 2;
+
+            write_indent();
+            os << "Value:\n";
+            indent += 2;
+            node->m_value->accept(*this);
+            indent -= 2;
+            indent -= 2;
+        }
+
         void Printer::visit(FieldAssignment *node)
         {
             write_indent();

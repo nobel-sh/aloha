@@ -38,6 +38,7 @@ namespace aloha
             // statement visitors
             void visit(VarDecl *node) override;
             void visit(Assignment *node) override;
+            void visit(ArrayAssignment *node) override;
             void visit(FieldAssignment *node) override;
             void visit(Return *node) override;
             void visit(Break *node) override;

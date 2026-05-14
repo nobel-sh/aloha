@@ -194,6 +194,19 @@ namespace aloha
       void accept(ASTVisitor &visitor) override;
     };
 
+    class ArrayAssignment : public Statement
+    {
+    public:
+      std::string m_array_name;
+      ExprPtr m_index_expr;
+      ExprPtr m_value;
+
+      ArrayAssignment(Location loc, std::string array_name, ExprPtr index_expr,
+                      ExprPtr value);
+      void write(std::ostream &os, unsigned long indent = 0) const override;
+      void accept(ASTVisitor &visitor) override;
+    };
+
     class FunctionCall : public Expression
     {
     public:

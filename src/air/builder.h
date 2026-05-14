@@ -75,6 +75,7 @@ namespace aloha
     void visit(ast::Identifier *node) override;
     void visit(ast::Declaration *node) override;
     void visit(ast::Assignment *node) override;
+    void visit(ast::ArrayAssignment *node) override;
     void visit(ast::FunctionCall *node) override;
     void visit(ast::ReturnStatement *node) override;
     void visit(ast::BreakStatement *node) override;
