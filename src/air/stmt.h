@@ -17,16 +17,16 @@ namespace aloha
     class VarDecl : public Stmt
     {
     public:
-      std::string name;
-      VarId var_id;
-      bool is_mutable;
-      TyId var_ty;
-      ExprPtr initializer;
+      std::string m_name;
+      VarId m_var_id;
+      bool m_is_mutable;
+      TyId m_var_ty;
+      ExprPtr m_initializer;
 
       VarDecl(const Location &loc, const std::string &name, VarId var_id,
               bool is_mutable, TyId var_ty, ExprPtr initializer)
-          : Stmt(loc), name(name), var_id(var_id), is_mutable(is_mutable),
-            var_ty(var_ty), initializer(std::move(initializer)) {}
+          : Stmt(loc), m_name(name), m_var_id(var_id), m_is_mutable(is_mutable),
+            m_var_ty(var_ty), m_initializer(std::move(initializer)) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
@@ -34,12 +34,12 @@ namespace aloha
     class Assignment : public Stmt
     {
     public:
-      std::string var_name;
-      VarId var_id;
-      ExprPtr value;
+      std::string m_var_name;
+      VarId m_var_id;
+      ExprPtr m_value;
 
       Assignment(const Location &loc, const std::string &var_name, VarId var_id, ExprPtr value)
-          : Stmt(loc), var_name(var_name), var_id(var_id), value(std::move(value)) {}
+          : Stmt(loc), m_var_name(var_name), m_var_id(var_id), m_value(std::move(value)) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
@@ -47,15 +47,15 @@ namespace aloha
     class FieldAssignment : public Stmt
     {
     public:
-      ExprPtr object;
-      std::string field_name;
-      uint32_t field_index;
-      ExprPtr value;
+      ExprPtr m_object;
+      std::string m_field_name;
+      uint32_t m_field_index;
+      ExprPtr m_value;
 
       FieldAssignment(const Location &loc, ExprPtr object, const std::string &field_name,
                       uint32_t field_index, ExprPtr value)
-          : Stmt(loc), object(std::move(object)), field_name(field_name),
-            field_index(field_index), value(std::move(value)) {}
+          : Stmt(loc), m_object(std::move(object)), m_field_name(field_name),
+            m_field_index(field_index), m_value(std::move(value)) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
@@ -63,10 +63,10 @@ namespace aloha
     class Return : public Stmt
     {
     public:
-      ExprPtr value;
+      ExprPtr m_value;
 
       Return(const Location &loc, ExprPtr value)
-          : Stmt(loc), value(std::move(value)) {}
+          : Stmt(loc), m_value(std::move(value)) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
@@ -74,14 +74,14 @@ namespace aloha
     class If : public Stmt
     {
     public:
-      ExprPtr condition; // must be TyIds::BOOL
-      std::vector<StmtPtr> then_branch;
-      std::vector<StmtPtr> else_branch;
+      ExprPtr m_condition; // must be TyIds::BOOL
+      std::vector<StmtPtr> m_then_branch;
+      std::vector<StmtPtr> m_else_branch;
 
       If(const Location &loc, ExprPtr condition,
          std::vector<StmtPtr> then_branch, std::vector<StmtPtr> else_branch)
-          : Stmt(loc), condition(std::move(condition)),
-            then_branch(std::move(then_branch)), else_branch(std::move(else_branch)) {}
+          : Stmt(loc), m_condition(std::move(condition)),
+            m_then_branch(std::move(then_branch)), m_else_branch(std::move(else_branch)) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
@@ -89,76 +89,76 @@ namespace aloha
     class ExprStmt : public Stmt
     {
     public:
-      ExprPtr expression;
+      ExprPtr m_expression;
 
       ExprStmt(const Location &loc, ExprPtr expression)
-          : Stmt(loc), expression(std::move(expression)) {}
+          : Stmt(loc), m_expression(std::move(expression)) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
 
     struct Param
     {
-      std::string name;
-      VarId var_id;
-      TyId ty;
-      bool is_mutable;
-      Location loc;
+      std::string m_name;
+      VarId m_var_id;
+      TyId m_ty;
+      bool m_is_mutable;
+      Location m_loc;
 
       Param(const std::string &name, VarId var_id, TyId ty, bool is_mutable, const Location &loc)
-          : name(name), var_id(var_id), ty(ty), is_mutable(is_mutable), loc(loc) {}
+          : m_name(name), m_var_id(var_id), m_ty(ty), m_is_mutable(is_mutable), m_loc(loc) {}
     };
 
     class Function : public Node
     {
     public:
-      std::string name;
-      FunctionId func_id;
-      std::vector<Param> params;
-      TyId return_ty;
-      std::vector<StmtPtr> body;
-      bool is_extern;
+      std::string m_name;
+      FunctionId m_func_id;
+      std::vector<Param> m_params;
+      TyId m_return_ty;
+      std::vector<StmtPtr> m_body;
+      bool m_is_extern;
 
       Function(const Location &loc, const std::string &name, FunctionId func_id,
                std::vector<Param> params, TyId return_ty,
                std::vector<StmtPtr> body, bool is_extern)
-          : Node(loc), name(name), func_id(func_id), params(std::move(params)),
-            return_ty(return_ty), body(std::move(body)), is_extern(is_extern) {}
+          : Node(loc), m_name(name), m_func_id(func_id), m_params(std::move(params)),
+            m_return_ty(return_ty), m_body(std::move(body)), m_is_extern(is_extern) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
 
     struct Field
     {
-      std::string name;
-      TyId ty;
-      uint32_t index; // field index for codegen
-      Location loc;
+      std::string m_name;
+      TyId m_ty;
+      uint32_t m_index; // field index for codegen
+      Location m_loc;
 
       Field(const std::string &name, TyId ty, uint32_t index, const Location &loc)
-          : name(name), ty(ty), index(index), loc(loc) {}
+          : m_name(name), m_ty(ty), m_index(index), m_loc(loc) {}
     };
 
     class StructDecl : public Node
     {
     public:
-      std::string name;
-      StructId struct_id;
-      TyId ty_id; // type id for this struct
-      std::vector<Field> fields;
+      std::string m_name;
+      StructId m_struct_id;
+      TyId m_ty_id; // type id for this struct
+      std::vector<Field> m_fields;
 
       StructDecl(const Location &loc, const std::string &name, StructId struct_id,
                  TyId ty_id, std::vector<Field> fields)
-          : Node(loc), name(name), struct_id(struct_id), ty_id(ty_id),
-            fields(std::move(fields)) {}
+          : Node(loc), m_name(name), m_struct_id(struct_id), m_ty_id(ty_id),
+            m_fields(std::move(fields)) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
 
       int find_field_index(const std::string &field_name) const
       {
-        for (size_t i = 0; i < fields.size(); ++i)
+        for (size_t i = 0; i < m_fields.size(); ++i)
         {
-          if (fields[i].name == field_name)
+          if (m_fields[i].m_name == field_name)
           {
             return static_cast<int>(i);
           }
@@ -168,9 +168,9 @@ namespace aloha
 
       const Field *get_field(const std::string &field_name) const
       {
-        for (const auto &field : fields)
+        for (const auto &field : m_fields)
         {
-          if (field.name == field_name)
+          if (field.m_name == field_name)
           {
             return &field;
           }
@@ -182,21 +182,21 @@ namespace aloha
     class Module : public Node
     {
     public:
-      std::string name;
-      std::vector<StructDeclPtr> structs;
-      std::vector<FunctionPtr> functions;
-      std::vector<std::string> imports;
+      std::string m_name;
+      std::vector<StructDeclPtr> m_structs;
+      std::vector<FunctionPtr> m_functions;
+      std::vector<std::string> m_imports;
 
       Module(const Location &loc, const std::string &name)
-          : Node(loc), name(name) {}
+          : Node(loc), m_name(name) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
 
       StructDecl *find_struct(const std::string &struct_name)
       {
-        for (auto &s : structs)
+        for (auto &s : m_structs)
         {
-          if (s->name == struct_name)
+          if (s->m_name == struct_name)
           {
             return s.get();
           }
@@ -206,9 +206,9 @@ namespace aloha
 
       Function *find_function(const std::string &func_name)
       {
-        for (auto &f : functions)
+        for (auto &f : m_functions)
         {
-          if (f->name == func_name)
+          if (f->m_name == func_name)
           {
             return f.get();
           }

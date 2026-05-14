@@ -17,9 +17,9 @@ namespace aloha
     class Node
     {
     public:
-      Location loc;
+      Location m_loc;
 
-      explicit Node(const Location &loc) : loc(loc) {}
+      explicit Node(const Location &loc) : m_loc(loc) {}
       virtual ~Node() = default;
 
       virtual void accept(AIRVisitor &visitor) = 0;
@@ -28,9 +28,9 @@ namespace aloha
     class Expr : public Node
     {
     public:
-      TyId ty;
+      TyId m_ty;
 
-      Expr(const Location &loc, TyId ty) : Node(loc), ty(ty) {}
+      Expr(const Location &loc, TyId ty) : Node(loc), m_ty(ty) {}
       virtual ~Expr() = default;
     };
 

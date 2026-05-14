@@ -48,7 +48,7 @@ namespace aloha
     TyId array_ty_id = next_ty_id++;
     std::string array_name = ty_name(element_type) + "[]";
     auto ty_info = std::make_unique<TyInfo>(array_ty_id, TyKind::ARRAY, array_name);
-    ty_info->type_params.push_back(element_type);
+    ty_info->m_type_params.push_back(element_type);
 
     types[array_ty_id] = std::move(ty_info);
     array_type_cache[element_type] = array_ty_id;
@@ -106,7 +106,7 @@ namespace aloha
     auto ty_info = get_ty_info(id);
     if (ty_info)
     {
-      return ty_info->name;
+      return ty_info->m_name;
     }
     return "<invalid type id>";
   }
@@ -134,21 +134,21 @@ namespace aloha
   bool TyTable::is_struct(TyId id) const
   {
     auto ty_info = get_ty_info(id);
-    return ty_info && ty_info->kind == TyKind::STRUCT;
+    return ty_info && ty_info->m_kind == TyKind::STRUCT;
   }
 
   bool TyTable::is_array(TyId id) const
   {
     auto ty_info = get_ty_info(id);
-    return ty_info && ty_info->kind == TyKind::ARRAY;
+    return ty_info && ty_info->m_kind == TyKind::ARRAY;
   }
 
   std::optional<TyId> TyTable::get_array_element_type(TyId array_ty) const
   {
     auto ty_info = get_ty_info(array_ty);
-    if (ty_info && ty_info->kind == TyKind::ARRAY && !ty_info->type_params.empty())
+    if (ty_info && ty_info->m_kind == TyKind::ARRAY && !ty_info->m_type_params.empty())
     {
-      return ty_info->type_params[0];
+      return ty_info->m_type_params[0];
     }
     return std::nullopt;
   }

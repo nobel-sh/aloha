@@ -29,7 +29,7 @@ namespace aloha
     }
 
     current_air_module = air_module;
-    module->setSourceFileName(air_module->name);
+    module->setSourceFileName(air_module->m_name);
 
     generate_types();
 
@@ -78,30 +78,30 @@ namespace aloha
       return;
 
     // First pass: Create opaque struct types for forward references
-    for (const auto &struct_decl : current_air_module->structs)
+    for (const auto &struct_decl : current_air_module->m_structs)
     {
-      auto *struct_type = llvm::StructType::create(*context, struct_decl->name);
-      struct_map[struct_decl->struct_id] = struct_type;
-      type_map[struct_decl->ty_id] = struct_type;
+      auto *struct_type = llvm::StructType::create(*context, struct_decl->m_name);
+      struct_map[struct_decl->m_struct_id] = struct_type;
+      type_map[struct_decl->m_ty_id] = struct_type;
     }
 
     // Second pass: Fill in struct bodies
-    for (const auto &struct_decl : current_air_module->structs)
+    for (const auto &struct_decl : current_air_module->m_structs)
     {
       std::vector<llvm::Type *> field_types;
-      for (const auto &field : struct_decl->fields)
+      for (const auto &field : struct_decl->m_fields)
       {
-        llvm::Type *field_type = get_llvm_type(field.ty);
+        llvm::Type *field_type = get_llvm_type(field.m_ty);
         if (!field_type)
         {
-          report_error("Cannot resolve field type for '" + field.name + "'",
-                       field.loc);
+          report_error("Cannot resolve field type for '" + field.m_name + "'",
+                       field.m_loc);
           field_type = llvm::Type::getInt32Ty(*context); // Fallback
         }
         field_types.push_back(field_type);
       }
 
-      auto *struct_type = struct_map[struct_decl->struct_id];
+      auto *struct_type = struct_map[struct_decl->m_struct_id];
       struct_type->setBody(field_types);
     }
   }
@@ -122,9 +122,9 @@ namespace aloha
 
     if (ty_info->is_struct())
     {
-      if (ty_info->struct_id.has_value())
+      if (ty_info->m_struct_id.has_value())
       {
-        auto struct_it = struct_map.find(ty_info->struct_id.value());
+        auto struct_it = struct_map.find(ty_info->m_struct_id.value());
         if (struct_it != struct_map.end())
         {
           type_map[ty_id] = struct_it->second;
@@ -134,12 +134,12 @@ namespace aloha
     }
     else if (ty_info->is_array())
     {
-      if (ty_info->type_params.empty())
+      if (ty_info->m_type_params.empty())
       {
         return nullptr;
       }
 
-      TyId element_ty_id = ty_info->type_params[0];
+      TyId element_ty_id = ty_info->m_type_params[0];
       llvm::Type *element_llvm_type = get_llvm_type(element_ty_id);
       if (!element_llvm_type)
       {
@@ -157,20 +157,20 @@ namespace aloha
     if (!current_air_module)
       return;
 
-    for (const auto &func : current_air_module->functions)
+    for (const auto &func : current_air_module->m_functions)
     {
       llvm::FunctionType *func_type = get_function_type(func.get());
       if (!func_type)
       {
-        report_error("Cannot create function type for '" + func->name + "'", func->loc);
+        report_error("Cannot create function type for '" + func->m_name + "'", func->m_loc);
         continue;
       }
 
-      llvm::Function::LinkageTypes linkage = func->is_extern
+      llvm::Function::LinkageTypes linkage = func->m_is_extern
                                                  ? llvm::Function::ExternalLinkage
                                                  : llvm::Function::ExternalLinkage;
 
-      std::string llvm_name = func->name;
+      std::string llvm_name = func->m_name;
       if (llvm_name == "main")
       {
         llvm_name = "__aloha_main";
@@ -183,37 +183,37 @@ namespace aloha
       unsigned idx = 0;
       for (auto &arg : llvm_func->args())
       {
-        if (idx < func->params.size())
+        if (idx < func->m_params.size())
         {
-          arg.setName(func->params[idx].name);
+          arg.setName(func->m_params[idx].m_name);
         }
         idx++;
       }
 
-      function_map[func->func_id] = llvm_func;
+      function_map[func->m_func_id] = llvm_func;
     }
   }
 
   llvm::FunctionType *CodeGenerator::get_function_type(air::Function *func)
   {
     // Get return type
-    llvm::Type *return_type = get_llvm_type(func->return_ty);
+    llvm::Type *return_type = get_llvm_type(func->m_return_ty);
     if (!return_type)
     {
-      report_error("Cannot resolve return type for function '" + func->name + "'",
-                   func->loc);
+      report_error("Cannot resolve return type for function '" + func->m_name + "'",
+                   func->m_loc);
       return nullptr;
     }
 
     // Get parameter types
     std::vector<llvm::Type *> param_types;
-    for (const auto &param : func->params)
+    for (const auto &param : func->m_params)
     {
-      llvm::Type *param_type = get_llvm_type(param.ty);
+      llvm::Type *param_type = get_llvm_type(param.m_ty);
       if (!param_type)
       {
-        report_error("Cannot resolve parameter type for '" + param.name + "'",
-                     param.loc);
+        report_error("Cannot resolve parameter type for '" + param.m_name + "'",
+                     param.m_loc);
         return nullptr;
       }
       param_types.push_back(param_type);
@@ -227,9 +227,9 @@ namespace aloha
     if (!current_air_module)
       return;
 
-    for (const auto &func : current_air_module->functions)
+    for (const auto &func : current_air_module->m_functions)
     {
-      if (!func->is_extern)
+      if (!func->m_is_extern)
       {
         generate_function(func.get());
       }
@@ -238,10 +238,10 @@ namespace aloha
 
   void CodeGenerator::generate_function(air::Function *func)
   {
-    llvm::Function *llvm_func = function_map[func->func_id];
+    llvm::Function *llvm_func = function_map[func->m_func_id];
     if (!llvm_func)
     {
-      report_error("Function '" + func->name + "' not declared", func->loc);
+      report_error("Function '" + func->m_name + "' not declared", func->m_loc);
       return;
     }
 
@@ -256,19 +256,19 @@ namespace aloha
     unsigned idx = 0;
     for (auto &arg : llvm_func->args())
     {
-      if (idx < func->params.size())
+      if (idx < func->m_params.size())
       {
-        const auto &param = func->params[idx];
+        const auto &param = func->m_params[idx];
         llvm::AllocaInst *alloca = create_entry_block_alloca(
-            llvm_func, param.name, arg.getType());
+            llvm_func, param.m_name, arg.getType());
         builder->CreateStore(&arg, alloca);
-        variable_map[param.var_id] = alloca;
+        variable_map[param.m_var_id] = alloca;
       }
       idx++;
     }
 
     // Generate function body statements
-    for (const auto &stmt : func->body)
+    for (const auto &stmt : func->m_body)
     {
       stmt->accept(*this);
     }
@@ -277,16 +277,16 @@ namespace aloha
     llvm::BasicBlock *current_block = builder->GetInsertBlock();
     if (current_block && !current_block->getTerminator())
     {
-      if (func->return_ty == TyIds::VOID)
+      if (func->m_return_ty == TyIds::VOID)
       {
         builder->CreateRetVoid();
       }
       else
       {
         // For non-void functions, if there's no terminator, it's an error
-        report_error("Function '" + func->name + "' missing return statement", func->loc);
+        report_error("Function '" + func->m_name + "' missing return statement", func->m_loc);
         // Add a dummy return to prevent LLVM errors
-        llvm::Type *ret_type = get_llvm_type(func->return_ty);
+        llvm::Type *ret_type = get_llvm_type(func->m_return_ty);
         if (ret_type->isDoubleTy())
         {
           builder->CreateRet(llvm::ConstantFP::get(ret_type, 0.0));
@@ -308,12 +308,12 @@ namespace aloha
   void CodeGenerator::generate_main_wrapper()
   {
     auto it = std::find_if(
-        current_air_module->functions.begin(),
-        current_air_module->functions.end(),
+        current_air_module->m_functions.begin(),
+        current_air_module->m_functions.end(),
         [](const std::unique_ptr<air::Function> &f)
-        { return f->name == "main"; });
+        { return f->m_name == "main"; });
 
-    if (it == current_air_module->functions.end())
+    if (it == current_air_module->m_functions.end())
     {
       return; // No main function to wrap
     }
@@ -331,15 +331,15 @@ namespace aloha
     llvm::BasicBlock *entry_block = llvm::BasicBlock::Create(*context, "entry", main_wrapper_func);
     builder->SetInsertPoint(entry_block);
 
-    llvm::Function *llvm_main_func = function_map[main_func->func_id];
+    llvm::Function *llvm_main_func = function_map[main_func->m_func_id];
     if (!llvm_main_func)
     {
-      report_error("Function 'main' not declared", main_func->loc);
+      report_error("Function 'main' not declared", main_func->m_loc);
       return;
     }
     llvm::Value *ret_value = builder->CreateCall(llvm_main_func, {});
 
-    if (main_func->return_ty == TyIds::VOID)
+    if (main_func->m_return_ty == TyIds::VOID)
     {
       builder->CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
     }
@@ -363,18 +363,18 @@ namespace aloha
 
   void CodeGenerator::visit(air::IntegerLiteral *node)
   {
-    uint64_t value = static_cast<uint64_t>(node->value);
+    uint64_t value = static_cast<uint64_t>(node->m_value);
     current_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value, true);
   }
 
   void CodeGenerator::visit(air::FloatLiteral *node)
   {
-    current_value = llvm::ConstantFP::get(*context, llvm::APFloat(node->value));
+    current_value = llvm::ConstantFP::get(*context, llvm::APFloat(node->m_value));
   }
 
   void CodeGenerator::visit(air::StringLiteral *node)
   {
-    llvm::Constant *str_constant = llvm::ConstantDataArray::getString(*context, node->value);
+    llvm::Constant *str_constant = llvm::ConstantDataArray::getString(*context, node->m_value);
     llvm::GlobalVariable *global_str = new llvm::GlobalVariable(
         *module,
         str_constant->getType(),
@@ -391,21 +391,21 @@ namespace aloha
 
   void CodeGenerator::visit(air::BoolLiteral *node)
   {
-    current_value = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), node->value ? 1 : 0);
+    current_value = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), node->m_value ? 1 : 0);
   }
 
   void CodeGenerator::visit(air::VarRef *node)
   {
-    auto it = variable_map.find(node->var_id);
+    auto it = variable_map.find(node->m_var_id);
     if (it == variable_map.end())
     {
-      report_error("Undefined variable: '" + node->name + "'", node->loc);
+      report_error("Undefined variable: '" + node->m_name + "'", node->m_loc);
       current_value = nullptr;
       return;
     }
 
     llvm::AllocaInst *alloca = it->second;
-    current_value = builder->CreateLoad(alloca->getAllocatedType(), alloca, node->name);
+    current_value = builder->CreateLoad(alloca->getAllocatedType(), alloca, node->m_name);
   }
 
   enum class NumericKind
@@ -431,21 +431,21 @@ namespace aloha
   {
     current_value = nullptr; // set on success
 
-    node->left->accept(*this);
+    node->m_left->accept(*this);
     llvm::Value *left = current_value;
 
-    node->right->accept(*this);
+    node->m_right->accept(*this);
     llvm::Value *right = current_value;
 
     if (!left || !right)
     {
-      report_error("Failed to generate binary operation operands", node->loc);
+      report_error("Failed to generate binary operation operands", node->m_loc);
       return;
     }
 
-    NumericKind kind = get_numeric_kind(node->left->ty);
+    NumericKind kind = get_numeric_kind(node->m_left->m_ty);
 
-    switch (node->op)
+    switch (node->m_op)
     {
     case air::BinaryOpKind::ADD:
       if (kind == NumericKind::INTEGER)
@@ -453,7 +453,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFAdd(left, right, "addtmp");
       else
-        report_error("Unsupported type for addition", node->loc);
+        report_error("Unsupported type for addition", node->m_loc);
       break;
 
     case air::BinaryOpKind::SUB:
@@ -462,7 +462,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFSub(left, right, "subtmp");
       else
-        report_error("Unsupported type for subtraction", node->loc);
+        report_error("Unsupported type for subtraction", node->m_loc);
       break;
 
     case air::BinaryOpKind::MUL:
@@ -471,7 +471,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFMul(left, right, "multmp");
       else
-        report_error("Unsupported type for multiplication", node->loc);
+        report_error("Unsupported type for multiplication", node->m_loc);
       break;
 
     case air::BinaryOpKind::DIV:
@@ -480,7 +480,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFDiv(left, right, "divtmp");
       else
-        report_error("Unsupported type for division", node->loc);
+        report_error("Unsupported type for division", node->m_loc);
       break;
 
     case air::BinaryOpKind::MOD:
@@ -489,7 +489,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFRem(left, right, "modtmp");
       else
-        report_error("Unsupported type for modulo", node->loc);
+        report_error("Unsupported type for modulo", node->m_loc);
       break;
 
     case air::BinaryOpKind::EQ:
@@ -498,7 +498,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFCmpOEQ(left, right, "eqtmp");
       else
-        report_error("Unsupported type for equality comparison", node->loc);
+        report_error("Unsupported type for equality comparison", node->m_loc);
       break;
 
     case air::BinaryOpKind::NE:
@@ -507,7 +507,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFCmpONE(left, right, "netmp");
       else
-        report_error("Unsupported type for inequality comparison", node->loc);
+        report_error("Unsupported type for inequality comparison", node->m_loc);
       break;
 
     case air::BinaryOpKind::LT:
@@ -516,7 +516,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFCmpOLT(left, right, "lttmp");
       else
-        report_error("Unsupported type for less-than comparison", node->loc);
+        report_error("Unsupported type for less-than comparison", node->m_loc);
       break;
 
     case air::BinaryOpKind::LE:
@@ -525,7 +525,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFCmpOLE(left, right, "letmp");
       else
-        report_error("Unsupported type for less-equal comparison", node->loc);
+        report_error("Unsupported type for less-equal comparison", node->m_loc);
       break;
 
     case air::BinaryOpKind::GT:
@@ -534,7 +534,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFCmpOGT(left, right, "gttmp");
       else
-        report_error("Unsupported type for greater-than comparison", node->loc);
+        report_error("Unsupported type for greater-than comparison", node->m_loc);
       break;
 
     case air::BinaryOpKind::GE:
@@ -543,7 +543,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFCmpOGE(left, right, "getmp");
       else
-        report_error("Unsupported type for greater-equal comparison", node->loc);
+        report_error("Unsupported type for greater-equal comparison", node->m_loc);
       break;
 
     case air::BinaryOpKind::AND:
@@ -555,7 +555,7 @@ namespace aloha
       break;
 
     default:
-      report_error("Unknown binary operation", node->loc);
+      report_error("Unknown binary operation", node->m_loc);
       break;
     }
   }
@@ -564,18 +564,18 @@ namespace aloha
   {
     current_value = nullptr; // set on success
 
-    node->operand->accept(*this);
+    node->m_operand->accept(*this);
     llvm::Value *operand = current_value;
 
     if (!operand)
     {
-      report_error("Failed to generate unary operation operand", node->loc);
+      report_error("Failed to generate unary operation operand", node->m_loc);
       return;
     }
 
-    NumericKind kind = get_numeric_kind(node->operand->ty);
+    NumericKind kind = get_numeric_kind(node->m_operand->m_ty);
 
-    switch (node->op)
+    switch (node->m_op)
     {
     case air::UnaryOpKind::NEG:
       if (kind == NumericKind::INTEGER)
@@ -583,7 +583,7 @@ namespace aloha
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFNeg(operand, "negtmp");
       else
-        report_error("Unsupported type for negation", node->loc);
+        report_error("Unsupported type for negation", node->m_loc);
       break;
 
     case air::UnaryOpKind::NOT:
@@ -591,28 +591,28 @@ namespace aloha
       break;
 
     default:
-      report_error("Unknown unary operation", node->loc);
+      report_error("Unknown unary operation", node->m_loc);
       break;
     }
   }
 
   void CodeGenerator::visit(air::Call *node)
   {
-    llvm::Function *callee = function_map[node->func_id];
+    llvm::Function *callee = function_map[node->m_func_id];
     if (!callee)
     {
-      report_error("Undefined function: '" + node->function_name + "'", node->loc);
+      report_error("Undefined function: '" + node->m_function_name + "'", node->m_loc);
       current_value = nullptr;
       return;
     }
 
     std::vector<llvm::Value *> args;
-    for (const auto &arg : node->arguments)
+    for (const auto &arg : node->m_arguments)
     {
       arg->accept(*this);
       if (!current_value)
       {
-        report_error("Failed to generate function argument", arg->loc);
+        report_error("Failed to generate function argument", arg->m_loc);
         return;
       }
       args.push_back(current_value);
@@ -630,22 +630,22 @@ namespace aloha
 
   void CodeGenerator::visit(air::StructInstantiation *node)
   {
-    llvm::StructType *struct_type = struct_map[node->struct_id];
+    llvm::StructType *struct_type = struct_map[node->m_struct_id];
     if (!struct_type)
     {
-      report_error("Undefined struct: '" + node->struct_name + "'", node->loc);
+      report_error("Undefined struct: '" + node->m_struct_name + "'", node->m_loc);
       current_value = nullptr;
       return;
     }
 
     llvm::AllocaInst *struct_alloca = builder->CreateAlloca(struct_type, nullptr, "struct_tmp");
 
-    for (size_t i = 0; i < node->field_values.size(); ++i)
+    for (size_t i = 0; i < node->m_field_values.size(); ++i)
     {
-      node->field_values[i]->accept(*this);
+      node->m_field_values[i]->accept(*this);
       if (!current_value)
       {
-        report_error("Failed to generate struct field value", node->field_values[i]->loc);
+        report_error("Failed to generate struct field value", node->m_field_values[i]->m_loc);
         return;
       }
 
@@ -660,28 +660,28 @@ namespace aloha
 
   void CodeGenerator::visit(air::FieldAccess *node)
   {
-    node->object->accept(*this);
+    node->m_object->accept(*this);
     llvm::Value *object = current_value;
 
     if (!object)
     {
-      report_error("Failed to generate object for field access", node->loc);
+      report_error("Failed to generate object for field access", node->m_loc);
       current_value = nullptr;
       return;
     }
 
-    const TyInfo *obj_ty_info = ty_table.get_ty_info(node->object->ty);
+    const TyInfo *obj_ty_info = ty_table.get_ty_info(node->m_object->m_ty);
     if (!obj_ty_info || !obj_ty_info->is_struct())
     {
-      report_error("Field access on non-struct type", node->loc);
+      report_error("Field access on non-struct type", node->m_loc);
       current_value = nullptr;
       return;
     }
 
-    llvm::StructType *struct_type = struct_map[obj_ty_info->struct_id.value()];
+    llvm::StructType *struct_type = struct_map[obj_ty_info->m_struct_id.value()];
     if (!struct_type)
     {
-      report_error("Struct type not found in Struct mapping from AirTy -> LLVM Type", node->loc);
+      report_error("Struct type not found in Struct mapping from AirTy -> LLVM Type", node->m_loc);
       current_value = nullptr;
       return;
     }
@@ -689,7 +689,7 @@ namespace aloha
     llvm::Type *obj_llvm_type = object->getType();
     if (!obj_llvm_type->isStructTy())
     {
-      report_error("Expected struct value for field access", node->loc);
+      report_error("Expected struct value for field access", node->m_loc);
       current_value = nullptr;
       return;
     }
@@ -699,37 +699,37 @@ namespace aloha
     llvm::Value *struct_ptr = tmp_alloca;
 
     llvm::Value *field_ptr = builder->CreateStructGEP(
-        struct_type, struct_ptr, node->field_index, "field_ptr");
+        struct_type, struct_ptr, node->m_field_index, "field_ptr");
 
-    llvm::Type *field_type = get_llvm_type(node->ty);
-    current_value = builder->CreateLoad(field_type, field_ptr, node->field_name);
+    llvm::Type *field_type = get_llvm_type(node->m_ty);
+    current_value = builder->CreateLoad(field_type, field_ptr, node->m_field_name);
   }
 
   void CodeGenerator::visit(air::ArrayExpr *node)
   {
-    if (node->elements.empty())
+    if (node->m_elements.empty())
     {
-      report_error("Empty arrays not yet supported", node->loc);
+      report_error("Empty arrays not yet supported", node->m_loc);
       current_value = nullptr;
       return;
     }
 
     if (!current_function)
     {
-      report_error("Array literals only supported inside functions", node->loc);
+      report_error("Array literals only supported inside functions", node->m_loc);
       current_value = nullptr;
       return;
     }
 
-    node->elements[0]->accept(*this);
+    node->m_elements[0]->accept(*this);
     if (!current_value)
     {
-      report_error("Failed to generate first array element", node->loc);
+      report_error("Failed to generate first array element", node->m_loc);
       return;
     }
 
     llvm::Type *element_type = current_value->getType();
-    size_t array_size = node->elements.size();
+    size_t array_size = node->m_elements.size();
 
     llvm::ArrayType *array_type = llvm::ArrayType::get(element_type, array_size);
 
@@ -738,18 +738,18 @@ namespace aloha
 
     if (!array_alloca)
     {
-      report_error("Failed to allocate array storage", node->loc);
+      report_error("Failed to allocate array storage", node->m_loc);
       current_value = nullptr;
       return;
     }
 
     size_t index = 0;
-    for (const auto &element : node->elements)
+    for (const auto &element : node->m_elements)
     {
       element->accept(*this);
       if (!current_value)
       {
-        report_error("Failed to generate array element at index " + std::to_string(index), element->loc);
+        report_error("Failed to generate array element at index " + std::to_string(index), element->m_loc);
         return;
       }
 
@@ -768,30 +768,30 @@ namespace aloha
 
   void CodeGenerator::visit(air::ArrayAccess *node)
   {
-    node->array_expr->accept(*this);
+    node->m_array_expr->accept(*this);
     llvm::Value *array = current_value;
 
     if (!array)
     {
-      report_error("Failed to generate array for access", node->loc);
+      report_error("Failed to generate array for access", node->m_loc);
       current_value = nullptr;
       return;
     }
 
-    node->index_expr->accept(*this);
+    node->m_index_expr->accept(*this);
     llvm::Value *index = current_value;
 
     if (!index)
     {
-      report_error("Failed to generate index for array access", node->loc);
+      report_error("Failed to generate index for array access", node->m_loc);
       current_value = nullptr;
       return;
     }
 
-    llvm::Type *element_type = get_llvm_type(node->ty);
+    llvm::Type *element_type = get_llvm_type(node->m_ty);
     if (!element_type)
     {
-      report_error("Cannot resolve array element type", node->loc);
+      report_error("Cannot resolve array element type", node->m_loc);
       current_value = nullptr;
       return;
     }
@@ -804,69 +804,69 @@ namespace aloha
 
   void CodeGenerator::visit(air::VarDecl *node)
   {
-    if (node->initializer)
+    if (node->m_initializer)
     {
-      node->initializer->accept(*this);
+      node->m_initializer->accept(*this);
       llvm::Value *init_value = current_value;
 
       if (!init_value)
       {
-        report_error("Failed to generate variable initializer", node->loc);
+        report_error("Failed to generate variable initializer", node->m_loc);
         return;
       }
 
       // For arrays or if type is ERROR, use the value's type directly
       llvm::Type *var_type = nullptr;
-      if (node->var_ty == TyIds::ERROR)
+      if (node->m_var_ty == TyIds::ERROR)
       {
         var_type = init_value->getType();
       }
       else
       {
-        var_type = get_llvm_type(node->var_ty);
+        var_type = get_llvm_type(node->m_var_ty);
       }
 
       if (!var_type)
       {
-        report_error("Cannot resolve variable type", node->loc);
+        report_error("Cannot resolve variable type", node->m_loc);
         return;
       }
 
       llvm::AllocaInst *alloca = create_entry_block_alloca(
-          current_function, node->name, var_type);
+          current_function, node->m_name, var_type);
 
       if (!alloca)
       {
-        report_error("Failed to create variable storage", node->loc);
+        report_error("Failed to create variable storage", node->m_loc);
         return;
       }
 
       builder->CreateStore(init_value, alloca);
 
       // register variable
-      variable_map[node->var_id] = alloca;
+      variable_map[node->m_var_id] = alloca;
     }
     else
     {
-      report_error("Variable declaration without initializer", node->loc);
+      report_error("Variable declaration without initializer", node->m_loc);
     }
   }
 
   void CodeGenerator::visit(air::Assignment *node)
   {
-    node->value->accept(*this);
+    node->m_value->accept(*this);
     llvm::Value *value = current_value;
 
     if (!value)
     {
-      report_error("Failed to generate assignment value", node->loc);
+      report_error("Failed to generate assignment value", node->m_loc);
       return;
     }
 
-    auto it = variable_map.find(node->var_id);
+    auto it = variable_map.find(node->m_var_id);
     if (it == variable_map.end())
     {
-      report_error("Assignment to undefined variable: '" + node->var_name + "'", node->loc);
+      report_error("Assignment to undefined variable: '" + node->m_var_name + "'", node->m_loc);
       return;
     }
 
@@ -875,42 +875,42 @@ namespace aloha
 
   void CodeGenerator::visit(air::FieldAssignment *node)
   {
-    node->object->accept(*this);
+    node->m_object->accept(*this);
     llvm::Value *object = current_value;
 
     if (!object)
     {
-      report_error("Failed to generate object for field assignment", node->loc);
+      report_error("Failed to generate object for field assignment", node->m_loc);
       return;
     }
 
-    node->value->accept(*this);
+    node->m_value->accept(*this);
     llvm::Value *value = current_value;
 
     if (!value)
     {
-      report_error("Failed to generate field assignment value", node->loc);
+      report_error("Failed to generate field assignment value", node->m_loc);
       return;
     }
 
-    const TyInfo *obj_ty_info = ty_table.get_ty_info(node->object->ty);
+    const TyInfo *obj_ty_info = ty_table.get_ty_info(node->m_object->m_ty);
     if (!obj_ty_info || !obj_ty_info->is_struct())
     {
-      report_error("Field assignment on non-struct type", node->loc);
+      report_error("Field assignment on non-struct type", node->m_loc);
       return;
     }
 
-    llvm::StructType *struct_type = struct_map[obj_ty_info->struct_id.value()];
+    llvm::StructType *struct_type = struct_map[obj_ty_info->m_struct_id.value()];
     if (!struct_type)
     {
-      report_error("Struct type not found in codegen", node->loc);
+      report_error("Struct type not found in codegen", node->m_loc);
       return;
     }
 
     llvm::Type *obj_llvm_type = object->getType();
     if (!obj_llvm_type->isStructTy())
     {
-      report_error("Expected struct value for field assignment", node->loc);
+      report_error("Expected struct value for field assignment", node->m_loc);
       return;
     }
 
@@ -919,18 +919,18 @@ namespace aloha
     llvm::Value *struct_ptr = tmp_alloca;
 
     llvm::Value *field_ptr = builder->CreateStructGEP(
-        struct_type, struct_ptr, node->field_index, "field_ptr");
+        struct_type, struct_ptr, node->m_field_index, "field_ptr");
     builder->CreateStore(value, field_ptr);
   }
 
   void CodeGenerator::visit(air::Return *node)
   {
-    if (node->value)
+    if (node->m_value)
     {
-      node->value->accept(*this);
+      node->m_value->accept(*this);
       if (!current_value)
       {
-        report_error("Failed to generate return value", node->loc);
+        report_error("Failed to generate return value", node->m_loc);
         return;
       }
       builder->CreateRet(current_value);
@@ -943,12 +943,12 @@ namespace aloha
 
   void CodeGenerator::visit(air::If *node)
   {
-    node->condition->accept(*this);
+    node->m_condition->accept(*this);
     llvm::Value *cond = current_value;
 
     if (!cond)
     {
-      report_error("Failed to generate if condition", node->loc);
+      report_error("Failed to generate if condition", node->m_loc);
       return;
     }
 
@@ -956,7 +956,7 @@ namespace aloha
     llvm::BasicBlock *merge_block = llvm::BasicBlock::Create(*context, "ifcont");
     llvm::BasicBlock *else_block = nullptr;
 
-    if (node->else_branch.empty())
+    if (node->m_else_branch.empty())
     {
       builder->CreateCondBr(cond, then_block, merge_block);
     }
@@ -967,7 +967,7 @@ namespace aloha
     }
 
     builder->SetInsertPoint(then_block);
-    for (const auto &stmt : node->then_branch)
+    for (const auto &stmt : node->m_then_branch)
     {
       stmt->accept(*this);
     }
@@ -980,11 +980,11 @@ namespace aloha
     }
 
     bool else_has_terminator = false;
-    if (!node->else_branch.empty())
+    if (!node->m_else_branch.empty())
     {
       else_block->insertInto(current_function);
       builder->SetInsertPoint(else_block);
-      for (const auto &stmt : node->else_branch)
+      for (const auto &stmt : node->m_else_branch)
       {
         stmt->accept(*this);
       }
@@ -997,7 +997,7 @@ namespace aloha
       }
     }
 
-    bool merge_reachable = !then_has_terminator || !else_has_terminator || node->else_branch.empty();
+    bool merge_reachable = !then_has_terminator || !else_has_terminator || node->m_else_branch.empty();
     if (merge_reachable)
     {
       merge_block->insertInto(current_function);
@@ -1015,7 +1015,7 @@ namespace aloha
 
   void CodeGenerator::visit(air::ExprStmt *node)
   {
-    node->expression->accept(*this);
+    node->m_expression->accept(*this);
     // result is discarded for expression statements
   }
 

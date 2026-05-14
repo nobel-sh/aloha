@@ -8,23 +8,23 @@ namespace aloha
 
   void AIRBuilder::visit(ast::Integer *node)
   {
-    current_expr = std::make_unique<air::IntegerLiteral>(node->loc(),
+    current_expr = std::make_unique<air::IntegerLiteral>(node->m_loc,
                                                          node->m_value);
   }
   void AIRBuilder::visit(ast::Float *node)
   {
-    current_expr = std::make_unique<air::FloatLiteral>(node->loc(),
+    current_expr = std::make_unique<air::FloatLiteral>(node->m_loc,
                                                        node->m_value);
   }
 
   void AIRBuilder::visit(ast::Boolean *node)
   {
-    current_expr = std::make_unique<air::BoolLiteral>(node->loc(), node->m_value);
+    current_expr = std::make_unique<air::BoolLiteral>(node->m_loc, node->m_value);
   }
 
   void AIRBuilder::visit(ast::String *node)
   {
-    current_expr = std::make_unique<air::StringLiteral>(node->loc(), node->m_value);
+    current_expr = std::make_unique<air::StringLiteral>(node->m_loc, node->m_value);
   }
 
   void AIRBuilder::visit(ast::UnaryExpression *node)
@@ -38,19 +38,19 @@ namespace aloha
 
     air::UnaryOpKind op = ast_op_to_air_unop(node->m_op);
     auto op_str = ast::Operator::string(node->m_op);
-    TyId operand_ty = operand->ty;
+    TyId operand_ty = operand->m_ty;
 
     if (op == air::UnaryOpKind::NEG)
     {
       if (operand_ty != TyIds::INTEGER && operand_ty != TyIds::FLOAT)
       {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                           "Negation operator requires numeric operand");
-        current_expr = std::make_unique<air::UnaryOp>(node->loc(), op,
+        current_expr = std::make_unique<air::UnaryOp>(node->m_loc, op,
                                                       std::move(operand), TyIds::ERROR);
         return;
       }
-      current_expr = std::make_unique<air::UnaryOp>(node->loc(), op,
+      current_expr = std::make_unique<air::UnaryOp>(node->m_loc, op,
                                                     std::move(operand), operand_ty);
       return;
     }
@@ -58,20 +58,20 @@ namespace aloha
     {
       if (operand_ty != TyIds::BOOL)
       {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                           "Logical NOT operator requires boolean operand");
-        current_expr = std::make_unique<air::UnaryOp>(node->loc(), op,
+        current_expr = std::make_unique<air::UnaryOp>(node->m_loc, op,
                                                       std::move(operand), TyIds::ERROR);
         return;
       }
-      current_expr = std::make_unique<air::UnaryOp>(node->loc(), op,
+      current_expr = std::make_unique<air::UnaryOp>(node->m_loc, op,
                                                     std::move(operand), TyIds::BOOL);
       return;
     }
 
-    diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+    diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                       "Unknown unary operator '" + op_str + "'");
-    current_expr = std::make_unique<air::UnaryOp>(node->loc(), op,
+    current_expr = std::make_unique<air::UnaryOp>(node->m_loc, op,
                                                   std::move(operand), TyIds::ERROR);
   }
 
@@ -86,8 +86,8 @@ namespace aloha
       return;
     }
 
-    TyId left_ty = left->ty;
-    TyId right_ty = right->ty;
+    TyId left_ty = left->m_ty;
+    TyId right_ty = right->m_ty;
 
     air::BinaryOpKind op = ast_op_to_air_binop(node->m_op);
     auto op_str = ast::Operator::string(node->m_op);
@@ -98,15 +98,15 @@ namespace aloha
           (left_ty == TyIds::FLOAT && right_ty == TyIds::FLOAT))
       {
         TyId result_ty = left_ty; // both are same type here
-        current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
+        current_expr = std::make_unique<air::BinaryOp>(node->m_loc, op,
                                                        std::move(left), std::move(right),
                                                        result_ty);
         return;
       }
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Arithmetic operation '" + op_str +
                             "' requires numeric operands");
-      current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
+      current_expr = std::make_unique<air::BinaryOp>(node->m_loc, op,
                                                      std::move(left), std::move(right),
                                                      TyIds::ERROR);
       return;
@@ -115,15 +115,15 @@ namespace aloha
     {
       if (left_ty != right_ty)
       {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                           "Comparison operation '" + op_str +
                               "' requires operands of the same type");
-        current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
+        current_expr = std::make_unique<air::BinaryOp>(node->m_loc, op,
                                                        std::move(left), std::move(right),
                                                        TyIds::ERROR);
         return;
       }
-      current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
+      current_expr = std::make_unique<air::BinaryOp>(node->m_loc, op,
                                                      std::move(left), std::move(right),
                                                      TyIds::BOOL);
       return;
@@ -132,23 +132,23 @@ namespace aloha
     {
       if (left_ty != TyIds::BOOL || right_ty != TyIds::BOOL)
       {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                           "Logical operation '" + op_str +
                               "' requires boolean operands");
-        current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
+        current_expr = std::make_unique<air::BinaryOp>(node->m_loc, op,
                                                        std::move(left), std::move(right),
                                                        TyIds::ERROR);
         return;
       }
-      current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
+      current_expr = std::make_unique<air::BinaryOp>(node->m_loc, op,
                                                      std::move(left), std::move(right),
                                                      TyIds::BOOL);
       return;
     }
 
-    diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+    diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                       "Unknown binary operator '" + op_str + "'");
-    current_expr = std::make_unique<air::BinaryOp>(node->loc(), op,
+    current_expr = std::make_unique<air::BinaryOp>(node->m_loc, op,
                                                    std::move(left), std::move(right),
                                                    TyIds::ERROR);
   }
@@ -160,22 +160,22 @@ namespace aloha
     auto ty_opt = lookup_variable_type(name);
     if (!ty_opt.has_value())
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Undefined variable '" + name + "'");
-      current_expr = std::make_unique<air::VarRef>(node->loc(), name, 0, TyIds::ERROR);
+      current_expr = std::make_unique<air::VarRef>(node->m_loc, name, 0, TyIds::ERROR);
       return;
     }
 
     auto var_id_opt = lookup_variable_id(name);
     if (!var_id_opt.has_value())
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Internal error: Variable '" + name + "' has no VarId");
-      current_expr = std::make_unique<air::VarRef>(node->loc(), name, 0, TyIds::ERROR);
+      current_expr = std::make_unique<air::VarRef>(node->m_loc, name, 0, TyIds::ERROR);
       return;
     }
 
-    current_expr = std::make_unique<air::VarRef>(node->loc(), name, var_id_opt.value(), ty_opt.value());
+    current_expr = std::make_unique<air::VarRef>(node->m_loc, name, var_id_opt.value(), ty_opt.value());
   }
 
   void AIRBuilder::visit(ast::Declaration *node)
@@ -206,18 +206,18 @@ namespace aloha
         // infer from initializer
         if (!node->m_type.has_value())
         {
-          var_ty = init_expr->ty;
+          var_ty = init_expr->m_ty;
         }
         // else check from initializer
         else if (var_ty != TyIds::ERROR)
         {
-          check_types_compatible(var_ty, init_expr->ty, node->loc(), "variable initialization");
+          check_types_compatible(var_ty, init_expr->m_ty, node->m_loc, "variable initialization");
         }
       }
     }
     else
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Variable '" + var_name + "' requires an initializer");
       if (var_ty == TyIds::VOID)
       {
@@ -237,7 +237,7 @@ namespace aloha
         break;
       }
     }
-    current_stmt = std::make_unique<air::VarDecl>(node->loc(), var_name, var_id,
+    current_stmt = std::make_unique<air::VarDecl>(node->m_loc, var_name, var_id,
                                                   node->m_is_mutable, var_ty,
                                                   std::move(init_expr));
   }
@@ -249,7 +249,7 @@ namespace aloha
     auto var_ty_opt = lookup_variable_type(var_name);
     if (!var_ty_opt.has_value())
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Undefined variable '" + var_name + "'");
       var_ty_opt = TyIds::ERROR;
     }
@@ -263,21 +263,21 @@ namespace aloha
 
     if (var_ty_opt.has_value())
     {
-      check_types_compatible(var_ty_opt.value(), value_expr->ty,
-                             node->loc(), "assignment");
+      check_types_compatible(var_ty_opt.value(), value_expr->m_ty,
+                             node->m_loc, "assignment");
     }
 
     auto var_id_opt = lookup_variable_id(var_name);
     if (!var_id_opt.has_value())
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Assignment to undefined variable: '" + var_name + "'");
-      current_stmt = std::make_unique<air::Assignment>(node->loc(), var_name, 0,
+      current_stmt = std::make_unique<air::Assignment>(node->m_loc, var_name, 0,
                                                        std::move(value_expr));
       return;
     }
 
-    current_stmt = std::make_unique<air::Assignment>(node->loc(), var_name, var_id_opt.value(),
+    current_stmt = std::make_unique<air::Assignment>(node->m_loc, var_name, var_id_opt.value(),
                                                      std::move(value_expr));
   }
 
@@ -288,7 +288,7 @@ namespace aloha
     auto func_opt = symbol_table.lookup_function(func_name);
     if (!func_opt.has_value())
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Undefined function '" + func_name + "'");
       current_expr.reset();
       return;
@@ -302,7 +302,7 @@ namespace aloha
       msg << "Function '" << func_name << "' expects "
           << func_symbol.param_types.size() << " argument(s), got "
           << node->m_arguments.size();
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(), msg.str());
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc, msg.str());
     }
 
     std::vector<air::ExprPtr> args;
@@ -317,17 +317,17 @@ namespace aloha
       if (i < func_symbol.param_types.size())
       {
         TyId expected_ty = func_symbol.param_types[i];
-        TyId actual_ty = arg->ty;
+        TyId actual_ty = arg->m_ty;
 
         check_types_compatible(expected_ty, actual_ty,
-                               node->m_arguments[i]->loc(),
+                               node->m_arguments[i]->m_loc,
                                "function argument");
       }
 
       args.emplace_back(std::move(arg));
     }
 
-    current_expr = std::make_unique<air::Call>(node->loc(), func_name, func_symbol.id,
+    current_expr = std::make_unique<air::Call>(node->m_loc, func_name, func_symbol.id,
                                                std::move(args), func_symbol.return_type);
   }
 
@@ -341,14 +341,14 @@ namespace aloha
       value = lower_expr(node->m_expression.get());
       if (value)
       {
-        return_ty = value->ty;
+        return_ty = value->m_ty;
       }
     }
 
     check_types_compatible(current_function_return_type, return_ty,
-                           node->loc(), "return statement");
+                           node->m_loc, "return statement");
 
-    current_stmt = std::make_unique<air::Return>(node->loc(), std::move(value));
+    current_stmt = std::make_unique<air::Return>(node->m_loc, std::move(value));
   }
 
   void AIRBuilder::visit(ast::IfStatement *node)
@@ -360,9 +360,9 @@ namespace aloha
       return;
     }
 
-    if (condition->ty != TyIds::BOOL)
+    if (condition->m_ty != TyIds::BOOL)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_condition->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_condition->m_loc,
                         "If condition must be of type bool");
     }
 
@@ -378,20 +378,20 @@ namespace aloha
       else_branch = lower_block(node->m_else_branch.get());
     }
 
-    current_stmt = std::make_unique<air::If>(node->loc(), std::move(condition),
+    current_stmt = std::make_unique<air::If>(node->m_loc, std::move(condition),
                                              std::move(then_branch), std::move(else_branch));
   }
 
   void AIRBuilder::visit(ast::WhileLoop *node)
   {
-    diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+    diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                       "While loops not yet supported in AIR lowering");
     current_stmt.reset();
   }
 
   void AIRBuilder::visit(ast::ForLoop *node)
   {
-    diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+    diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                       "For loops not yet supported in AIR lowering");
     current_stmt.reset();
   }
@@ -413,7 +413,7 @@ namespace aloha
     const ResolvedStruct *resolved = lookup_resolved_struct(struct_name);
     if (!resolved)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Undefined struct '" + struct_name + "'");
       current_expr.reset();
       return;
@@ -425,7 +425,7 @@ namespace aloha
       msg << "Struct '" << struct_name << "' expects "
           << resolved->fields.size() << " field(s), got "
           << node->m_field_values.size();
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(), msg.str());
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc, msg.str());
     }
 
     std::vector<air::ExprPtr> field_values;
@@ -440,17 +440,17 @@ namespace aloha
       if (i < resolved->fields.size())
       {
         TyId expected_ty = resolved->fields[i].type_id;
-        TyId actual_ty = value->ty;
+        TyId actual_ty = value->m_ty;
 
         check_types_compatible(expected_ty, actual_ty,
-                               node->m_field_values[i]->loc(),
+                               node->m_field_values[i]->m_loc,
                                "struct field");
       }
 
       field_values.emplace_back(std::move(value));
     }
 
-    current_expr = std::make_unique<air::StructInstantiation>(node->loc(), struct_name,
+    current_expr = std::make_unique<air::StructInstantiation>(node->m_loc, struct_name,
                                                               resolved->struct_id,
                                                               std::move(field_values), resolved->type_id);
   }
@@ -464,35 +464,35 @@ namespace aloha
       return;
     }
 
-    TyId struct_ty = struct_expr->ty;
+    TyId struct_ty = struct_expr->m_ty;
 
     if (!ty_table.is_struct(struct_ty))
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Field access requires struct type");
-      current_expr = std::make_unique<air::FieldAccess>(node->loc(),
+      current_expr = std::make_unique<air::FieldAccess>(node->m_loc,
                                                         std::move(struct_expr),
                                                         node->m_field_name, 0, TyIds::ERROR);
       return;
     }
 
     auto ty_info = ty_table.get_ty_info(struct_ty);
-    if (!ty_info || !ty_info->struct_id.has_value())
+    if (!ty_info || !ty_info->m_struct_id.has_value())
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Internal error: invalid struct type");
-      current_expr = std::make_unique<air::FieldAccess>(node->loc(),
+      current_expr = std::make_unique<air::FieldAccess>(node->m_loc,
                                                         std::move(struct_expr),
                                                         node->m_field_name, 0, TyIds::ERROR);
       return;
     }
 
-    const ResolvedStruct *resolved = lookup_resolved_struct_by_id(ty_info->struct_id.value());
+    const ResolvedStruct *resolved = lookup_resolved_struct_by_id(ty_info->m_struct_id.value());
     if (!resolved)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Internal error: struct not resolved");
-      current_expr = std::make_unique<air::FieldAccess>(node->loc(),
+      current_expr = std::make_unique<air::FieldAccess>(node->m_loc,
                                                         std::move(struct_expr),
                                                         node->m_field_name, 0, TyIds::ERROR);
       return;
@@ -516,16 +516,16 @@ namespace aloha
 
     if (!found)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Struct '" + resolved->name + "' has no field '" +
                             field_name + "'");
-      current_expr = std::make_unique<air::FieldAccess>(node->loc(),
+      current_expr = std::make_unique<air::FieldAccess>(node->m_loc,
                                                         std::move(struct_expr),
                                                         field_name, 0, TyIds::ERROR);
       return;
     }
 
-    current_expr = std::make_unique<air::FieldAccess>(node->loc(),
+    current_expr = std::make_unique<air::FieldAccess>(node->m_loc,
                                                       std::move(struct_expr),
                                                       field_name, field_index, field_ty);
   }
@@ -546,36 +546,36 @@ namespace aloha
       return;
     }
 
-    if (!ty_table.is_array(array_expr->ty))
+    if (!ty_table.is_array(array_expr->m_ty))
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Array access requires array type");
-      current_expr = std::make_unique<air::ArrayAccess>(node->loc(),
+      current_expr = std::make_unique<air::ArrayAccess>(node->m_loc,
                                                         std::move(array_expr),
                                                         std::move(index_expr), TyIds::ERROR);
       return;
     }
 
-    if (index_expr->ty != TyIds::INTEGER)
+    if (index_expr->m_ty != TyIds::INTEGER)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Array index must be of type integer");
-      current_expr = std::make_unique<air::ArrayAccess>(node->loc(),
+      current_expr = std::make_unique<air::ArrayAccess>(node->m_loc,
                                                         std::move(array_expr),
                                                         std::move(index_expr), TyIds::ERROR);
       return;
     }
 
-    auto element_ty = ty_table.get_array_element_type(array_expr->ty);
+    auto element_ty = ty_table.get_array_element_type(array_expr->m_ty);
     if (!element_ty.has_value())
     {
       ALOHA_ICE(
-          "Internal error: unable to get array element type" + node->loc().to_string());
+          "Internal error: unable to get array element type" + node->m_loc.to_string());
       current_expr.reset();
       return;
     }
 
-    current_expr = std::make_unique<air::ArrayAccess>(node->loc(),
+    current_expr = std::make_unique<air::ArrayAccess>(node->m_loc,
                                                       std::move(array_expr),
                                                       std::move(index_expr), element_ty.value());
   }
@@ -596,12 +596,12 @@ namespace aloha
       return;
     }
 
-    TyId struct_ty = struct_expr->ty;
+    TyId struct_ty = struct_expr->m_ty;
     if (!ty_table.is_struct(struct_ty))
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Field assignment requires struct type");
-      current_stmt = std::make_unique<air::FieldAssignment>(node->loc(),
+      current_stmt = std::make_unique<air::FieldAssignment>(node->m_loc,
                                                             std::move(struct_expr),
                                                             node->m_field_name, 0,
                                                             std::move(value_expr));
@@ -609,23 +609,23 @@ namespace aloha
     }
 
     auto ty_info = ty_table.get_ty_info(struct_ty);
-    if (!ty_info || !ty_info->struct_id.has_value())
+    if (!ty_info || !ty_info->m_struct_id.has_value())
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Internal error: invalid struct type");
-      current_stmt = std::make_unique<air::FieldAssignment>(node->loc(),
+      current_stmt = std::make_unique<air::FieldAssignment>(node->m_loc,
                                                             std::move(struct_expr),
                                                             node->m_field_name, 0,
                                                             std::move(value_expr));
       return;
     }
 
-    const ResolvedStruct *resolved = lookup_resolved_struct_by_id(ty_info->struct_id.value());
+    const ResolvedStruct *resolved = lookup_resolved_struct_by_id(ty_info->m_struct_id.value());
     if (!resolved)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Internal error: struct not resolved");
-      current_stmt = std::make_unique<air::FieldAssignment>(node->loc(),
+      current_stmt = std::make_unique<air::FieldAssignment>(node->m_loc,
                                                             std::move(struct_expr),
                                                             node->m_field_name, 0,
                                                             std::move(value_expr));
@@ -650,17 +650,17 @@ namespace aloha
 
     if (!found)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Struct '" + resolved->name + "' has no field '" +
                             field_name + "'");
     }
     else
     {
-      check_types_compatible(field_ty, value_expr->ty,
-                             node->loc(), "field assignment");
+      check_types_compatible(field_ty, value_expr->m_ty,
+                             node->m_loc, "field assignment");
     }
 
-    current_stmt = std::make_unique<air::FieldAssignment>(node->loc(),
+    current_stmt = std::make_unique<air::FieldAssignment>(node->m_loc,
                                                           std::move(struct_expr),
                                                           field_name, field_index,
                                                           std::move(value_expr));
@@ -684,14 +684,14 @@ namespace aloha
     TyId array_ty = TyIds::ERROR;
     if (!array_elements.empty())
     {
-      TyId element_ty = array_elements[0]->ty;
+      TyId element_ty = array_elements[0]->m_ty;
 
       // Check all elements have the same type
       for (size_t i = 1; i < array_elements.size(); i++)
       {
-        if (array_elements[i]->ty != element_ty)
+        if (array_elements[i]->m_ty != element_ty)
         {
-          diagnostics.error(DiagnosticPhase::AIRBuilding, node->loc(),
+          diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                             "Array elements must have the same type");
           current_expr.reset();
           return;
@@ -702,7 +702,7 @@ namespace aloha
       array_ty = ty_table.register_array(element_ty);
     }
 
-    current_expr = std::make_unique<air::ArrayExpr>(node->loc(), std::move(array_elements), array_ty);
+    current_expr = std::make_unique<air::ArrayExpr>(node->m_loc, std::move(array_elements), array_ty);
   }
 
   void AIRBuilder::visit(ast::ExpressionStatement *node)
@@ -714,7 +714,7 @@ namespace aloha
       return;
     }
 
-    current_stmt = std::make_unique<air::ExprStmt>(node->loc(), std::move(expr));
+    current_stmt = std::make_unique<air::ExprStmt>(node->m_loc, std::move(expr));
   }
 
   void AIRBuilder::visit(ast::StatementBlock *node)
@@ -750,7 +750,7 @@ namespace aloha
         auto air_struct = lower_struct(struct_decl);
         if (air_struct)
         {
-          module->structs.emplace_back(std::move(air_struct));
+          module->m_structs.emplace_back(std::move(air_struct));
         }
       }
     }
@@ -762,7 +762,7 @@ namespace aloha
         auto air_func = lower_function(func);
         if (air_func)
         {
-          module->functions.emplace_back(std::move(air_func));
+          module->m_functions.emplace_back(std::move(air_func));
         }
       }
     }
@@ -784,7 +784,7 @@ namespace aloha
     const ResolvedStruct *resolved = lookup_resolved_struct(name);
     if (!resolved)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, struct_decl->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, struct_decl->m_loc,
                         "Internal error: struct '" + name + "' not resolved");
       return nullptr;
     }
@@ -797,7 +797,7 @@ namespace aloha
       fields.emplace_back(field.name, field.type_id, static_cast<uint32_t>(i), field.location);
     }
 
-    return std::make_unique<air::StructDecl>(struct_decl->loc(), name,
+    return std::make_unique<air::StructDecl>(struct_decl->m_loc, name,
                                              resolved->struct_id, resolved->type_id, fields);
   }
 
@@ -809,7 +809,7 @@ namespace aloha
     auto func_opt = symbol_table.lookup_function(name);
     if (!func_opt.has_value())
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, func->loc(),
+      diagnostics.error(DiagnosticPhase::AIRBuilding, func->m_loc,
                         "Internal error: function '" + name + "' not in symbol table");
       return nullptr;
     }
@@ -843,7 +843,7 @@ namespace aloha
       }
 
       // create air::Param with all required fields
-      params.emplace_back(param.m_name, param_var_id, param_ty, false, func->loc());
+      params.emplace_back(param.m_name, param_var_id, param_ty, false, func->m_loc);
 
       // register parameter in variable type and id maps
       register_variable(param.m_name, param_ty);
@@ -857,7 +857,7 @@ namespace aloha
       body = lower_block(func->m_body.get());
     }
 
-    return std::make_unique<air::Function>(func->loc(), name, func_symbol.id,
+    return std::make_unique<air::Function>(func->m_loc, name, func_symbol.id,
                                            std::move(params), func_symbol.return_type,
                                            std::move(body), func->m_is_extern);
   }
@@ -873,7 +873,7 @@ namespace aloha
     expr->accept(*this);
     if (!current_expr)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, expr->loc(), "Unknown expression type");
+      diagnostics.error(DiagnosticPhase::AIRBuilding, expr->m_loc, "Unknown expression type");
     }
     return std::move(current_expr);
   }
@@ -889,7 +889,7 @@ namespace aloha
     stmt->accept(*this);
     if (!current_stmt)
     {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, stmt->loc(), "Unknown statement type");
+      diagnostics.error(DiagnosticPhase::AIRBuilding, stmt->m_loc, "Unknown statement type");
     }
     return std::move(current_stmt);
   }

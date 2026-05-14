@@ -43,31 +43,31 @@ namespace aloha
 
   struct TyInfo
   {
-    TyId id;
-    TyKind kind;
-    std::string name;
+    TyId m_id;
+    TyKind m_kind;
+    std::string m_name;
 
-    std::optional<StructId> struct_id;
+    std::optional<StructId> m_struct_id;
 
-    std::vector<TyId> type_params;
+    std::vector<TyId> m_type_params;
 
     TyInfo(TyId id, TyKind kind, const std::string &name)
-        : id(id), kind(kind), name(name), struct_id(std::nullopt) {}
+        : m_id(id), m_kind(kind), m_name(name), m_struct_id(std::nullopt) {}
 
     TyInfo(TyId id, TyKind kind, const std::string &name, StructId sid)
-        : id(id), kind(kind), name(name), struct_id(sid) {}
+        : m_id(id), m_kind(kind), m_name(name), m_struct_id(sid) {}
 
     bool is_builtin() const
     {
-      return kind == TyKind::INTEGER || kind == TyKind::FLOAT || kind == TyKind::STRING ||
-             kind == TyKind::BOOL || kind == TyKind::VOID;
+      return m_kind == TyKind::INTEGER || m_kind == TyKind::FLOAT || m_kind == TyKind::STRING ||
+             m_kind == TyKind::BOOL || m_kind == TyKind::VOID;
     }
 
-    bool is_struct() const { return kind == TyKind::STRUCT; }
+    bool is_struct() const { return m_kind == TyKind::STRUCT; }
 
-    bool is_array() const { return kind == TyKind::ARRAY; }
+    bool is_array() const { return m_kind == TyKind::ARRAY; }
 
-    bool is_error() const { return kind == TyKind::ERROR; }
+    bool is_error() const { return m_kind == TyKind::ERROR; }
   };
 
   class TyTable

@@ -303,13 +303,13 @@ namespace aloha
             return false;
           }
 
-          for (auto &func : imported_module->functions)
+          for (auto &func : imported_module->m_functions)
           {
-            air_module->functions.push_back(std::move(func));
+            air_module->m_functions.push_back(std::move(func));
           }
-          for (auto &struct_decl : imported_module->structs)
+          for (auto &struct_decl : imported_module->m_structs)
           {
-            air_module->structs.push_back(std::move(struct_decl));
+            air_module->m_structs.push_back(std::move(struct_decl));
           }
         }
       }

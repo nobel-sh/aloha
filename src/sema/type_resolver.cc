@@ -210,12 +210,12 @@ namespace aloha
     for (const auto &field : resolved.fields)
     {
       auto ty_info = ty_table.get_ty_info(field.type_id);
-      if (ty_info && ty_info->kind == TyKind::STRUCT)
+      if (ty_info && ty_info->m_kind == TyKind::STRUCT)
       {
         // recursively check for circular dependency
-        if (ty_info->struct_id.has_value())
+        if (ty_info->m_struct_id.has_value())
         {
-          StructId field_struct_id = ty_info->struct_id.value();
+          StructId field_struct_id = ty_info->m_struct_id.value();
           if (check_circular_dependency(field_struct_id, field.name, visiting, field.location))
           {
             return true;
