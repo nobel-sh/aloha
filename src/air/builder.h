@@ -103,6 +103,8 @@ namespace aloha
     bool is_arithmetic_op(air::BinaryOpKind op);
     bool is_comparison_op(air::BinaryOpKind op);
     bool is_logical_op(air::BinaryOpKind op);
+    bool block_definitely_returns(const ast::StatementBlock *block) const;
+    bool stmt_definitely_returns(const ast::Statement *stmt) const;
 
     void register_variable(const std::string &name, TyId type);
     void register_variable_id(const std::string &name, VarId id);

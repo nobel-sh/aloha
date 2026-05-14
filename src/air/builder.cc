@@ -895,6 +895,13 @@ namespace aloha
     std::vector<air::StmtPtr> body;
     if (!func->m_is_extern && func->m_body)
     {
+      if (func_symbol.return_type != TyIds::VOID &&
+          !block_definitely_returns(func->m_body.get()))
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, func->m_loc,
+                          "Function '" + name + "' must return a value on all paths");
+      }
+
       body = lower_block(func->m_body.get());
     }
 
@@ -1044,6 +1051,47 @@ namespace aloha
   {
     return op == air::BinaryOpKind::LOGICAL_AND ||
            op == air::BinaryOpKind::LOGICAL_OR;
+  }
+
+  bool AIRBuilder::block_definitely_returns(const ast::StatementBlock *block) const
+  {
+    if (!block)
+    {
+      return false;
+    }
+
+    for (const auto &stmt : block->m_statements)
+    {
+      if (stmt_definitely_returns(stmt.get()))
+      {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool AIRBuilder::stmt_definitely_returns(const ast::Statement *stmt) const
+  {
+    if (!stmt)
+    {
+      return false;
+    }
+
+    if (dynamic_cast<const ast::ReturnStatement *>(stmt) != nullptr)
+    {
+      return true;
+    }
+
+    if (const auto *if_stmt = dynamic_cast<const ast::IfStatement *>(stmt))
+    {
+      return if_stmt->m_then_branch &&
+             if_stmt->m_else_branch &&
+             block_definitely_returns(if_stmt->m_then_branch.get()) &&
+             block_definitely_returns(if_stmt->m_else_branch.get());
+    }
+
+    return false;
   }
 
   void AIRBuilder::register_variable(const std::string &name, TyId type)
