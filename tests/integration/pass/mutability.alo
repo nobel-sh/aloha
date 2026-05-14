@@ -1,0 +1,24 @@
+fun test_mut_assignment() -> void {
+    mut value: int = 1;
+    value = 2;
+    assert_msg(value == 2, "mutable variable should allow assignment");
+}
+
+fun test_shadowed_mutability() -> void {
+    mut value: int = 10;
+
+    if (true) {
+        mut value: int = 20;
+        value = 30;
+        assert_msg(value == 30, "inner mutable value should be assignable");
+    }
+
+    value = 40;
+    assert_msg(value == 40, "outer mutable value should remain assignable");
+}
+
+fun main() -> void {
+    test_mut_assignment();
+    test_shadowed_mutability();
+    println("All mutability tests passed!");
+}

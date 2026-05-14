@@ -1,0 +1,6 @@
+// expect-error: Cannot assign to immutable variable 'value'
+
+fun main() -> void {
+    imut value: int = 1;
+    value = 2;
+}

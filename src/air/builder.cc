@@ -233,7 +233,7 @@ namespace aloha
       var_id = 0;
     }
 
-    register_variable(var_name, var_id.value(), var_ty);
+    register_variable(var_name, var_id.value(), var_ty, node->m_is_mutable);
 
     current_stmt = std::make_unique<air::VarDecl>(node->m_loc, var_name, var_id.value(),
                                                   node->m_is_mutable, var_ty,
@@ -244,12 +244,11 @@ namespace aloha
   {
     const std::string &var_name = node->m_variable_name;
 
-    auto var_ty_opt = lookup_variable_type(var_name);
-    if (!var_ty_opt.has_value())
+    auto binding_opt = lookup_variable(var_name);
+    if (!binding_opt.has_value())
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                         "Undefined variable '" + var_name + "'");
-      var_ty_opt = TyIds::ERROR;
     }
 
     auto value_expr = lower_expr(node->m_expression.get());
@@ -259,23 +258,25 @@ namespace aloha
       return;
     }
 
-    if (var_ty_opt.has_value())
+    if (!binding_opt.has_value())
     {
-      check_types_compatible(var_ty_opt.value(), value_expr->m_ty,
-                             node->m_loc, "assignment");
-    }
-
-    auto var_id_opt = lookup_variable_id(var_name);
-    if (!var_id_opt.has_value())
-    {
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
-                        "Assignment to undefined variable: '" + var_name + "'");
       current_stmt = std::make_unique<air::Assignment>(node->m_loc, var_name, 0,
                                                        std::move(value_expr));
       return;
     }
 
-    current_stmt = std::make_unique<air::Assignment>(node->m_loc, var_name, var_id_opt.value(),
+    const VarBinding &binding = binding_opt.value();
+
+    if (!binding.is_mutable)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Cannot assign to immutable variable '" + var_name + "'");
+    }
+
+    check_types_compatible(binding.type, value_expr->m_ty,
+                           node->m_loc, "assignment");
+
+    current_stmt = std::make_unique<air::Assignment>(node->m_loc, var_name, binding.id,
                                                      std::move(value_expr));
   }
 
@@ -879,7 +880,7 @@ namespace aloha
       // create air::Param with all required fields
       params.emplace_back(param.m_name, param_var_id.value(), param_ty, false, func->m_loc);
 
-      register_variable(param.m_name, param_var_id.value(), param_ty);
+      register_variable(param.m_name, param_var_id.value(), param_ty, false);
     }
 
     // lower function body if not extern
@@ -1102,14 +1103,15 @@ namespace aloha
     }
   }
 
-  void AIRBuilder::register_variable(const std::string &name, VarId id, TyId type)
+  void AIRBuilder::register_variable(const std::string &name, VarId id, TyId type,
+                                     bool is_mutable)
   {
     if (variable_scopes.empty())
     {
       push_scope();
     }
 
-    variable_scopes.back()[name] = VarBinding{id, type};
+    variable_scopes.back()[name] = VarBinding{id, type, is_mutable};
   }
 
   std::optional<VarId> AIRBuilder::find_variable_id_for_declaration(const ast::Declaration *decl) const
@@ -1144,15 +1146,26 @@ namespace aloha
     return std::nullopt;
   }
 
-  std::optional<TyId> AIRBuilder::lookup_variable_type(const std::string &name)
+  std::optional<AIRBuilder::VarBinding> AIRBuilder::lookup_variable(const std::string &name)
   {
     for (auto it = variable_scopes.rbegin(); it != variable_scopes.rend(); ++it)
     {
       auto binding = it->find(name);
       if (binding != it->end())
       {
-        return binding->second.type;
+        return binding->second;
       }
+    }
+
+    return std::nullopt;
+  }
+
+  std::optional<TyId> AIRBuilder::lookup_variable_type(const std::string &name)
+  {
+    auto binding = lookup_variable(name);
+    if (binding.has_value())
+    {
+      return binding->type;
     }
 
     return std::nullopt;
@@ -1160,13 +1173,10 @@ namespace aloha
 
   std::optional<VarId> AIRBuilder::lookup_variable_id(const std::string &name)
   {
-    for (auto it = variable_scopes.rbegin(); it != variable_scopes.rend(); ++it)
+    auto binding = lookup_variable(name);
+    if (binding.has_value())
     {
-      auto binding = it->find(name);
-      if (binding != it->end())
-      {
-        return binding->second.id;
-      }
+      return binding->id;
     }
 
     return std::nullopt;

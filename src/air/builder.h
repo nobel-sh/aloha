@@ -37,6 +37,7 @@ namespace aloha
     {
       VarId id;
       TyId type;
+      bool is_mutable;
     };
 
     std::vector<std::unordered_map<std::string, VarBinding>> variable_scopes;
@@ -113,9 +114,10 @@ namespace aloha
 
     void push_scope();
     void pop_scope();
-    void register_variable(const std::string &name, VarId id, TyId type);
+    void register_variable(const std::string &name, VarId id, TyId type, bool is_mutable);
     std::optional<VarId> find_variable_id_for_declaration(const ast::Declaration *decl) const;
     std::optional<VarId> find_parameter_var_id(const std::string &name, Location loc) const;
+    std::optional<VarBinding> lookup_variable(const std::string &name);
     std::optional<TyId> lookup_variable_type(const std::string &name);
     std::optional<VarId> lookup_variable_id(const std::string &name);
 
