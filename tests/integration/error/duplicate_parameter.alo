@@ -1,0 +1,9 @@
+// expect-error: Duplicate parameter declaration: 'value'
+
+fun duplicate(value: int, value: int) -> int {
+    return value;
+}
+
+fun main() -> void {
+    duplicate(1, 2);
+}

@@ -121,7 +121,7 @@ namespace aloha
       VarId var_id = symbol_table_ptr->allocate_var_id();
       Location loc = func->loc(); // parameters don't have individual locations
 
-      if (check_duplicate_variable(param.m_name, loc, current_scope))
+      if (check_duplicate_parameter(param.m_name, loc, current_scope))
       {
         continue;
       }
@@ -226,6 +226,18 @@ namespace aloha
     if (symbol_table_ptr->lookup_struct(name).has_value())
     {
       diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate struct declaration: '" + name + "'");
+      return true;
+    }
+    return false;
+  }
+
+  bool SymbolBinder::check_duplicate_parameter(const std::string &name,
+                                               Location loc, Scope *scope)
+  {
+    if (scope && scope->has_variable_local(name))
+    {
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
+                        "Duplicate parameter declaration: '" + name + "'");
       return true;
     }
     return false;

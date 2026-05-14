@@ -52,6 +52,8 @@ namespace aloha
 
     bool check_duplicate_function(const std::string &name, Location loc);
     bool check_duplicate_struct(const std::string &name, Location loc);
+    bool check_duplicate_parameter(const std::string &name, Location loc,
+                                   Scope *scope);
     bool check_duplicate_variable(const std::string &name, Location loc,
                                   Scope *scope);
   };
