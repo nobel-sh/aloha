@@ -999,6 +999,10 @@ namespace aloha
       return air::BinaryOpKind::GT;
     case ast::Operator::Binary::GREATER_EQUAL:
       return air::BinaryOpKind::GE;
+    case ast::Operator::Binary::LOGICAL_AND:
+      return air::BinaryOpKind::LOGICAL_AND;
+    case ast::Operator::Binary::LOGICAL_OR:
+      return air::BinaryOpKind::LOGICAL_OR;
     default:
       ALOHA_UNREACHABLE();
     }
@@ -1038,8 +1042,8 @@ namespace aloha
 
   bool AIRBuilder::is_logical_op(air::BinaryOpKind op)
   {
-    return op == air::BinaryOpKind::AND ||
-           op == air::BinaryOpKind::OR;
+    return op == air::BinaryOpKind::LOGICAL_AND ||
+           op == air::BinaryOpKind::LOGICAL_OR;
   }
 
   void AIRBuilder::register_variable(const std::string &name, TyId type)

@@ -475,8 +475,8 @@ namespace aloha
 
   enum Precedence
   {
-    PREC_ASSIGNMENT = 1,
-    PREC_CONDITIONAL,
+    PREC_LOGICAL_OR = 1,
+    PREC_LOGICAL_AND,
     PREC_COMPARISON,
     PREC_SUM,
     PREC_PRODUCT,
@@ -497,6 +497,8 @@ namespace aloha
       {"<=", PREC_COMPARISON},
       {">=", PREC_COMPARISON},
       {"!=", PREC_COMPARISON},
+      {"&&", PREC_LOGICAL_AND},
+      {"||", PREC_LOGICAL_OR},
       {"->", PREC_CALL},
   };
 
@@ -548,6 +550,8 @@ namespace aloha
       {"<=", MAKE_BINARY_PARSER(PREC_COMPARISON, ast::Operator::Binary::LESS_EQUAL)},
       {">=", MAKE_BINARY_PARSER(PREC_COMPARISON, ast::Operator::Binary::GREATER_EQUAL)},
       {"!=", MAKE_BINARY_PARSER(PREC_COMPARISON, ast::Operator::Binary::NOT_EQUAL)},
+      {"&&", MAKE_BINARY_PARSER(PREC_LOGICAL_AND, ast::Operator::Binary::LOGICAL_AND)},
+      {"||", MAKE_BINARY_PARSER(PREC_LOGICAL_OR, ast::Operator::Binary::LOGICAL_OR)},
       {"->",
        [](Parser &parser, auto left, const Token &token)
        {

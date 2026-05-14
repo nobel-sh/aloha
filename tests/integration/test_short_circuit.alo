@@ -1,0 +1,37 @@
+fun fail_bool() -> bool {
+    assert_msg(false, "short-circuit should skip fail_bool");
+    return true;
+}
+
+fun test_and_short_circuit() -> void {
+    imut skipped = false && fail_bool();
+    assert_msg(skipped == false, "false && rhs should be false");
+
+    imut evaluated = true && true;
+    assert_msg(evaluated == true, "true && true should be true");
+
+    println("[PASS] Short-circuit AND tests passed");
+}
+
+fun test_or_short_circuit() -> void {
+    imut skipped = true || fail_bool();
+    assert_msg(skipped == true, "true || rhs should be true");
+
+    imut evaluated = false || true;
+    assert_msg(evaluated == true, "false || true should be true");
+
+    println("[PASS] Short-circuit OR tests passed");
+}
+
+fun test_precedence() -> void {
+    imut result = 1 < 2 && 3 < 4 || false;
+    assert_msg(result == true, "comparisons should bind tighter than && and ||");
+    println("[PASS] Boolean precedence tests passed");
+}
+
+fun main() -> void {
+    test_and_short_circuit();
+    test_or_short_circuit();
+    test_precedence();
+    println("All short-circuit tests passed!");
+}

@@ -438,6 +438,62 @@ namespace aloha
     node->m_left->accept(*this);
     llvm::Value *left = current_value;
 
+    if (node->m_op == air::BinaryOpKind::LOGICAL_AND || node->m_op == air::BinaryOpKind::LOGICAL_OR)
+    {
+      if (!left)
+      {
+        report_error("Failed to generate left operand for short-circuit operation", node->m_loc);
+        return;
+      }
+
+      llvm::BasicBlock *left_block = builder->GetInsertBlock();
+      llvm::BasicBlock *right_block =
+          llvm::BasicBlock::Create(*context, node->m_op == air::BinaryOpKind::LOGICAL_AND ? "and.rhs" : "or.rhs", current_function);
+      llvm::BasicBlock *merge_block =
+          llvm::BasicBlock::Create(*context, node->m_op == air::BinaryOpKind::LOGICAL_AND ? "and.end" : "or.end");
+
+      if (node->m_op == air::BinaryOpKind::LOGICAL_AND)
+      {
+        builder->CreateCondBr(left, right_block, merge_block);
+      }
+      else
+      {
+        builder->CreateCondBr(left, merge_block, right_block);
+      }
+
+      builder->SetInsertPoint(right_block);
+      node->m_right->accept(*this);
+      llvm::Value *right = current_value;
+      if (!right)
+      {
+        report_error("Failed to generate right operand for short-circuit operation", node->m_loc);
+        return;
+      }
+
+      llvm::BasicBlock *right_end_block = builder->GetInsertBlock();
+      if (right_end_block && !right_end_block->getTerminator())
+      {
+        builder->CreateBr(merge_block);
+      }
+
+      merge_block->insertInto(current_function);
+      builder->SetInsertPoint(merge_block);
+
+      llvm::PHINode *phi = builder->CreatePHI(llvm::Type::getInt1Ty(*context), 2,
+                                              node->m_op == air::BinaryOpKind::LOGICAL_AND ? "andtmp" : "ortmp");
+      if (node->m_op == air::BinaryOpKind::LOGICAL_AND)
+      {
+        phi->addIncoming(llvm::ConstantInt::getFalse(*context), left_block);
+      }
+      else
+      {
+        phi->addIncoming(llvm::ConstantInt::getTrue(*context), left_block);
+      }
+      phi->addIncoming(right, right_end_block);
+      current_value = phi;
+      return;
+    }
+
     node->m_right->accept(*this);
     llvm::Value *right = current_value;
 
@@ -550,11 +606,11 @@ namespace aloha
         report_error("Unsupported type for greater-equal comparison", node->m_loc);
       break;
 
-    case air::BinaryOpKind::AND:
+    case air::BinaryOpKind::LOGICAL_AND:
       current_value = builder->CreateAnd(left, right, "andtmp");
       break;
 
-    case air::BinaryOpKind::OR:
+    case air::BinaryOpKind::LOGICAL_OR:
       current_value = builder->CreateOr(left, right, "ortmp");
       break;
 

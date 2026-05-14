@@ -33,6 +33,10 @@ namespace aloha
                     return Binary::GREATER;
                 case TokenKind::GREATER_EQUAL:
                     return Binary::GREATER_EQUAL;
+                case TokenKind::AMP_AMP:
+                    return Binary::LOGICAL_AND;
+                case TokenKind::PIPE_PIPE:
+                    return Binary::LOGICAL_OR;
                 default:
                     return std::nullopt;
                 }
@@ -64,6 +68,10 @@ namespace aloha
                     return ">";
                 case Binary::GREATER_EQUAL:
                     return ">=";
+                case Binary::LOGICAL_AND:
+                    return "&&";
+                case Binary::LOGICAL_OR:
+                    return "||";
                 default:
                     ALOHA_UNREACHABLE();
                 }

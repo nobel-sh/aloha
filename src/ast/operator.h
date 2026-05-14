@@ -24,6 +24,8 @@ namespace aloha
                 LESS_EQUAL,
                 GREATER,
                 GREATER_EQUAL,
+                LOGICAL_AND,
+                LOGICAL_OR,
             };
 
             enum class Unary

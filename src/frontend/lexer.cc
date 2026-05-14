@@ -212,6 +212,24 @@ Token Lexer::lex_single_token()
     return peek_token(1) == '=' ? make_two_char_token(TokenKind::NOT_EQUAL, TokenKind::BANG)
                                 : make_single_token(TokenKind::BANG);
 
+  case '&':
+    if (peek_token(1) == '&')
+    {
+      return make_two_char_token(TokenKind::AMP_AMP, TokenKind::AMP_AMP);
+    }
+    add_error("Unexpected character '&'; did you mean '&&'?");
+    consume_token();
+    return lex_single_token();
+
+  case '|':
+    if (peek_token(1) == '|')
+    {
+      return make_two_char_token(TokenKind::PIPE_PIPE, TokenKind::PIPE_PIPE);
+    }
+    add_error("Unexpected character '|'; did you mean '||'?");
+    consume_token();
+    return lex_single_token();
+
   case '<':
     return peek_token(1) == '=' ? make_two_char_token(TokenKind::LESS_EQUAL, TokenKind::LESS_THAN)
                                 : make_single_token(TokenKind::LESS_THAN);

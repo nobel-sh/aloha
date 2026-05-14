@@ -86,8 +86,8 @@ namespace aloha
       GE,
 
       // logical
-      AND,
-      OR,
+      LOGICAL_AND,
+      LOGICAL_OR,
     };
 
     class BinaryOp : public Expr
@@ -128,9 +128,9 @@ namespace aloha
           return ">";
         case BinaryOpKind::GE:
           return ">=";
-        case BinaryOpKind::AND:
+        case BinaryOpKind::LOGICAL_AND:
           return "&&";
-        case BinaryOpKind::OR:
+        case BinaryOpKind::LOGICAL_OR:
           return "||";
         default:
           return "<unknown>";
@@ -154,8 +154,8 @@ namespace aloha
         case BinaryOpKind::LE:
         case BinaryOpKind::GT:
         case BinaryOpKind::GE:
-        case BinaryOpKind::AND:
-        case BinaryOpKind::OR:
+        case BinaryOpKind::LOGICAL_AND:
+        case BinaryOpKind::LOGICAL_OR:
           return TyIds::BOOL;
 
         default:

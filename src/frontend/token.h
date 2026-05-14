@@ -9,6 +9,7 @@
 
 #define TOKEN_KINDS      \
   X(BANG, "!")           \
+  X(AMP_AMP, "&&")       \
   X(COLON, ":")          \
   X(COMMA, ",")          \
   X(EQUAL_EQUAL, "==")   \
@@ -25,6 +26,7 @@
   X(MINUS, "-")          \
   X(NOT_EQUAL, "!=")     \
   X(PERCENT, "%")        \
+  X(PIPE_PIPE, "||")     \
   X(PLUS, "+")           \
   X(RIGHT_BRACE, "}")    \
   X(RIGHT_PAREN, ")")    \
