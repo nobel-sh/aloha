@@ -70,6 +70,46 @@ namespace aloha
     return aloha::utils::get_stdlib_archive();
   }
 
+  Location CompilerDriver::input_location() const
+  {
+    return Location(1, 1, options.input_file);
+  }
+
+  bool CompilerDriver::fail_with_diagnostic(DiagnosticPhase phase,
+                                            const std::string &message,
+                                            bool mark_compilation_error)
+  {
+    diagnostics.error(phase, input_location(), message);
+    diagnostics.print_all();
+    if (mark_compilation_error)
+    {
+      has_compilation_errors = true;
+    }
+    return false;
+  }
+
+  bool CompilerDriver::fail_after_diagnostics(bool mark_compilation_error)
+  {
+    diagnostics.print_all();
+    if (mark_compilation_error)
+    {
+      has_compilation_errors = true;
+    }
+    return false;
+  }
+
+  bool CompilerDriver::fail_stage_or_diagnostics(DiagnosticPhase phase,
+                                                 const std::string &message,
+                                                 bool mark_compilation_error)
+  {
+    if (diagnostics.has_errors())
+    {
+      return fail_after_diagnostics(mark_compilation_error);
+    }
+
+    return fail_with_diagnostic(phase, message, mark_compilation_error);
+  }
+
   void CompilerDriver::dump_ast() const
   {
     if (!options.dump_ast || !ast || !parser)
@@ -116,8 +156,9 @@ namespace aloha
       std::ifstream file(options.input_file);
       if (!file.is_open())
       {
-        std::cerr << "Error: Could not open file: " << options.input_file << std::endl;
-        return false;
+        return fail_with_diagnostic(DiagnosticPhase::Driver,
+                                    "Could not open file: " + options.input_file,
+                                    false);
       }
       std::string source((std::istreambuf_iterator<char>(file)),
                          std::istreambuf_iterator<char>());
@@ -125,8 +166,9 @@ namespace aloha
 
       if (source.empty())
       {
-        std::cerr << "Error: File is empty: " << options.input_file << std::endl;
-        return false;
+        return fail_with_diagnostic(DiagnosticPhase::Driver,
+                                    "File is empty: " + options.input_file,
+                                    false);
       }
 
       lexer = std::make_unique<Lexer>(source, options.input_file);
@@ -135,9 +177,7 @@ namespace aloha
       ast = parser->parse();
       if (!ast || diagnostics.has_errors())
       {
-        std::cerr << "Error: Parsing failed" << std::endl;
-        diagnostics.print_all();
-        return false;
+        return fail_stage_or_diagnostics(DiagnosticPhase::Parser, "Parsing failed", false);
       }
 
       log("Parsed successfully");
@@ -146,8 +186,9 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: Parsing exception: " << e.what() << std::endl;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::Parser,
+                                  "Parsing exception: " + std::string(e.what()),
+                                  false);
     }
   }
 
@@ -161,10 +202,8 @@ namespace aloha
 
       if (!symbol_binder->bind(ast.get(), type_arena) || diagnostics.has_errors())
       {
-        std::cerr << "Error: Symbol binding failed" << std::endl;
-        diagnostics.print_all();
-        has_compilation_errors = true;
-        return false;
+        return fail_stage_or_diagnostics(DiagnosticPhase::SymbolBinding,
+                                         "Symbol binding failed");
       }
 
       log("Definition collection completed successfully");
@@ -173,9 +212,8 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: Definition collection exception: " << e.what() << std::endl;
-      has_compilation_errors = true;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::SymbolBinding,
+                                  "Definition collection exception: " + std::string(e.what()));
     }
   }
 
@@ -190,10 +228,8 @@ namespace aloha
 
       if (!import_resolver->resolve_imports(ast.get()) || diagnostics.has_errors())
       {
-        std::cerr << "Error: Import resolution failed" << std::endl;
-        diagnostics.print_all();
-        has_compilation_errors = true;
-        return false;
+        return fail_stage_or_diagnostics(DiagnosticPhase::ImportResolution,
+                                         "Import resolution failed");
       }
 
       log("Import resolution completed successfully");
@@ -211,9 +247,8 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: Import resolution exception: " << e.what() << std::endl;
-      has_compilation_errors = true;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::ImportResolution,
+                                  "Import resolution exception: " + std::string(e.what()));
     }
   }
 
@@ -228,10 +263,8 @@ namespace aloha
 
       if (!type_resolver->resolve(ast.get(), type_arena) || diagnostics.has_errors())
       {
-        std::cerr << "Error: Type resolution failed" << std::endl;
-        diagnostics.print_all();
-        has_compilation_errors = true;
-        return false;
+        return fail_stage_or_diagnostics(DiagnosticPhase::TypeResolution,
+                                         "Type resolution failed");
       }
 
       if (import_resolver)
@@ -241,10 +274,8 @@ namespace aloha
         {
           if (!type_resolver->resolve(imported_ast.get(), type_arena) || diagnostics.has_errors())
           {
-            std::cerr << "Error: Type resolution failed in imported file" << std::endl;
-            diagnostics.print_all();
-            has_compilation_errors = true;
-            return false;
+            return fail_stage_or_diagnostics(DiagnosticPhase::TypeResolution,
+                                             "Type resolution failed in imported file");
           }
         }
       }
@@ -259,9 +290,8 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: Type resolution exception: " << e.what() << std::endl;
-      has_compilation_errors = true;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::TypeResolution,
+                                  "Type resolution exception: " + std::string(e.what()));
     }
   }
 
@@ -283,10 +313,8 @@ namespace aloha
       air_module = air_builder->build(ast.get());
       if (!air_module || diagnostics.has_errors())
       {
-        std::cerr << "Error: AIR building failed" << std::endl;
-        diagnostics.print_all();
-        has_compilation_errors = true;
-        return false;
+        return fail_stage_or_diagnostics(DiagnosticPhase::AIRBuilding,
+                                         "AIR building failed");
       }
 
       if (import_resolver)
@@ -297,10 +325,8 @@ namespace aloha
           auto imported_module = air_builder->build(imported_ast.get());
           if (!imported_module || diagnostics.has_errors())
           {
-            std::cerr << "Error: AIR building failed in imported file" << std::endl;
-            diagnostics.print_all();
-            has_compilation_errors = true;
-            return false;
+            return fail_stage_or_diagnostics(DiagnosticPhase::AIRBuilding,
+                                             "AIR building failed in imported file");
           }
 
           for (auto &func : imported_module->m_functions)
@@ -320,9 +346,8 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: AIR building exception: " << e.what() << std::endl;
-      has_compilation_errors = true;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::AIRBuilding,
+                                  "AIR building exception: " + std::string(e.what()));
     }
   }
 
@@ -337,10 +362,8 @@ namespace aloha
       llvm_module = codegen->generate(air_module.get());
       if (!llvm_module || diagnostics.has_errors())
       {
-        std::cerr << "Error: Code generation failed" << std::endl;
-        diagnostics.print_all();
-        has_compilation_errors = true;
-        return false;
+        return fail_stage_or_diagnostics(DiagnosticPhase::Codegen,
+                                         "Code generation failed");
       }
 
       log("Code generation completed successfully");
@@ -349,9 +372,8 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: Code generation exception: " << e.what() << std::endl;
-      has_compilation_errors = true;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::Codegen,
+                                  "Code generation exception: " + std::string(e.what()));
     }
   }
 
@@ -373,8 +395,9 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: Optimization exception: " << e.what() << std::endl;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::Optimization,
+                                  "Optimization exception: " + std::string(e.what()),
+                                  false);
     }
   }
 
@@ -395,9 +418,9 @@ namespace aloha
 
       if (ec)
       {
-        std::cerr << "Error: Could not open file " << ir_file << ": "
-                  << ec.message() << std::endl;
-        return false;
+        return fail_with_diagnostic(DiagnosticPhase::Emission,
+                                    "Could not open file " + ir_file + ": " + ec.message(),
+                                    false);
       }
 
       llvm_module->print(out, nullptr);
@@ -408,8 +431,9 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: LLVM IR emission exception: " << e.what() << std::endl;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::Emission,
+                                  "LLVM IR emission exception: " + std::string(e.what()),
+                                  false);
     }
   }
 
@@ -433,8 +457,9 @@ namespace aloha
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: Object file emission exception: " << e.what() << std::endl;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::Emission,
+                                  "Object file emission exception: " + std::string(e.what()),
+                                  false);
     }
   }
 
@@ -467,8 +492,9 @@ namespace aloha
 
       if (linker.empty())
       {
-        std::cerr << "Error: No linker found (tried: ld.lld, ld, lld)" << std::endl;
-        return false;
+        return fail_with_diagnostic(DiagnosticPhase::Linking,
+                                    "No linker found (tried: ld.lld, ld, lld)",
+                                    false);
       }
 
       log("Using linker: " + linker);
@@ -501,18 +527,19 @@ namespace aloha
       }
       else
       {
-        std::cerr << "Error: Linking failed with code " << result << std::endl;
+        std::string message = "Linking failed with code " + std::to_string(result);
         if (!error_msg.empty())
         {
-          std::cerr << "Error: " << error_msg << std::endl;
+          message += ": " + error_msg;
         }
-        return false;
+        return fail_with_diagnostic(DiagnosticPhase::Linking, message, false);
       }
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error: Linking exception: " << e.what() << std::endl;
-      return false;
+      return fail_with_diagnostic(DiagnosticPhase::Linking,
+                                  "Linking exception: " + std::string(e.what()),
+                                  false);
     }
   }
 

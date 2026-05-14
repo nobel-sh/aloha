@@ -769,7 +769,6 @@ namespace aloha
 
     if (diagnostics.has_errors())
     {
-      diagnostics.print_all();
       return nullptr;
     }
 

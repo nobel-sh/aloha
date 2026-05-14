@@ -76,6 +76,12 @@ namespace aloha
     std::string get_base_name() const;
     std::string get_output_name(const std::string &extension) const;
     std::string get_stdlib_archive_path() const;
+    Location input_location() const;
+    bool fail_with_diagnostic(DiagnosticPhase phase, const std::string &message,
+                              bool mark_compilation_error = true);
+    bool fail_after_diagnostics(bool mark_compilation_error = true);
+    bool fail_stage_or_diagnostics(DiagnosticPhase phase, const std::string &message,
+                                   bool mark_compilation_error = true);
     void log(const std::string &message) const;
     void log_stage(const std::string &stage_name) const;
     void dump_ast() const;

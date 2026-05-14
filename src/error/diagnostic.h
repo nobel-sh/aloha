@@ -17,13 +17,18 @@ namespace aloha
 
     enum class DiagnosticPhase
     {
+        Driver,
         Lexer,
         Parser,
+        ImportResolution,
         SymbolBinding,
         TypeResolution,
         TypeChecking,
         AIRBuilding,
-        Codegen
+        Codegen,
+        Optimization,
+        Emission,
+        Linking
     };
 
     struct Diagnostic
