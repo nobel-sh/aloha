@@ -1,0 +1,5 @@
+// expect-error: Unknown type 'missing_type'
+
+fun main() -> void {
+    imut value: missing_type = 1;
+}

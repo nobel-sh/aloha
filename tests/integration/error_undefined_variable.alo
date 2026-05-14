@@ -1,0 +1,5 @@
+// expect-error: Undefined variable 'missing_value'
+
+fun main() -> void {
+    imut value: int = missing_value;
+}

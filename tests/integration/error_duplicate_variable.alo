@@ -1,0 +1,6 @@
+// expect-error: Duplicate variable declaration in same scope: 'value'
+
+fun main() -> void {
+    imut value: int = 1;
+    imut value: int = 2;
+}

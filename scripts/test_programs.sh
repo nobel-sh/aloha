@@ -3,6 +3,7 @@
 # File naming conventions:
 #   test_*.alo  - Tests that should compile successfully
 #   error_*.alo - Tests that should fail compilation (expected errors)
+#                 Optional marker: // expect-error: diagnostic substring
 #   skip_*.alo  - Tests to skip (work in progress, etc.)
 
 set -e
@@ -97,6 +98,7 @@ for file in *.alo; do
 
     if [[ "$file" == error_* ]]; then
         echo -n "Testing $file (expect error)... "
+        expected_error=$(grep -m 1 'expect-error:' "$file" | sed 's/.*expect-error:[[:space:]]*//')
 
         if compile_output=$("$COMPILER" "$file" 2>&1); then
             # Compilation succeeded when it should have failed
@@ -104,6 +106,14 @@ for file in *.alo; do
             echo "  Expected compilation to fail but it succeeded"
             failed=$((failed + 1))
         else
+            if [[ -n "$expected_error" ]] && ! echo "$compile_output" | grep -Fq "$expected_error"; then
+                echo -e "${RED}✗ WRONG ERROR${NC}"
+                echo "  Expected diagnostic containing: $expected_error"
+                echo "$compile_output" | grep -E "Error|error|Expected" | head -3
+                failed=$((failed + 1))
+                continue
+            fi
+
             # Compilation failed as expected
             echo -e "${BLUE}✓ FAIL AS EXPECTED${NC}"
             passed=$((passed + 1))
