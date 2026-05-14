@@ -269,6 +269,11 @@ namespace aloha
     // Generate function body statements
     for (const auto &stmt : func->m_body)
     {
+      llvm::BasicBlock *block = builder->GetInsertBlock();
+      if (!block || block->getTerminator())
+      {
+        break;
+      }
       stmt->accept(*this);
     }
 
@@ -968,6 +973,11 @@ namespace aloha
     builder->SetInsertPoint(then_block);
     for (const auto &stmt : node->m_then_branch)
     {
+      llvm::BasicBlock *block = builder->GetInsertBlock();
+      if (!block || block->getTerminator())
+      {
+        break;
+      }
       stmt->accept(*this);
     }
     llvm::BasicBlock *then_end_block = builder->GetInsertBlock();
@@ -985,6 +995,11 @@ namespace aloha
       builder->SetInsertPoint(else_block);
       for (const auto &stmt : node->m_else_branch)
       {
+        llvm::BasicBlock *block = builder->GetInsertBlock();
+        if (!block || block->getTerminator())
+        {
+          break;
+        }
         stmt->accept(*this);
       }
       llvm::BasicBlock *else_end_block = builder->GetInsertBlock();
@@ -1010,6 +1025,77 @@ namespace aloha
       // set insert point to null to indicate unreachable code
       builder->ClearInsertionPoint();
     }
+  }
+
+  void CodeGenerator::visit(air::Break *node)
+  {
+    if (break_blocks.empty())
+    {
+      report_error("'break' can only be used inside a loop", node->m_loc);
+      return;
+    }
+
+    builder->CreateBr(break_blocks.back());
+  }
+
+  void CodeGenerator::visit(air::Continue *node)
+  {
+    if (continue_blocks.empty())
+    {
+      report_error("'continue' can only be used inside a loop", node->m_loc);
+      return;
+    }
+
+    builder->CreateBr(continue_blocks.back());
+  }
+
+  void CodeGenerator::visit(air::While *node)
+  {
+    llvm::BasicBlock *condition_block =
+        llvm::BasicBlock::Create(*context, "while.cond", current_function);
+    llvm::BasicBlock *body_block =
+        llvm::BasicBlock::Create(*context, "while.body");
+    llvm::BasicBlock *after_block =
+        llvm::BasicBlock::Create(*context, "while.end");
+
+    builder->CreateBr(condition_block);
+
+    builder->SetInsertPoint(condition_block);
+    node->m_condition->accept(*this);
+    llvm::Value *cond = current_value;
+    if (!cond)
+    {
+      report_error("Failed to generate while condition", node->m_loc);
+      return;
+    }
+    builder->CreateCondBr(cond, body_block, after_block);
+
+    body_block->insertInto(current_function);
+    builder->SetInsertPoint(body_block);
+    break_blocks.push_back(after_block);
+    continue_blocks.push_back(condition_block);
+
+    for (const auto &stmt : node->m_body)
+    {
+      llvm::BasicBlock *block = builder->GetInsertBlock();
+      if (!block || block->getTerminator())
+      {
+        break;
+      }
+      stmt->accept(*this);
+    }
+
+    break_blocks.pop_back();
+    continue_blocks.pop_back();
+
+    llvm::BasicBlock *body_end_block = builder->GetInsertBlock();
+    if (body_end_block && !body_end_block->getTerminator())
+    {
+      builder->CreateBr(condition_block);
+    }
+
+    after_block->insertInto(current_function);
+    builder->SetInsertPoint(after_block);
   }
 
   void CodeGenerator::visit(air::ExprStmt *node)

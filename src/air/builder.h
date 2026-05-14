@@ -36,6 +36,7 @@ namespace aloha
     std::unordered_map<std::string, TyId> var_types; // variable name -> type
     std::unordered_map<std::string, VarId> var_ids;  // variable name -> varId for current scope
     TyId current_function_return_type;               // for checking return statements
+    unsigned loop_depth = 0;
 
     air::ExprPtr current_expr;
     air::StmtPtr current_stmt;
@@ -70,6 +71,8 @@ namespace aloha
     void visit(ast::Assignment *node) override;
     void visit(ast::FunctionCall *node) override;
     void visit(ast::ReturnStatement *node) override;
+    void visit(ast::BreakStatement *node) override;
+    void visit(ast::ContinueStatement *node) override;
     void visit(ast::IfStatement *node) override;
     void visit(ast::WhileLoop *node) override;
     void visit(ast::ForLoop *node) override;

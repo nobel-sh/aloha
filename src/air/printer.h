@@ -40,7 +40,10 @@ namespace aloha
             void visit(Assignment *node) override;
             void visit(FieldAssignment *node) override;
             void visit(Return *node) override;
+            void visit(Break *node) override;
+            void visit(Continue *node) override;
             void visit(If *node) override;
+            void visit(While *node) override;
             void visit(ExprStmt *node) override;
 
             // declaration visitors

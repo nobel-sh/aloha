@@ -50,6 +50,8 @@ namespace aloha
     llvm::Value *current_value;       // Result of expression codegen
     llvm::Function *current_function; // Currently generating function
     air::Module *current_air_module;  // Current AIR module being processed
+    std::vector<llvm::BasicBlock *> break_blocks;
+    std::vector<llvm::BasicBlock *> continue_blocks;
 
   public:
     explicit CodeGenerator(TyTable &ty_table, aloha::DiagnosticEngine &diag);
@@ -97,7 +99,10 @@ namespace aloha
     void visit(air::Assignment *node) override;
     void visit(air::FieldAssignment *node) override;
     void visit(air::Return *node) override;
+    void visit(air::Break *node) override;
+    void visit(air::Continue *node) override;
     void visit(air::If *node) override;
+    void visit(air::While *node) override;
     void visit(air::ExprStmt *node) override;
 
     // Top-level declarations

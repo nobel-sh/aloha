@@ -18,6 +18,8 @@ namespace aloha
         class Assignment;
         class FunctionCall;
         class ReturnStatement;
+        class BreakStatement;
+        class ContinueStatement;
         class IfStatement;
         class WhileLoop;
         class ForLoop;

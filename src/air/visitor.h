@@ -31,7 +31,10 @@ namespace aloha
       virtual void visit(Assignment *node) = 0;
       virtual void visit(FieldAssignment *node) = 0;
       virtual void visit(Return *node) = 0;
+      virtual void visit(Break *node) = 0;
+      virtual void visit(Continue *node) = 0;
       virtual void visit(If *node) = 0;
+      virtual void visit(While *node) = 0;
       virtual void visit(ExprStmt *node) = 0;
 
       // declaration visitors

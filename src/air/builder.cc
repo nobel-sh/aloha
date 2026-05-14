@@ -382,11 +382,53 @@ namespace aloha
                                              std::move(then_branch), std::move(else_branch));
   }
 
+  void AIRBuilder::visit(ast::BreakStatement *node)
+  {
+    if (loop_depth == 0)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "'break' can only be used inside a loop");
+    }
+
+    current_stmt = std::make_unique<air::Break>(node->m_loc);
+  }
+
+  void AIRBuilder::visit(ast::ContinueStatement *node)
+  {
+    if (loop_depth == 0)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "'continue' can only be used inside a loop");
+    }
+
+    current_stmt = std::make_unique<air::Continue>(node->m_loc);
+  }
+
   void AIRBuilder::visit(ast::WhileLoop *node)
   {
-    diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
-                      "While loops not yet supported in AIR lowering");
-    current_stmt.reset();
+    auto condition = lower_expr(node->m_condition.get());
+    if (!condition)
+    {
+      current_stmt.reset();
+      return;
+    }
+
+    if (condition->m_ty != TyIds::BOOL)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_condition->m_loc,
+                        "While condition must be of type bool");
+    }
+
+    ++loop_depth;
+    std::vector<air::StmtPtr> body;
+    if (node->m_body)
+    {
+      body = lower_block(node->m_body.get());
+    }
+    --loop_depth;
+
+    current_stmt = std::make_unique<air::While>(node->m_loc, std::move(condition),
+                                                std::move(body));
   }
 
   void AIRBuilder::visit(ast::ForLoop *node)

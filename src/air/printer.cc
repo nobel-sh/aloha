@@ -238,6 +238,20 @@ namespace aloha
             }
         }
 
+        void Printer::visit(Break *node)
+        {
+            (void)node;
+            write_indent();
+            os << "Break\n";
+        }
+
+        void Printer::visit(Continue *node)
+        {
+            (void)node;
+            write_indent();
+            os << "Continue\n";
+        }
+
         void Printer::visit(If *node)
         {
             write_indent();
@@ -271,6 +285,29 @@ namespace aloha
                 indent -= 2;
             }
 
+            indent -= 2;
+        }
+
+        void Printer::visit(While *node)
+        {
+            write_indent();
+            os << "While:\n";
+
+            indent += 2;
+            write_indent();
+            os << "Condition:\n";
+            indent += 2;
+            node->m_condition->accept(*this);
+            indent -= 2;
+
+            write_indent();
+            os << "Body:\n";
+            indent += 2;
+            for (const auto &stmt : node->m_body)
+            {
+                stmt->accept(*this);
+            }
+            indent -= 2;
             indent -= 2;
         }
 

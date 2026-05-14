@@ -266,6 +266,14 @@ namespace aloha
     {
       return parse_return_statement();
     }
+    if (match("break"))
+    {
+      return parse_break_statement();
+    }
+    if (match("continue"))
+    {
+      return parse_continue_statement();
+    }
     if (match("if"))
     {
       return parse_if_statement();
@@ -403,6 +411,20 @@ namespace aloha
     }
 
     return std::make_unique<ast::ReturnStatement>(loc, std::move(expression));
+  }
+
+  std::unique_ptr<ast::Statement> Parser::parse_break_statement()
+  {
+    Location loc = current_location();
+    consume("break", "Expected 'break' keyword");
+    return std::make_unique<ast::BreakStatement>(loc);
+  }
+
+  std::unique_ptr<ast::Statement> Parser::parse_continue_statement()
+  {
+    Location loc = current_location();
+    consume("continue", "Expected 'continue' keyword");
+    return std::make_unique<ast::ContinueStatement>(loc);
   }
 
   std::unique_ptr<ast::Statement> Parser::parse_if_statement()

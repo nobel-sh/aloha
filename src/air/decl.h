@@ -27,7 +27,10 @@ namespace aloha
     class Assignment;
     class FieldAssignment;
     class Return;
+    class Break;
+    class Continue;
     class If;
+    class While;
     class ExprStmt;
 
     // declaration nodes

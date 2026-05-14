@@ -71,6 +71,22 @@ namespace aloha
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
 
+    class Break : public Stmt
+    {
+    public:
+      explicit Break(const Location &loc) : Stmt(loc) {}
+
+      void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+    };
+
+    class Continue : public Stmt
+    {
+    public:
+      explicit Continue(const Location &loc) : Stmt(loc) {}
+
+      void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+    };
+
     class If : public Stmt
     {
     public:
@@ -82,6 +98,18 @@ namespace aloha
          std::vector<StmtPtr> then_branch, std::vector<StmtPtr> else_branch)
           : Stmt(loc), m_condition(std::move(condition)),
             m_then_branch(std::move(then_branch)), m_else_branch(std::move(else_branch)) {}
+
+      void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+    };
+
+    class While : public Stmt
+    {
+    public:
+      ExprPtr m_condition;
+      std::vector<StmtPtr> m_body;
+
+      While(const Location &loc, ExprPtr condition, std::vector<StmtPtr> body)
+          : Stmt(loc), m_condition(std::move(condition)), m_body(std::move(body)) {}
 
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };

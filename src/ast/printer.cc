@@ -157,6 +157,16 @@ namespace aloha
             os << std::string(indent, ' ') << "}\n";
         }
 
+        void BreakStatement::write(std::ostream &os, unsigned long indent) const
+        {
+            os << std::string(indent, ' ') << "BreakStatement\n";
+        }
+
+        void ContinueStatement::write(std::ostream &os, unsigned long indent) const
+        {
+            os << std::string(indent, ' ') << "ContinueStatement\n";
+        }
+
         void IfStatement::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "IfStatement:{\n";

@@ -1,0 +1,40 @@
+fun test_basic_while() -> void {
+    mut i = 0;
+    mut sum = 0;
+
+    while (i < 5) {
+        sum = sum + i;
+        i = i + 1;
+    }
+
+    assert_msg(sum == 10, "while loop should sum 0 through 4");
+    println("[PASS] Basic while loop tests passed");
+}
+
+fun test_break_and_continue() -> void {
+    mut i = 0;
+    mut sum = 0;
+
+    while (i < 6) {
+        i = i + 1;
+
+        if (i == 2) {
+            continue;
+        }
+
+        if (i == 5) {
+            break;
+        }
+
+        sum = sum + i;
+    }
+
+    assert_msg(sum == 8, "break and continue should produce 1 + 3 + 4");
+    println("[PASS] Break and continue tests passed");
+}
+
+fun main() -> void {
+    test_basic_while();
+    test_break_and_continue();
+    println("All loop tests passed!");
+}

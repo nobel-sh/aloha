@@ -20,6 +20,8 @@ namespace aloha
         void Assignment::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void FunctionCall::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void ReturnStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void BreakStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void ContinueStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void IfStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void WhileLoop::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void ForLoop::accept(ASTVisitor &visitor) { visitor.visit(this); }
@@ -89,6 +91,10 @@ namespace aloha
 
         ReturnStatement::ReturnStatement(Location loc, ExprPtr expr)
             : Statement(loc), m_expression(std::move(expr)) {}
+
+        BreakStatement::BreakStatement(Location loc) : Statement(loc) {}
+
+        ContinueStatement::ContinueStatement(Location loc) : Statement(loc) {}
 
         IfStatement::IfStatement(Location loc, ExprPtr cond,
                                  std::unique_ptr<StatementBlock> then_branch,
