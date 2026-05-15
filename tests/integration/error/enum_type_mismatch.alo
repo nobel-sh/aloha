@@ -1,0 +1,15 @@
+// expect-error: Comparison operation '==' requires operands of the same type
+
+enum Color {
+  Red,
+  Green
+}
+
+enum Direction {
+  North,
+  South
+}
+
+fun main() -> void {
+  imut bad: bool = Color::Red == Direction::North;
+}

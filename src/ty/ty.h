@@ -25,6 +25,7 @@ namespace aloha
   }
 
   using StructId = uint32_t;
+  using EnumId = uint32_t;
   using FunctionId = uint32_t;
   using VarId = uint32_t;
 
@@ -37,6 +38,7 @@ namespace aloha
     BOOL,
     VOID,
     STRUCT,
+    ENUM,
     ARRAY,
     // add more
   };
@@ -48,14 +50,15 @@ namespace aloha
     std::string m_name;
 
     std::optional<StructId> m_struct_id;
+    std::optional<EnumId> m_enum_id;
 
     std::vector<TyId> m_type_params;
 
     TyInfo(TyId id, TyKind kind, const std::string &name)
-        : m_id(id), m_kind(kind), m_name(name), m_struct_id(std::nullopt) {}
+        : m_id(id), m_kind(kind), m_name(name), m_struct_id(std::nullopt), m_enum_id(std::nullopt) {}
 
     TyInfo(TyId id, TyKind kind, const std::string &name, StructId sid)
-        : m_id(id), m_kind(kind), m_name(name), m_struct_id(sid) {}
+        : m_id(id), m_kind(kind), m_name(name), m_struct_id(sid), m_enum_id(std::nullopt) {}
 
     bool is_builtin() const
     {
@@ -64,6 +67,8 @@ namespace aloha
     }
 
     bool is_struct() const { return m_kind == TyKind::STRUCT; }
+
+    bool is_enum() const { return m_kind == TyKind::ENUM; }
 
     bool is_array() const { return m_kind == TyKind::ARRAY; }
 
@@ -78,6 +83,7 @@ namespace aloha
     std::unordered_map<TyId, TyId> array_type_cache; // element_type -> array_type
     TyId next_ty_id;
     StructId next_struct_id;
+    EnumId next_enum_id;
 
   public:
     TyTable();
@@ -85,6 +91,8 @@ namespace aloha
     TyId register_builtin(const std::string &name, TyKind kind, TyId id);
 
     TyId register_struct(const std::string &name, StructId struct_id);
+
+    TyId register_enum(const std::string &name, EnumId enum_id);
 
     TyId register_array(TyId element_type);
 
@@ -97,6 +105,7 @@ namespace aloha
     bool has_ty_name(const std::string &name) const;
 
     StructId allocate_struct_id();
+    EnumId allocate_enum_id();
 
     std::string ty_name(TyId id) const;
 
@@ -105,6 +114,7 @@ namespace aloha
     bool is_string(TyId id) const;
     bool is_void(TyId id) const;
     bool is_struct(TyId id) const;
+    bool is_enum(TyId id) const;
     bool is_array(TyId id) const;
 
     std::optional<TyId> get_array_element_type(TyId array_ty) const;

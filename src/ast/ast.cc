@@ -14,6 +14,7 @@ namespace aloha
         void UnaryExpression::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void BinaryExpression::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Identifier::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void EnumVariant::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void StructFieldAccess::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void StructFieldAssignment::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Declaration::accept(ASTVisitor &visitor) { visitor.visit(this); }
@@ -28,6 +29,7 @@ namespace aloha
         void ForLoop::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Function::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void StructDecl::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void EnumDecl::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void StructInstantiation::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Array::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void ArrayAccess::accept(ASTVisitor &visitor) { visitor.visit(this); }
@@ -62,6 +64,11 @@ namespace aloha
 
         Identifier::Identifier(Location loc, std::string name)
             : Expression(loc), m_name(std::move(name)) {}
+
+        EnumVariant::EnumVariant(Location loc, std::string enum_name,
+                                 std::string variant_name)
+            : Expression(loc), m_enum_name(std::move(enum_name)),
+              m_variant_name(std::move(variant_name)) {}
 
         StructFieldAccess::StructFieldAccess(Location loc, ExprPtr struct_expr,
                                              std::string field_name)
@@ -150,6 +157,10 @@ namespace aloha
         StructDecl::StructDecl(Location loc, std::string name,
                                std::vector<StructField> fields)
             : Statement(loc), m_name(std::move(name)), m_fields(std::move(fields)) {}
+
+        EnumDecl::EnumDecl(Location loc, std::string name,
+                           std::vector<std::string> variants)
+            : Statement(loc), m_name(std::move(name)), m_variants(std::move(variants)) {}
 
         StructInstantiation::StructInstantiation(Location loc, std::string name,
                                                  std::vector<ExprPtr> values)

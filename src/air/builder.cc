@@ -27,6 +27,24 @@ namespace aloha
     current_expr = std::make_unique<air::StringLiteral>(node->m_loc, node->m_value);
   }
 
+  void AIRBuilder::visit(ast::EnumVariant *node)
+  {
+    auto variant_opt = symbol_table.lookup_enum_variant(node->m_enum_name, node->m_variant_name);
+    if (!variant_opt.has_value())
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Unknown enum variant '" + node->m_enum_name + "::" +
+                            node->m_variant_name + "'");
+      current_expr.reset();
+      return;
+    }
+
+    const EnumVariantSymbol &variant = variant_opt.value();
+    current_expr = std::make_unique<air::EnumValue>(
+        node->m_loc, variant.enum_name, variant.variant_name,
+        variant.value, variant.enum_type_id);
+  }
+
   void AIRBuilder::visit(ast::UnaryExpression *node)
   {
     auto operand = lower_expr(node->m_expr.get());
@@ -118,6 +136,18 @@ namespace aloha
         diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
                           "Comparison operation '" + op_str +
                               "' requires operands of the same type");
+        current_expr = std::make_unique<air::BinaryOp>(node->m_loc, op,
+                                                       std::move(left), std::move(right),
+                                                       TyIds::ERROR);
+        return;
+      }
+      if ((op == air::BinaryOpKind::LT || op == air::BinaryOpKind::LE ||
+           op == air::BinaryOpKind::GT || op == air::BinaryOpKind::GE) &&
+          left_ty != TyIds::INTEGER && left_ty != TyIds::FLOAT)
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                          "Comparison operation '" + op_str +
+                              "' requires numeric operands");
         current_expr = std::make_unique<air::BinaryOp>(node->m_loc, op,
                                                        std::move(left), std::move(right),
                                                        TyIds::ERROR);
@@ -510,6 +540,11 @@ namespace aloha
   }
 
   void AIRBuilder::visit(ast::StructDecl *node)
+  {
+    (void)node;
+  }
+
+  void AIRBuilder::visit(ast::EnumDecl *node)
   {
     (void)node;
   }

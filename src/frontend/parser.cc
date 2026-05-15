@@ -109,6 +109,10 @@ namespace aloha
       {
         program->m_nodes.push_back(parse_struct_decl());
       }
+      else if (match("enum"))
+      {
+        program->m_nodes.push_back(parse_enum_decl());
+      }
       else if (match("extern"))
       {
         program->m_nodes.push_back(parse_extern_function());
@@ -192,6 +196,21 @@ namespace aloha
     return fields;
   }
 
+  std::vector<std::string> Parser::parse_enum_variants()
+  {
+    std::vector<std::string> variants;
+    while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
+    {
+      auto identifier = expect_identifier();
+      variants.push_back(identifier->m_name);
+      if (!match(TokenKind::RIGHT_BRACE))
+      {
+        consume(TokenKind::COMMA, "Expected ',' or '}' after enum variant");
+      }
+    }
+    return variants;
+  }
+
   std::unique_ptr<ast::Expression> Parser::parse_struct_field_access()
   {
     Location loc = current_location();
@@ -214,6 +233,18 @@ namespace aloha
                                              std::move(fields));
   }
 
+  std::unique_ptr<ast::Statement> Parser::parse_enum_decl()
+  {
+    Location loc = current_location();
+    consume("enum", "Expected 'enum' keyword");
+    auto identifier = expect_identifier();
+    consume(TokenKind::LEFT_BRACE, "Expected '{' after enum name");
+    auto variants = parse_enum_variants();
+    consume(TokenKind::RIGHT_BRACE, "Expected '}' after enum variants");
+    return std::make_unique<ast::EnumDecl>(loc, std::move(identifier->m_name),
+                                           std::move(variants));
+  }
+
   std::unique_ptr<ast::Expression> Parser::parse_struct_instantiation()
   {
     Location loc = current_location();
@@ -233,6 +264,16 @@ namespace aloha
     consume(TokenKind::RIGHT_BRACE, "Expected '}' after struct instantiation");
     return std::make_unique<ast::StructInstantiation>(
         loc, std::move(struct_ident->m_name), std::move(field_values));
+  }
+
+  std::unique_ptr<ast::Expression> Parser::parse_enum_variant()
+  {
+    Location loc = current_location();
+    auto enum_ident = expect_identifier();
+    consume(TokenKind::DOUBLE_COLON, "Expected '::' after enum name");
+    auto variant_ident = expect_identifier();
+    return std::make_unique<ast::EnumVariant>(
+        loc, std::move(enum_ident->m_name), std::move(variant_ident->m_name));
   }
 
   std::vector<ast::Parameter> Parser::parse_parameters()
@@ -654,6 +695,10 @@ namespace aloha
 
     if (match(TokenKind::IDENT))
     {
+      if (match(TokenKind::DOUBLE_COLON, true))
+      {
+        return parse_enum_variant();
+      }
       if (match(TokenKind::LEFT_PAREN, true))
       {
         return parse_function_call();

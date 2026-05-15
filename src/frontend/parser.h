@@ -72,8 +72,10 @@ namespace aloha
 
     std::vector<ast::Parameter> parse_parameters();
     std::vector<ast::StructField> parse_struct_field();
+    std::vector<std::string> parse_enum_variants();
 
     std::unique_ptr<ast::Statement> parse_struct_decl();
+    std::unique_ptr<ast::Statement> parse_enum_decl();
     std::unique_ptr<ast::Statement> parse_struct_field_assignment();
     std::unique_ptr<ast::Statement> parse_variable_declaration();
     std::unique_ptr<ast::Statement> parse_variable_assignment();
@@ -86,6 +88,7 @@ namespace aloha
 
     std::unique_ptr<ast::Expression> parse_struct_field_access();
     std::unique_ptr<ast::Expression> parse_struct_instantiation();
+    std::unique_ptr<ast::Expression> parse_enum_variant();
     std::unique_ptr<ast::Expression> parse_array();
 
     std::unique_ptr<ast::Expression>

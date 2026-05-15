@@ -1,0 +1,10 @@
+// expect-error: Unknown enum variant 'Color::Blue'
+
+enum Color {
+  Red,
+  Green
+}
+
+fun main() -> void {
+  imut c: Color = Color::Blue;
+}

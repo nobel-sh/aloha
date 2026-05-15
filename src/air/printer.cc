@@ -60,6 +60,13 @@ namespace aloha
                << ", ty=" << ty_name(node->m_ty) << ")\n";
         }
 
+        void Printer::visit(EnumValue *node)
+        {
+            write_indent();
+            os << "EnumValue: " << node->m_enum_name << "::" << node->m_variant_name
+               << " = " << node->m_value << " (ty=" << ty_name(node->m_ty) << ")\n";
+        }
+
         void Printer::visit(BinaryOp *node)
         {
             write_indent();

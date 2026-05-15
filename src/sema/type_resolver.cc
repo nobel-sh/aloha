@@ -81,6 +81,11 @@ namespace aloha
       {
         return struct_opt->type_id;
       }
+      auto enum_opt = symbol_table.lookup_enum(spec.name);
+      if (enum_opt.has_value())
+      {
+        return enum_opt->type_id;
+      }
 
       std::string suggestion = suggest_type_name(spec.name);
       if (!suggestion.empty())
@@ -236,6 +241,11 @@ namespace aloha
     for (const auto &[struct_name, struct_symbol] : symbol_table.structs)
     {
       candidates.push_back(struct_name);
+    }
+
+    for (const auto &[enum_name, enum_symbol] : symbol_table.enums)
+    {
+      candidates.push_back(enum_name);
     }
 
     std::string best_match;

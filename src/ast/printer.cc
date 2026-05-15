@@ -81,6 +81,12 @@ namespace aloha
             os << std::string(indent, ' ') << "Identifier: " << m_name << "\n";
         }
 
+        void EnumVariant::write(std::ostream &os, unsigned long indent) const
+        {
+            os << std::string(indent, ' ') << "EnumVariant: "
+               << m_enum_name << "::" << m_variant_name << "\n";
+        }
+
         void StructFieldAccess::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "StructFieldAccess:{\n";
@@ -260,6 +266,19 @@ namespace aloha
             {
                 os << std::string(indent + 4, ' ') << field.m_name << ": "
                    << type_to_string(field.m_type) << "\n";
+            }
+            os << std::string(indent + 2, ' ') << "]\n";
+            os << std::string(indent, ' ') << "}\n";
+        }
+
+        void EnumDecl::write(std::ostream &os, unsigned long indent) const
+        {
+            os << std::string(indent, ' ') << "EnumDecl:{\n";
+            os << std::string(indent + 2, ' ') << "Name: " << m_name << "\n";
+            os << std::string(indent + 2, ' ') << "Variants:[\n";
+            for (const auto &variant : m_variants)
+            {
+                os << std::string(indent + 4, ' ') << variant << "\n";
             }
             os << std::string(indent + 2, ' ') << "]\n";
             os << std::string(indent, ' ') << "}\n";

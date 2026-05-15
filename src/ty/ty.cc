@@ -5,7 +5,7 @@ namespace aloha
 {
 
   TyTable::TyTable()
-      : next_ty_id(TyIds::USER_DEFINED_START), next_struct_id(0)
+      : next_ty_id(TyIds::USER_DEFINED_START), next_struct_id(0), next_enum_id(0)
   {
     register_builtin("int", TyKind::INTEGER, TyIds::INTEGER);
     register_builtin("float", TyKind::FLOAT, TyIds::FLOAT);
@@ -32,6 +32,21 @@ namespace aloha
 
     TyId ty_id = next_ty_id++;
     auto ty_info = std::make_unique<TyInfo>(ty_id, TyKind::STRUCT, name, struct_id);
+    types[ty_id] = std::move(ty_info);
+    name_to_ty[name] = ty_id;
+    return ty_id;
+  }
+
+  TyId TyTable::register_enum(const std::string &name, EnumId enum_id)
+  {
+    if (auto existing = lookup_by_name(name))
+    {
+      return *existing;
+    }
+
+    TyId ty_id = next_ty_id++;
+    auto ty_info = std::make_unique<TyInfo>(ty_id, TyKind::ENUM, name);
+    ty_info->m_enum_id = enum_id;
     types[ty_id] = std::move(ty_info);
     name_to_ty[name] = ty_id;
     return ty_id;
@@ -101,6 +116,11 @@ namespace aloha
     return next_struct_id++;
   }
 
+  EnumId TyTable::allocate_enum_id()
+  {
+    return next_enum_id++;
+  }
+
   std::string TyTable::ty_name(TyId id) const
   {
     auto ty_info = get_ty_info(id);
@@ -135,6 +155,12 @@ namespace aloha
   {
     auto ty_info = get_ty_info(id);
     return ty_info && ty_info->m_kind == TyKind::STRUCT;
+  }
+
+  bool TyTable::is_enum(TyId id) const
+  {
+    auto ty_info = get_ty_info(id);
+    return ty_info && ty_info->m_kind == TyKind::ENUM;
   }
 
   bool TyTable::is_array(TyId id) const

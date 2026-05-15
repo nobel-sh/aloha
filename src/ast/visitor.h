@@ -15,6 +15,7 @@ namespace aloha
     virtual void visit(ast::UnaryExpression *node) = 0;
     virtual void visit(ast::BinaryExpression *node) = 0;
     virtual void visit(ast::Identifier *node) = 0;
+    virtual void visit(ast::EnumVariant *node) = 0;
     virtual void visit(ast::Declaration *node) = 0;
     virtual void visit(ast::Assignment *node) = 0;
     virtual void visit(ast::ArrayAssignment *node) = 0;
@@ -27,6 +28,7 @@ namespace aloha
     virtual void visit(ast::ForLoop *node) = 0;
     virtual void visit(ast::Function *node) = 0;
     virtual void visit(ast::StructDecl *node) = 0;
+    virtual void visit(ast::EnumDecl *node) = 0;
     virtual void visit(ast::StructInstantiation *node) = 0;
     virtual void visit(ast::StructFieldAccess *node) = 0;
     virtual void visit(ast::StructFieldAssignment *node) = 0;

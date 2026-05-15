@@ -11,6 +11,7 @@
   X(BANG, "!")           \
   X(AMP_AMP, "&&")       \
   X(COLON, ":")          \
+  X(DOUBLE_COLON, "::")   \
   X(COMMA, ",")          \
   X(EQUAL_EQUAL, "==")   \
   X(EQUAL, "=")          \

@@ -70,6 +70,7 @@ namespace aloha
     void visit(ast::Float *node) override;
     void visit(ast::Boolean *node) override;
     void visit(ast::String *node) override;
+    void visit(ast::EnumVariant *node) override;
     void visit(ast::UnaryExpression *node) override;
     void visit(ast::BinaryExpression *node) override;
     void visit(ast::Identifier *node) override;
@@ -85,6 +86,7 @@ namespace aloha
     void visit(ast::ForLoop *node) override;
     void visit(ast::Function *node) override;
     void visit(ast::StructDecl *node) override;
+    void visit(ast::EnumDecl *node) override;
     void visit(ast::StructInstantiation *node) override;
     void visit(ast::StructFieldAccess *node) override;
     void visit(ast::StructFieldAssignment *node) override;

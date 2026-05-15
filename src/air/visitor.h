@@ -18,6 +18,7 @@ namespace aloha
       virtual void visit(StringLiteral *node) = 0;
       virtual void visit(BoolLiteral *node) = 0;
       virtual void visit(VarRef *node) = 0;
+      virtual void visit(EnumValue *node) = 0;
       virtual void visit(BinaryOp *node) = 0;
       virtual void visit(UnaryOp *node) = 0;
       virtual void visit(Call *node) = 0;

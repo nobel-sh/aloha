@@ -144,6 +144,17 @@ namespace aloha
       void accept(ASTVisitor &visitor) override;
     };
 
+    class EnumVariant : public Expression
+    {
+    public:
+      std::string m_enum_name;
+      std::string m_variant_name;
+
+      EnumVariant(Location loc, std::string enum_name, std::string variant_name);
+      void write(std::ostream &os, unsigned long indent = 0) const override;
+      void accept(ASTVisitor &visitor) override;
+    };
+
     class StructFieldAccess : public Expression
     {
     public:
@@ -331,6 +342,17 @@ namespace aloha
       std::vector<StructField> m_fields;
 
       StructDecl(Location loc, std::string name, std::vector<StructField> fields);
+      void write(std::ostream &os, unsigned long indent = 0) const override;
+      void accept(ASTVisitor &visitor) override;
+    };
+
+    class EnumDecl : public Statement
+    {
+    public:
+      std::string m_name;
+      std::vector<std::string> m_variants;
+
+      EnumDecl(Location loc, std::string name, std::vector<std::string> variants);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };

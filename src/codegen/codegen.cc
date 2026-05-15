@@ -131,6 +131,11 @@ namespace aloha
         }
       }
     }
+    else if (ty_info->is_enum())
+    {
+      type_map[ty_id] = llvm::Type::getInt64Ty(*context);
+      return type_map[ty_id];
+    }
     else if (ty_info->is_array())
     {
       if (ty_info->m_type_params.empty())
@@ -412,6 +417,11 @@ namespace aloha
     current_value = builder->CreateLoad(alloca->getAllocatedType(), alloca, node->m_name);
   }
 
+  void CodeGenerator::visit(air::EnumValue *node)
+  {
+    current_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), node->m_value);
+  }
+
   enum class NumericKind
   {
     INTEGER,
@@ -553,7 +563,8 @@ namespace aloha
       break;
 
     case air::BinaryOpKind::EQ:
-      if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL)
+      if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL ||
+          left->getType()->isIntegerTy())
         current_value = builder->CreateICmpEQ(left, right, "eqtmp");
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFCmpOEQ(left, right, "eqtmp");
@@ -562,7 +573,8 @@ namespace aloha
       break;
 
     case air::BinaryOpKind::NE:
-      if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL)
+      if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL ||
+          left->getType()->isIntegerTy())
         current_value = builder->CreateICmpNE(left, right, "netmp");
       else if (kind == NumericKind::FLOAT)
         current_value = builder->CreateFCmpONE(left, right, "netmp");

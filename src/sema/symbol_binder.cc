@@ -35,6 +35,10 @@ namespace aloha
       {
         bind_struct_declaration(struct_decl);
       }
+      else if (auto enum_decl = dynamic_cast<ast::EnumDecl *>(node.get()))
+      {
+        bind_enum_declaration(enum_decl);
+      }
       else if (auto func = dynamic_cast<ast::Function *>(node.get()))
       {
         bind_function_declaration(func, type_arena);
@@ -56,6 +60,35 @@ namespace aloha
     TyId type_id = ty_table.register_struct(name, struct_id);
 
     symbol_table_ptr->register_struct(name, struct_id, type_id, loc);
+  }
+
+  void SymbolBinder::bind_enum_declaration(ast::EnumDecl *enum_decl)
+  {
+    const std::string &name = enum_decl->m_name;
+    Location loc = enum_decl->loc();
+
+    if (check_duplicate_enum(name, loc))
+    {
+      return;
+    }
+
+    EnumId enum_id = ty_table.allocate_enum_id();
+    TyId type_id = ty_table.register_enum(name, enum_id);
+    symbol_table_ptr->register_enum(name, enum_id, type_id, loc);
+
+    std::unordered_set<std::string> seen_variants;
+    for (size_t i = 0; i < enum_decl->m_variants.size(); ++i)
+    {
+      const std::string &variant = enum_decl->m_variants[i];
+      if (!seen_variants.insert(variant).second)
+      {
+        diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
+                          "Duplicate enum variant declaration: '" + name + "::" + variant + "'");
+        continue;
+      }
+      symbol_table_ptr->register_enum_variant(name, variant, enum_id, type_id,
+                                              static_cast<uint32_t>(i), loc);
+    }
   }
 
   void SymbolBinder::bind_function_declaration(ast::Function *func, const TySpecArena &type_arena)
@@ -223,9 +256,22 @@ namespace aloha
   bool SymbolBinder::check_duplicate_struct(const std::string &name,
                                             Location loc)
   {
-    if (symbol_table_ptr->lookup_struct(name).has_value())
+    if (symbol_table_ptr->lookup_struct(name).has_value() ||
+        symbol_table_ptr->lookup_enum(name).has_value())
     {
       diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate struct declaration: '" + name + "'");
+      return true;
+    }
+    return false;
+  }
+
+  bool SymbolBinder::check_duplicate_enum(const std::string &name,
+                                          Location loc)
+  {
+    if (symbol_table_ptr->lookup_enum(name).has_value() ||
+        symbol_table_ptr->lookup_struct(name).has_value())
+    {
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate enum declaration: '" + name + "'");
       return true;
     }
     return false;

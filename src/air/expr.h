@@ -68,6 +68,21 @@ namespace aloha
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
 
+    class EnumValue : public Expr
+    {
+    public:
+      std::string m_enum_name;
+      std::string m_variant_name;
+      uint32_t m_value;
+
+      EnumValue(const Location &loc, const std::string &enum_name,
+                const std::string &variant_name, uint32_t value, TyId ty)
+          : Expr(loc, ty), m_enum_name(enum_name), m_variant_name(variant_name),
+            m_value(value) {}
+
+      void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+    };
+
     enum class BinaryOpKind
     {
       // arithmetic

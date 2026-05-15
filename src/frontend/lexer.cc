@@ -145,7 +145,7 @@ bool Lexer::is_at_end() const
 Token Lexer::lex_single_token()
 {
   static const std::unordered_map<char, TokenKind> single_char_tokens = {
-      {'(', TokenKind::LEFT_PAREN}, {')', TokenKind::RIGHT_PAREN}, {'{', TokenKind::LEFT_BRACE}, {'}', TokenKind::RIGHT_BRACE}, {'[', TokenKind::LEFT_BRACKET}, {']', TokenKind::RIGHT_BRACKET}, {',', TokenKind::COMMA}, {'+', TokenKind::PLUS}, {'*', TokenKind::STAR}, {'%', TokenKind::PERCENT}, {';', TokenKind::SEMICOLON}, {':', TokenKind::COLON}};
+      {'(', TokenKind::LEFT_PAREN}, {')', TokenKind::RIGHT_PAREN}, {'{', TokenKind::LEFT_BRACE}, {'}', TokenKind::RIGHT_BRACE}, {'[', TokenKind::LEFT_BRACKET}, {']', TokenKind::RIGHT_BRACKET}, {',', TokenKind::COMMA}, {'+', TokenKind::PLUS}, {'*', TokenKind::STAR}, {'%', TokenKind::PERCENT}, {';', TokenKind::SEMICOLON}};
 
   // skip whitespace
   while (!is_eof() && std::isspace(peek_token()))
@@ -203,6 +203,10 @@ Token Lexer::lex_single_token()
   case '=':
     return peek_token(1) == '=' ? make_two_char_token(TokenKind::EQUAL_EQUAL, TokenKind::EQUAL)
                                 : make_single_token(TokenKind::EQUAL);
+
+  case ':':
+    return peek_token(1) == ':' ? make_two_char_token(TokenKind::DOUBLE_COLON, TokenKind::COLON)
+                                : make_single_token(TokenKind::COLON);
 
   case '-':
     return peek_token(1) == '>' ? make_two_char_token(TokenKind::THIN_ARROW, TokenKind::MINUS)

@@ -14,6 +14,7 @@ namespace aloha
         class UnaryExpression;
         class BinaryExpression;
         class Identifier;
+        class EnumVariant;
         class Declaration;
         class Assignment;
         class ArrayAssignment;
@@ -26,6 +27,7 @@ namespace aloha
         class ForLoop;
         class Function;
         class StructDecl;
+        class EnumDecl;
         class StructInstantiation;
         class StructFieldAccess;
         class StructFieldAssignment;

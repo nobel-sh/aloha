@@ -55,6 +55,33 @@ namespace aloha
         : struct_id(sid), type_id(tid), name(name), location(loc) {}
   };
 
+  struct EnumSymbol
+  {
+    EnumId enum_id;
+    TyId type_id;
+    std::string name;
+    Location location;
+
+    EnumSymbol(EnumId eid, TyId tid, const std::string &name, Location loc)
+        : enum_id(eid), type_id(tid), name(name), location(loc) {}
+  };
+
+  struct EnumVariantSymbol
+  {
+    EnumId enum_id;
+    TyId enum_type_id;
+    std::string enum_name;
+    std::string variant_name;
+    uint32_t value;
+    Location location;
+
+    EnumVariantSymbol(EnumId eid, TyId tid, const std::string &enum_name,
+                      const std::string &variant_name, uint32_t value,
+                      Location loc)
+        : enum_id(eid), enum_type_id(tid), enum_name(enum_name),
+          variant_name(variant_name), value(value), location(loc) {}
+  };
+
   class Scope
   {
   private:
@@ -95,6 +122,8 @@ namespace aloha
     std::unordered_map<std::string, FunctionSymbol> functions;
 
     std::unordered_map<std::string, StructSymbol> structs;
+    std::unordered_map<std::string, EnumSymbol> enums;
+    std::unordered_map<std::string, EnumVariantSymbol> enum_variants;
 
     std::unordered_map<VarId, VarSymbol> variables;
 
@@ -126,6 +155,22 @@ namespace aloha
       structs.emplace(name, StructSymbol(struct_id, type_id, name, loc));
     }
 
+    void register_enum(const std::string &name, EnumId enum_id,
+                       TyId type_id, Location loc)
+    {
+      enums.emplace(name, EnumSymbol(enum_id, type_id, name, loc));
+    }
+
+    void register_enum_variant(const std::string &enum_name,
+                               const std::string &variant_name,
+                               EnumId enum_id, TyId type_id, uint32_t value,
+                               Location loc)
+    {
+      enum_variants.emplace(enum_name + "::" + variant_name,
+                            EnumVariantSymbol(enum_id, type_id, enum_name,
+                                              variant_name, value, loc));
+    }
+
     std::optional<FunctionSymbol> lookup_function(const std::string &name) const
     {
       auto it = functions.find(name);
@@ -140,6 +185,27 @@ namespace aloha
     {
       auto it = structs.find(name);
       if (it != structs.end())
+      {
+        return it->second;
+      }
+      return std::nullopt;
+    }
+
+    std::optional<EnumSymbol> lookup_enum(const std::string &name) const
+    {
+      auto it = enums.find(name);
+      if (it != enums.end())
+      {
+        return it->second;
+      }
+      return std::nullopt;
+    }
+
+    std::optional<EnumVariantSymbol> lookup_enum_variant(const std::string &enum_name,
+                                                         const std::string &variant_name) const
+    {
+      auto it = enum_variants.find(enum_name + "::" + variant_name);
+      if (it != enum_variants.end())
       {
         return it->second;
       }
@@ -164,6 +230,11 @@ namespace aloha
     const std::unordered_map<std::string, StructSymbol> &get_all_structs() const
     {
       return structs;
+    }
+
+    const std::unordered_map<std::string, EnumSymbol> &get_all_enums() const
+    {
+      return enums;
     }
   };
 

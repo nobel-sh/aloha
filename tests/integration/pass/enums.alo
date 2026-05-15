@@ -1,0 +1,17 @@
+enum Color {
+  Red,
+  Green,
+  Blue
+}
+
+fun is_red(c: Color) -> bool {
+  return c == Color::Red;
+}
+
+fun main() -> void {
+  imut c: Color = Color::Green;
+  imut r: Color = Color::Red;
+
+  assert_msg(c != Color::Red, "green is not red");
+  assert_msg(is_red(r), "red helper works");
+}

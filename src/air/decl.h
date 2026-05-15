@@ -14,6 +14,7 @@ namespace aloha
     class StringLiteral;
     class BoolLiteral;
     class VarRef;
+    class EnumValue;
     class BinaryOp;
     class UnaryOp;
     class Call;

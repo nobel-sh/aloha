@@ -8,6 +8,7 @@
 #include "../error/diagnostic_engine.h"
 #include "../ast/ty_spec.h"
 #include <memory>
+#include <unordered_set>
 
 namespace aloha
 {
@@ -42,6 +43,7 @@ namespace aloha
     // register all struct names and function names
     void bind_declarations(ast::Program *program, const TySpecArena &type_arena);
     void bind_struct_declaration(ast::StructDecl *struct_decl);
+    void bind_enum_declaration(ast::EnumDecl *enum_decl);
     void bind_function_declaration(ast::Function *func, const TySpecArena &type_arena);
 
     // bind variables in function bodies
@@ -52,6 +54,7 @@ namespace aloha
 
     bool check_duplicate_function(const std::string &name, Location loc);
     bool check_duplicate_struct(const std::string &name, Location loc);
+    bool check_duplicate_enum(const std::string &name, Location loc);
     bool check_duplicate_parameter(const std::string &name, Location loc,
                                    Scope *scope);
     bool check_duplicate_variable(const std::string &name, Location loc,
