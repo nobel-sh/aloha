@@ -24,6 +24,7 @@ namespace aloha
     virtual void visit(ast::BreakStatement *node) = 0;
     virtual void visit(ast::ContinueStatement *node) = 0;
     virtual void visit(ast::IfStatement *node) = 0;
+    virtual void visit(ast::MatchStatement *node) = 0;
     virtual void visit(ast::WhileLoop *node) = 0;
     virtual void visit(ast::ForLoop *node) = 0;
     virtual void visit(ast::Function *node) = 0;

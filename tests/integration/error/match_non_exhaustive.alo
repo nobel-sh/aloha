@@ -1,0 +1,15 @@
+// expect-error: Match statement must cover all variants of enum 'TokenKind' or include '_'
+
+enum TokenKind {
+  Ident,
+  Number
+}
+
+fun main() -> void {
+  imut kind = TokenKind::Ident;
+  match kind {
+    TokenKind::Ident => {
+      println("ident");
+    }
+  }
+}

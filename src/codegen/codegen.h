@@ -104,6 +104,7 @@ namespace aloha
     void visit(air::Break *node) override;
     void visit(air::Continue *node) override;
     void visit(air::If *node) override;
+    void visit(air::Match *node) override;
     void visit(air::While *node) override;
     void visit(air::ExprStmt *node) override;
 

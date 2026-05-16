@@ -201,8 +201,15 @@ Token Lexer::lex_single_token()
     return make_single_token(TokenKind::SLASH);
 
   case '=':
-    return peek_token(1) == '=' ? make_two_char_token(TokenKind::EQUAL_EQUAL, TokenKind::EQUAL)
-                                : make_single_token(TokenKind::EQUAL);
+    if (peek_token(1) == '=')
+    {
+      return make_two_char_token(TokenKind::EQUAL_EQUAL, TokenKind::EQUAL);
+    }
+    if (peek_token(1) == '>')
+    {
+      return make_two_char_token(TokenKind::FAT_ARROW, TokenKind::EQUAL);
+    }
+    return make_single_token(TokenKind::EQUAL);
 
   case ':':
     return peek_token(1) == ':' ? make_two_char_token(TokenKind::DOUBLE_COLON, TokenKind::COLON)

@@ -32,6 +32,7 @@ namespace aloha
     class Break;
     class Continue;
     class If;
+    class Match;
     class While;
     class ExprStmt;
 

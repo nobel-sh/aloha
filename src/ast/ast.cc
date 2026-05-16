@@ -25,6 +25,7 @@ namespace aloha
         void BreakStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void ContinueStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void IfStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void MatchStatement::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void WhileLoop::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void ForLoop::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Function::accept(ASTVisitor &visitor) { visitor.visit(this); }
@@ -116,6 +117,20 @@ namespace aloha
               m_then_branch(std::move(then_branch)),
               m_else_branch(std::move(else_branch)) {}
         bool IfStatement::has_else_branch() const { return m_else_branch != nullptr; }
+
+        MatchArm::MatchArm(Location loc, std::string enum_name,
+                           std::string variant_name,
+                           std::unique_ptr<StatementBlock> body)
+            : m_loc(loc), m_is_wildcard(false), m_enum_name(std::move(enum_name)),
+              m_variant_name(std::move(variant_name)), m_body(std::move(body)) {}
+
+        MatchArm::MatchArm(Location loc, std::unique_ptr<StatementBlock> body)
+            : m_loc(loc), m_is_wildcard(true), m_body(std::move(body)) {}
+
+        MatchStatement::MatchStatement(Location loc, ExprPtr scrutinee,
+                                       std::vector<MatchArm> arms)
+            : Statement(loc), m_scrutinee(std::move(scrutinee)),
+              m_arms(std::move(arms)) {}
 
         WhileLoop::WhileLoop(Location loc, ExprPtr cond,
                              std::unique_ptr<StatementBlock> body)

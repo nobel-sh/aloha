@@ -1,0 +1,9 @@
+// expect-error: Match expression must be an enum
+
+fun main() -> void {
+  match 1 {
+    _ => {
+      println("bad");
+    }
+  }
+}

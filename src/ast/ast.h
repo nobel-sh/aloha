@@ -271,6 +271,31 @@ namespace aloha
       bool has_else_branch() const;
     };
 
+    class MatchArm
+    {
+    public:
+      Location m_loc;
+      bool m_is_wildcard;
+      std::string m_enum_name;
+      std::string m_variant_name;
+      std::unique_ptr<StatementBlock> m_body;
+
+      MatchArm(Location loc, std::string enum_name, std::string variant_name,
+               std::unique_ptr<StatementBlock> body);
+      MatchArm(Location loc, std::unique_ptr<StatementBlock> body);
+    };
+
+    class MatchStatement : public Statement
+    {
+    public:
+      ExprPtr m_scrutinee;
+      std::vector<MatchArm> m_arms;
+
+      MatchStatement(Location loc, ExprPtr scrutinee, std::vector<MatchArm> arms);
+      void write(std::ostream &os, unsigned long indent = 0) const override;
+      void accept(ASTVisitor &visitor) override;
+    };
+
     class WhileLoop : public Statement
     {
     public:

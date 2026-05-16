@@ -317,6 +317,44 @@ namespace aloha
             indent -= 2;
         }
 
+        void Printer::visit(Match *node)
+        {
+            write_indent();
+            os << "Match:\n";
+
+            indent += 2;
+            write_indent();
+            os << "Scrutinee:\n";
+            indent += 2;
+            node->m_scrutinee->accept(*this);
+            indent -= 2;
+
+            write_indent();
+            os << "Arms:\n";
+            indent += 2;
+            for (const auto &arm : node->m_arms)
+            {
+                write_indent();
+                if (arm.m_is_wildcard)
+                {
+                    os << "_:\n";
+                }
+                else
+                {
+                    os << arm.m_enum_name << "::" << arm.m_variant_name
+                       << " = " << arm.m_variant_value << ":\n";
+                }
+                indent += 2;
+                for (const auto &stmt : arm.m_body)
+                {
+                    stmt->accept(*this);
+                }
+                indent -= 2;
+            }
+            indent -= 2;
+            indent -= 2;
+        }
+
         void Printer::visit(While *node)
         {
             write_indent();

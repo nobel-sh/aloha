@@ -119,6 +119,40 @@ namespace aloha
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
 
+    struct MatchArm
+    {
+      bool m_is_wildcard;
+      std::string m_enum_name;
+      std::string m_variant_name;
+      uint32_t m_variant_value;
+      std::vector<StmtPtr> m_body;
+      Location m_loc;
+
+      MatchArm(const std::string &enum_name, const std::string &variant_name,
+               uint32_t variant_value, std::vector<StmtPtr> body,
+               const Location &loc)
+          : m_is_wildcard(false), m_enum_name(enum_name),
+            m_variant_name(variant_name), m_variant_value(variant_value),
+            m_body(std::move(body)), m_loc(loc) {}
+
+      MatchArm(std::vector<StmtPtr> body, const Location &loc)
+          : m_is_wildcard(true), m_variant_value(0),
+            m_body(std::move(body)), m_loc(loc) {}
+    };
+
+    class Match : public Stmt
+    {
+    public:
+      ExprPtr m_scrutinee;
+      std::vector<MatchArm> m_arms;
+
+      Match(const Location &loc, ExprPtr scrutinee, std::vector<MatchArm> arms)
+          : Stmt(loc), m_scrutinee(std::move(scrutinee)),
+            m_arms(std::move(arms)) {}
+
+      void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+    };
+
     class While : public Stmt
     {
     public:

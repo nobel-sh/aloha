@@ -319,6 +319,10 @@ namespace aloha
     {
       return parse_if_statement();
     }
+    if (match("match"))
+    {
+      return parse_match_statement();
+    }
     if (match("while"))
     {
       return parse_while_loop();
@@ -367,6 +371,7 @@ namespace aloha
 
       // Check if it's a block statement before moving the pointer
       bool is_block_stmt = dynamic_cast<ast::IfStatement *>(stmt.get()) != nullptr ||
+                           dynamic_cast<ast::MatchStatement *>(stmt.get()) != nullptr ||
                            dynamic_cast<ast::WhileLoop *>(stmt.get()) != nullptr;
 
       statements->m_statements.push_back(std::move(stmt));
@@ -516,6 +521,54 @@ namespace aloha
     return std::make_unique<ast::IfStatement>(loc, std::move(condition),
                                               std::move(then_branch),
                                               std::move(else_branch));
+  }
+
+  std::unique_ptr<ast::Statement> Parser::parse_match_statement()
+  {
+    Location loc = current_location();
+    consume("match", "Expected 'match' keyword");
+    std::unique_ptr<ast::Expression> scrutinee;
+    if (match(TokenKind::IDENT) && match(TokenKind::LEFT_BRACE, true))
+    {
+      scrutinee = expect_identifier();
+    }
+    else
+    {
+      scrutinee = parse_expression(0);
+    }
+    consume(TokenKind::LEFT_BRACE, "Expected '{' after match expression");
+
+    std::vector<ast::MatchArm> arms;
+    while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
+    {
+      Location arm_loc = current_location();
+      if (match(TokenKind::UNDERSCORE))
+      {
+        advance();
+        consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
+        consume(TokenKind::LEFT_BRACE, "Expected '{' before match arm body");
+        arms.emplace_back(arm_loc, parse_statements());
+      }
+      else
+      {
+        auto enum_ident = expect_identifier();
+        consume(TokenKind::DOUBLE_COLON, "Expected '::' in enum match pattern");
+        auto variant_ident = expect_identifier();
+        consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
+        consume(TokenKind::LEFT_BRACE, "Expected '{' before match arm body");
+        arms.emplace_back(arm_loc, std::move(enum_ident->m_name),
+                          std::move(variant_ident->m_name), parse_statements());
+      }
+
+      if (match(TokenKind::COMMA))
+      {
+        advance();
+      }
+    }
+
+    consume(TokenKind::RIGHT_BRACE, "Expected '}' after match arms");
+    return std::make_unique<ast::MatchStatement>(loc, std::move(scrutinee),
+                                                 std::move(arms));
   }
 
   std::unique_ptr<ast::Statement> Parser::parse_while_loop()

@@ -84,6 +84,7 @@ namespace aloha
     std::unique_ptr<ast::Statement> parse_break_statement();
     std::unique_ptr<ast::Statement> parse_continue_statement();
     std::unique_ptr<ast::Statement> parse_if_statement();
+    std::unique_ptr<ast::Statement> parse_match_statement();
     std::unique_ptr<ast::Statement> parse_while_loop();
 
     std::unique_ptr<ast::Expression> parse_struct_field_access();

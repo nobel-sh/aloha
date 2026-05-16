@@ -1,0 +1,25 @@
+enum TokenKind {
+  Ident,
+  Number,
+  Plus
+}
+
+fun token_score(kind: TokenKind) -> int {
+  match kind {
+    TokenKind::Ident => {
+      return 1;
+    }
+    TokenKind::Number => {
+      return 2;
+    }
+    _ => {
+      return 3;
+    }
+  }
+}
+
+fun main() -> void {
+  assert_msg(token_score(TokenKind::Ident) == 1, "ident match works");
+  assert_msg(token_score(TokenKind::Number) == 2, "number match works");
+  assert_msg(token_score(TokenKind::Plus) == 3, "wildcard match works");
+}

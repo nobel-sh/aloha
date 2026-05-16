@@ -212,6 +212,20 @@ namespace aloha
       return std::nullopt;
     }
 
+    std::vector<EnumVariantSymbol> get_enum_variants(const std::string &enum_name) const
+    {
+      std::vector<EnumVariantSymbol> variants;
+      for (const auto &[key, variant] : enum_variants)
+      {
+        (void)key;
+        if (variant.enum_name == enum_name)
+        {
+          variants.push_back(variant);
+        }
+      }
+      return variants;
+    }
+
     std::optional<VarSymbol> lookup_variable(VarId id) const
     {
       auto it = variables.find(id);

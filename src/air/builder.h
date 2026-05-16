@@ -16,6 +16,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 
@@ -82,6 +83,7 @@ namespace aloha
     void visit(ast::BreakStatement *node) override;
     void visit(ast::ContinueStatement *node) override;
     void visit(ast::IfStatement *node) override;
+    void visit(ast::MatchStatement *node) override;
     void visit(ast::WhileLoop *node) override;
     void visit(ast::ForLoop *node) override;
     void visit(ast::Function *node) override;

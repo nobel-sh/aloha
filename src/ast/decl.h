@@ -23,6 +23,7 @@ namespace aloha
         class BreakStatement;
         class ContinueStatement;
         class IfStatement;
+        class MatchStatement;
         class WhileLoop;
         class ForLoop;
         class Function;

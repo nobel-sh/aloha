@@ -36,6 +36,7 @@ namespace aloha
       virtual void visit(Break *node) = 0;
       virtual void visit(Continue *node) = 0;
       virtual void visit(If *node) = 0;
+      virtual void visit(Match *node) = 0;
       virtual void visit(While *node) = 0;
       virtual void visit(ExprStmt *node) = 0;
 

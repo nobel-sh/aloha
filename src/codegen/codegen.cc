@@ -1135,6 +1135,91 @@ namespace aloha
     }
   }
 
+  void CodeGenerator::visit(air::Match *node)
+  {
+    node->m_scrutinee->accept(*this);
+    llvm::Value *scrutinee = current_value;
+    if (!scrutinee)
+    {
+      report_error("Failed to generate match expression", node->m_loc);
+      return;
+    }
+
+    llvm::BasicBlock *merge_block = llvm::BasicBlock::Create(*context, "match.end");
+    bool merge_reachable = false;
+
+    for (size_t i = 0; i < node->m_arms.size(); ++i)
+    {
+      const auto &arm = node->m_arms[i];
+      llvm::BasicBlock *arm_block = llvm::BasicBlock::Create(*context, "match.arm", current_function);
+      llvm::BasicBlock *next_block = nullptr;
+      bool is_last = i + 1 == node->m_arms.size();
+
+      if (!arm.m_is_wildcard && !is_last)
+      {
+        next_block = llvm::BasicBlock::Create(*context, "match.next");
+      }
+      else
+      {
+        next_block = merge_block;
+      }
+
+      llvm::BasicBlock *current_block = builder->GetInsertBlock();
+      if (current_block && !current_block->getTerminator())
+      {
+        if (arm.m_is_wildcard)
+        {
+          builder->CreateBr(arm_block);
+        }
+        else
+        {
+          llvm::Value *tag = llvm::ConstantInt::get(scrutinee->getType(), arm.m_variant_value);
+          llvm::Value *cond = builder->CreateICmpEQ(scrutinee, tag, "matchcmp");
+          builder->CreateCondBr(cond, arm_block, next_block);
+          if (next_block == merge_block)
+          {
+            merge_reachable = true;
+          }
+        }
+      }
+
+      builder->SetInsertPoint(arm_block);
+      for (const auto &stmt : arm.m_body)
+      {
+        llvm::BasicBlock *block = builder->GetInsertBlock();
+        if (!block || block->getTerminator())
+        {
+          break;
+        }
+        stmt->accept(*this);
+      }
+
+      llvm::BasicBlock *arm_end_block = builder->GetInsertBlock();
+      if (arm_end_block && !arm_end_block->getTerminator())
+      {
+        builder->CreateBr(merge_block);
+        merge_reachable = true;
+      }
+
+      if (next_block != merge_block)
+      {
+        next_block->insertInto(current_function);
+        builder->SetInsertPoint(next_block);
+      }
+    }
+
+    if (merge_reachable)
+    {
+      merge_block->insertInto(current_function);
+      builder->SetInsertPoint(merge_block);
+    }
+    else
+    {
+      delete merge_block;
+      builder->ClearInsertionPoint();
+    }
+  }
+
   void CodeGenerator::visit(air::Break *node)
   {
     if (break_blocks.empty())
