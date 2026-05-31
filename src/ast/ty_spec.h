@@ -17,7 +17,8 @@ namespace aloha
     {
       Builtin,
       Named,
-      Array
+      Array,
+      Ref
     };
 
     Kind kind;
@@ -70,6 +71,15 @@ namespace aloha
       return add(std::move(t));
     }
 
+    TySpecId ref(Location loc, TySpecId pointee)
+    {
+      TySpec t{};
+      t.kind = TySpec::Kind::Ref;
+      t.loc = loc;
+      t.element = pointee;
+      return add(std::move(t));
+    }
+
     std::string to_string(TySpecId id) const
     {
       if (id >= nodes.size())
@@ -103,6 +113,9 @@ namespace aloha
           return to_string(spec.element) + "[" + std::to_string(*spec.size) + "]";
         }
         return to_string(spec.element) + "[]";
+
+      case TySpec::Kind::Ref:
+        return "&" + to_string(spec.element);
       }
       return "unknown";
     }

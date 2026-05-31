@@ -918,7 +918,13 @@ namespace aloha
     auto token = peek();
     Location loc = current_location();
 
-    if (match(TokenKind::IDENT))
+    if (match(TokenKind::AMP))
+    {
+      advance();
+      ParseTy pointee_type = parse_type();
+      return type_arena->ref(loc, pointee_type);
+    }
+    else if (match(TokenKind::IDENT))
     {
       advance();
       auto lexeme = token->get_lexeme();

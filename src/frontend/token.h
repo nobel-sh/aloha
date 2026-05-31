@@ -9,6 +9,7 @@
 
 #define TOKEN_KINDS      \
   X(BANG, "!")           \
+  X(AMP, "&")            \
   X(AMP_AMP, "&&")       \
   X(COLON, ":")          \
   X(DOUBLE_COLON, "::")   \

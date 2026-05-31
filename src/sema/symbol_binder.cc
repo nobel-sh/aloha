@@ -106,7 +106,8 @@ namespace aloha
     std::vector<TyId> param_types;
     for (const auto &param : func->m_parameters)
     {
-      auto param_ty_opt = ty_table.lookup_by_name(type_arena.to_string(param.m_type));
+      auto param_ty_opt = resolve_signature_type(param.m_type, type_arena, loc,
+                                                 "parameter type");
       if (!param_ty_opt.has_value())
       {
         diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Unknown parameter type: " + type_arena.to_string(param.m_type));
@@ -118,7 +119,8 @@ namespace aloha
       }
     }
 
-    auto return_ty_opt = ty_table.lookup_by_name(type_arena.to_string(func->m_return_type));
+    auto return_ty_opt = resolve_signature_type(func->m_return_type, type_arena, loc,
+                                                "return type");
     TyId return_ty = TyIds::ERROR;
     if (!return_ty_opt.has_value())
     {
@@ -131,6 +133,74 @@ namespace aloha
 
     symbol_table_ptr->register_function(func_id, name, return_ty, param_types,
                                         func->m_is_extern, loc);
+  }
+
+  std::optional<TyId> SymbolBinder::resolve_signature_type(TySpecId ty_spec_id,
+                                                           const TySpecArena &type_arena,
+                                                           Location loc,
+                                                           const std::string &context)
+  {
+    if (ty_spec_id >= type_arena.nodes.size())
+    {
+      ALOHA_ICE("TySpecId out of bound in SymbolBinder::resolve_signature_type");
+    }
+
+    const TySpec &spec = type_arena[ty_spec_id];
+    switch (spec.kind)
+    {
+    case TySpec::Kind::Builtin:
+      switch (spec.builtin)
+      {
+      case TySpec::Builtin::Int:
+        return TyIds::INTEGER;
+      case TySpec::Builtin::Float:
+        return TyIds::FLOAT;
+      case TySpec::Builtin::String:
+        return TyIds::STRING;
+      case TySpec::Builtin::Bool:
+        return TyIds::BOOL;
+      case TySpec::Builtin::Void:
+        return TyIds::VOID;
+      }
+      return std::nullopt;
+
+    case TySpec::Kind::Named:
+    {
+      if (auto struct_opt = symbol_table_ptr->lookup_struct(spec.name))
+      {
+        return struct_opt->type_id;
+      }
+      if (auto enum_opt = symbol_table_ptr->lookup_enum(spec.name))
+      {
+        return enum_opt->type_id;
+      }
+      (void)loc;
+      (void)context;
+      return std::nullopt;
+    }
+
+    case TySpec::Kind::Array:
+    {
+      auto element_ty = resolve_signature_type(spec.element, type_arena, loc, context);
+      if (!element_ty.has_value())
+      {
+        return std::nullopt;
+      }
+      return ty_table.register_array(element_ty.value());
+    }
+
+    case TySpec::Kind::Ref:
+    {
+      auto pointee_ty = resolve_signature_type(spec.element, type_arena, loc, context);
+      if (!pointee_ty.has_value())
+      {
+        return std::nullopt;
+      }
+      return ty_table.register_ref(pointee_ty.value());
+    }
+    }
+
+    return std::nullopt;
   }
 
   void SymbolBinder::bind_function_bodies(ast::Program *program)

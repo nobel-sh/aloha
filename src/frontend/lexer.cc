@@ -228,9 +228,7 @@ Token Lexer::lex_single_token()
     {
       return make_two_char_token(TokenKind::AMP_AMP, TokenKind::AMP_AMP);
     }
-    add_error("Unexpected character '&'; did you mean '&&'?");
-    consume_token();
-    return lex_single_token();
+    return make_single_token(TokenKind::AMP);
 
   case '|':
     if (peek_token(1) == '|')

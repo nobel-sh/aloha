@@ -71,6 +71,26 @@ namespace aloha
     return array_ty_id;
   }
 
+  TyId TyTable::register_ref(TyId pointee_type)
+  {
+    auto it = ref_type_cache.find(pointee_type);
+    if (it != ref_type_cache.end())
+    {
+      return it->second;
+    }
+
+    TyId ref_ty_id = next_ty_id++;
+    std::string ref_name = "&" + ty_name(pointee_type);
+    auto ty_info = std::make_unique<TyInfo>(ref_ty_id, TyKind::REF, ref_name);
+    ty_info->m_type_params.push_back(pointee_type);
+
+    types[ref_ty_id] = std::move(ty_info);
+    name_to_ty[ref_name] = ref_ty_id;
+    ref_type_cache[pointee_type] = ref_ty_id;
+
+    return ref_ty_id;
+  }
+
   std::optional<TyId> TyTable::lookup_by_name(const std::string &name) const
   {
     auto it = name_to_ty.find(name);
@@ -169,10 +189,26 @@ namespace aloha
     return ty_info && ty_info->m_kind == TyKind::ARRAY;
   }
 
+  bool TyTable::is_ref(TyId id) const
+  {
+    auto ty_info = get_ty_info(id);
+    return ty_info && ty_info->m_kind == TyKind::REF;
+  }
+
   std::optional<TyId> TyTable::get_array_element_type(TyId array_ty) const
   {
     auto ty_info = get_ty_info(array_ty);
     if (ty_info && ty_info->m_kind == TyKind::ARRAY && !ty_info->m_type_params.empty())
+    {
+      return ty_info->m_type_params[0];
+    }
+    return std::nullopt;
+  }
+
+  std::optional<TyId> TyTable::get_ref_pointee_type(TyId ref_ty) const
+  {
+    auto ty_info = get_ty_info(ref_ty);
+    if (ty_info && ty_info->m_kind == TyKind::REF && !ty_info->m_type_params.empty())
     {
       return ty_info->m_type_params[0];
     }

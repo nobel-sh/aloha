@@ -40,6 +40,7 @@ namespace aloha
     STRUCT,
     ENUM,
     ARRAY,
+    REF,
     // add more
   };
 
@@ -72,6 +73,8 @@ namespace aloha
 
     bool is_array() const { return m_kind == TyKind::ARRAY; }
 
+    bool is_ref() const { return m_kind == TyKind::REF; }
+
     bool is_error() const { return m_kind == TyKind::ERROR; }
   };
 
@@ -81,6 +84,7 @@ namespace aloha
     std::unordered_map<TyId, std::unique_ptr<TyInfo>> types;
     std::unordered_map<std::string, TyId> name_to_ty;
     std::unordered_map<TyId, TyId> array_type_cache; // element_type -> array_type
+    std::unordered_map<TyId, TyId> ref_type_cache;   // pointee_type -> ref_type
     TyId next_ty_id;
     StructId next_struct_id;
     EnumId next_enum_id;
@@ -95,6 +99,8 @@ namespace aloha
     TyId register_enum(const std::string &name, EnumId enum_id);
 
     TyId register_array(TyId element_type);
+
+    TyId register_ref(TyId pointee_type);
 
     std::optional<TyId> lookup_by_name(const std::string &name) const;
 
@@ -116,8 +122,10 @@ namespace aloha
     bool is_struct(TyId id) const;
     bool is_enum(TyId id) const;
     bool is_array(TyId id) const;
+    bool is_ref(TyId id) const;
 
     std::optional<TyId> get_array_element_type(TyId array_ty) const;
+    std::optional<TyId> get_ref_pointee_type(TyId ref_ty) const;
 
     bool are_compatible(TyId lhs, TyId rhs) const;
   };

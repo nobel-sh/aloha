@@ -1,0 +1,5 @@
+// expect-error: Unknown parameter type: &Missing
+fun consume_missing(p: &Missing) -> void{}
+
+fun main() -> void {
+}

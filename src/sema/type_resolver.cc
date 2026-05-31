@@ -110,6 +110,17 @@ namespace aloha
       TyId array_ty = ty_table.register_array(element_ty_opt.value());
       return array_ty;
     }
+
+    case TySpec::Kind::Ref:
+    {
+      auto pointee_ty_opt = resolve_type_spec(spec.element, type_arena);
+      if (!pointee_ty_opt.has_value())
+      {
+        return std::nullopt;
+      }
+
+      return ty_table.register_ref(pointee_ty_opt.value());
+    }
     }
 
     return std::nullopt;

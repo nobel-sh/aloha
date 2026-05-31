@@ -45,6 +45,10 @@ namespace aloha
     void bind_struct_declaration(ast::StructDecl *struct_decl);
     void bind_enum_declaration(ast::EnumDecl *enum_decl);
     void bind_function_declaration(ast::Function *func, const TySpecArena &type_arena);
+    std::optional<TyId> resolve_signature_type(TySpecId ty_spec_id,
+                                               const TySpecArena &type_arena,
+                                               Location loc,
+                                               const std::string &context);
 
     // bind variables in function bodies
     void bind_function_bodies(ast::Program *program);

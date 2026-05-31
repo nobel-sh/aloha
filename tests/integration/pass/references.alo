@@ -1,0 +1,11 @@
+struct Point {
+  x: int,
+  y: int
+}
+
+fun consume_point(p: &Point) -> void {}
+extern fun produce_point() -> &Point; 
+
+fun main() -> void {
+  println("reference type signatures compile");
+}
