@@ -335,6 +335,23 @@ namespace aloha
             os << std::string(indent, ' ') << "}\n";
         }
 
+        void NewObjectExpression::write(std::ostream &os, unsigned long indent) const
+        {
+            os << std::string(indent, ' ') << "NewObjectExpression:{\n";
+            os << std::string(indent + 2, ' ') << "Name: " << m_struct_name << "\n";
+            os << std::string(indent + 2, ' ') << "Arena:{\n";
+            m_arena->write(os, indent + 4);
+            os << std::string(indent + 2, ' ') << "}\n";
+            os << std::string(indent + 2, ' ') << "Fields:[\n";
+            for (const auto &field : m_field_values)
+            {
+                os << std::string(indent + 4, ' ') << field.m_name << ":\n";
+                field.m_value->write(os, indent + 6);
+            }
+            os << std::string(indent + 2, ' ') << "]\n";
+            os << std::string(indent, ' ') << "}\n";
+        }
+
         void Array::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "Array:{\n";

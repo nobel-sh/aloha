@@ -32,6 +32,7 @@ namespace aloha
     virtual void visit(ast::StructDecl *node) = 0;
     virtual void visit(ast::EnumDecl *node) = 0;
     virtual void visit(ast::StructInstantiation *node) = 0;
+    virtual void visit(ast::NewObjectExpression *node) = 0;
     virtual void visit(ast::StructFieldAccess *node) = 0;
     virtual void visit(ast::StructFieldAssignment *node) = 0;
     virtual void visit(ast::Array *node) = 0;

@@ -276,6 +276,42 @@ namespace aloha
         loc, std::move(struct_ident->m_name), std::move(field_values));
   }
 
+  std::unique_ptr<ast::Expression> Parser::parse_new_object_expression()
+  {
+    Location loc = current_location();
+    consume("new", "Expected 'new' keyword");
+    consume(TokenKind::LEFT_PAREN, "Expected '(' after 'new'");
+    auto arena = parse_expression(0);
+    consume(TokenKind::RIGHT_PAREN, "Expected ')' after arena expression");
+    auto struct_ident = expect_identifier();
+    consume(TokenKind::LEFT_BRACE, "Expected '{' after struct name");
+
+    std::vector<ast::StructInstantiation::FieldValue> field_values;
+    while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
+    {
+      if (match(TokenKind::IDENT) && match(TokenKind::COLON, true))
+      {
+        auto field_name = expect_identifier()->m_name;
+        consume(TokenKind::COLON, "Expected ':' after field name");
+        field_values.emplace_back(std::move(field_name), parse_expression(0));
+      }
+      else
+      {
+        report_error("Object allocation requires named fields");
+        parse_expression(0);
+      }
+      if (!match(TokenKind::RIGHT_BRACE))
+      {
+        consume(TokenKind::COMMA, "Expected ',' or '}' after field value");
+      }
+    }
+
+    consume(TokenKind::RIGHT_BRACE, "Expected '}' after object allocation");
+    return std::make_unique<ast::NewObjectExpression>(
+        loc, std::move(struct_ident->m_name), std::move(arena),
+        std::move(field_values));
+  }
+
   std::unique_ptr<ast::Expression> Parser::parse_enum_variant()
   {
     Location loc = current_location();
@@ -806,6 +842,11 @@ namespace aloha
     if (match("match"))
     {
       return parse_match_expression();
+    }
+
+    if (match("new"))
+    {
+      return parse_new_object_expression();
     }
 
     if (match(TokenKind::IDENT))

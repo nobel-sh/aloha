@@ -814,6 +814,101 @@ namespace aloha
                                                               std::move(field_values), resolved->type_id);
   }
 
+  void AIRBuilder::visit(ast::NewObjectExpression *node)
+  {
+    const std::string &struct_name = node->m_struct_name;
+
+    const ResolvedStruct *resolved = lookup_resolved_struct(struct_name);
+    if (!resolved)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Undefined struct '" + struct_name + "'");
+      current_expr.reset();
+      return;
+    }
+
+    auto arena = lower_expr(node->m_arena.get());
+    if (!arena)
+    {
+      current_expr.reset();
+      return;
+    }
+
+    TyId arena_ty = ty_table.register_ref(TyIds::VOID);
+    check_types_compatible(arena_ty, arena->m_ty, node->m_arena->m_loc,
+                           "arena allocation");
+
+    std::unordered_map<std::string, size_t> field_indices;
+    for (size_t i = 0; i < resolved->fields.size(); ++i)
+    {
+      field_indices[resolved->fields[i].name] = i;
+    }
+
+    std::unordered_set<std::string> seen_fields;
+    std::vector<air::ExprPtr> field_values(resolved->fields.size());
+    bool has_field_error = false;
+
+    for (const auto &field_value : node->m_field_values)
+    {
+      auto value = lower_expr(field_value.m_value.get());
+      if (!value)
+      {
+        has_field_error = true;
+        continue;
+      }
+
+      const std::string &field_name = field_value.m_name;
+      auto index_it = field_indices.find(field_name);
+      if (index_it == field_indices.end())
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, field_value.m_value->m_loc,
+                          "Struct '" + struct_name + "' has no field '" +
+                              field_name + "'");
+        has_field_error = true;
+        continue;
+      }
+
+      if (!seen_fields.insert(field_name).second)
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, field_value.m_value->m_loc,
+                          "Duplicate initializer for field '" + field_name + "'");
+        has_field_error = true;
+        continue;
+      }
+
+      size_t field_index = index_it->second;
+      TyId expected_ty = resolved->fields[field_index].type_id;
+      check_types_compatible(expected_ty, value->m_ty,
+                             field_value.m_value->m_loc,
+                             "struct field");
+      field_values[field_index] = std::move(value);
+    }
+
+    for (const auto &field : resolved->fields)
+    {
+      if (seen_fields.find(field.name) == seen_fields.end())
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                          "Missing initializer for field '" + field.name +
+                              "' in struct '" + struct_name + "'");
+        has_field_error = true;
+      }
+    }
+
+    if (has_field_error)
+    {
+      current_expr.reset();
+      return;
+    }
+
+    TyId ref_ty = ty_table.register_ref(resolved->type_id);
+    current_expr = std::make_unique<air::NewObject>(node->m_loc, struct_name,
+                                                    resolved->struct_id,
+                                                    std::move(arena),
+                                                    std::move(field_values),
+                                                    ref_ty);
+  }
+
   void AIRBuilder::visit(ast::StructFieldAccess *node)
   {
     auto struct_expr = lower_expr(node->m_struct_expr.get());
@@ -824,6 +919,14 @@ namespace aloha
     }
 
     TyId struct_ty = struct_expr->m_ty;
+    if (ty_table.is_ref(struct_ty))
+    {
+      auto pointee_ty = ty_table.get_ref_pointee_type(struct_ty);
+      if (pointee_ty.has_value())
+      {
+        struct_ty = pointee_ty.value();
+      }
+    }
 
     if (!ty_table.is_struct(struct_ty))
     {

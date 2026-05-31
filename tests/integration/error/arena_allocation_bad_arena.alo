@@ -1,0 +1,13 @@
+// expect-error: Type mismatch in arena allocation: expected '&void', got 'int'
+
+struct Point {
+  x: int,
+  y: int
+}
+
+fun main() -> void {
+  imut p: &Point = new(1) Point {
+    x: 10,
+    y: 20
+  };
+}

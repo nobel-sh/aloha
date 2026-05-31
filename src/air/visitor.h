@@ -24,6 +24,7 @@ namespace aloha
       virtual void visit(UnaryOp *node) = 0;
       virtual void visit(Call *node) = 0;
       virtual void visit(StructInstantiation *node) = 0;
+      virtual void visit(NewObject *node) = 0;
       virtual void visit(FieldAccess *node) = 0;
       virtual void visit(ArrayExpr *node) = 0;
       virtual void visit(ArrayAccess *node) = 0;

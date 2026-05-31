@@ -33,6 +33,7 @@ namespace aloha
             void visit(UnaryOp *node) override;
             void visit(Call *node) override;
             void visit(StructInstantiation *node) override;
+            void visit(NewObject *node) override;
             void visit(FieldAccess *node) override;
             void visit(ArrayExpr *node) override;
             void visit(ArrayAccess *node) override;

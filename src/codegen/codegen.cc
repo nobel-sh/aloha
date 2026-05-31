@@ -820,6 +820,53 @@ namespace aloha
     current_value = builder->CreateLoad(struct_type, struct_alloca, "struct_val");
   }
 
+  void CodeGenerator::visit(air::NewObject *node)
+  {
+    llvm::StructType *struct_type = struct_map[node->m_struct_id];
+    if (!struct_type)
+    {
+      report_error("Undefined struct: '" + node->m_struct_name + "'", node->m_loc);
+      current_value = nullptr;
+      return;
+    }
+
+    node->m_arena->accept(*this);
+    llvm::Value *arena = current_value;
+    if (!arena)
+    {
+      report_error("Failed to generate arena for allocation", node->m_loc);
+      current_value = nullptr;
+      return;
+    }
+
+    llvm::FunctionCallee alloc_func = module->getOrInsertFunction(
+        "aloha_arena_alloc",
+        llvm::PointerType::get(*context, 0),
+        llvm::PointerType::get(*context, 0),
+        llvm::Type::getInt64Ty(*context));
+
+    const llvm::DataLayout &layout = module->getDataLayout();
+    uint64_t struct_size = layout.getTypeAllocSize(struct_type);
+    llvm::Value *size = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), struct_size);
+    llvm::Value *struct_ptr = builder->CreateCall(alloc_func, {arena, size}, "newobject");
+
+    for (size_t i = 0; i < node->m_field_values.size(); ++i)
+    {
+      node->m_field_values[i]->accept(*this);
+      if (!current_value)
+      {
+        report_error("Failed to generate struct field value", node->m_field_values[i]->m_loc);
+        return;
+      }
+
+      llvm::Value *field_ptr = builder->CreateStructGEP(
+          struct_type, struct_ptr, static_cast<unsigned>(i), "field_ptr");
+      builder->CreateStore(current_value, field_ptr);
+    }
+
+    current_value = struct_ptr;
+  }
+
   void CodeGenerator::visit(air::FieldAccess *node)
   {
     node->m_object->accept(*this);
@@ -832,7 +879,19 @@ namespace aloha
       return;
     }
 
-    const TyInfo *obj_ty_info = ty_table.get_ty_info(node->m_object->m_ty);
+    TyId object_ty = node->m_object->m_ty;
+    bool object_is_ref = false;
+    if (ty_table.is_ref(object_ty))
+    {
+      auto pointee_ty = ty_table.get_ref_pointee_type(object_ty);
+      if (pointee_ty.has_value())
+      {
+        object_ty = pointee_ty.value();
+        object_is_ref = true;
+      }
+    }
+
+    const TyInfo *obj_ty_info = ty_table.get_ty_info(object_ty);
     if (!obj_ty_info || !obj_ty_info->is_struct())
     {
       report_error("Field access on non-struct type", node->m_loc);
@@ -848,17 +907,31 @@ namespace aloha
       return;
     }
 
-    llvm::Type *obj_llvm_type = object->getType();
-    if (!obj_llvm_type->isStructTy())
+    llvm::Value *struct_ptr = nullptr;
+    if (object_is_ref)
     {
-      report_error("Expected struct value for field access", node->m_loc);
-      current_value = nullptr;
-      return;
+      if (!object->getType()->isPointerTy())
+      {
+        report_error("Expected struct reference for field access", node->m_loc);
+        current_value = nullptr;
+        return;
+      }
+      struct_ptr = object;
     }
+    else
+    {
+      llvm::Type *obj_llvm_type = object->getType();
+      if (!obj_llvm_type->isStructTy())
+      {
+        report_error("Expected struct value for field access", node->m_loc);
+        current_value = nullptr;
+        return;
+      }
 
-    llvm::AllocaInst *tmp_alloca = builder->CreateAlloca(struct_type, nullptr, "tmp_struct");
-    builder->CreateStore(object, tmp_alloca);
-    llvm::Value *struct_ptr = tmp_alloca;
+      llvm::AllocaInst *tmp_alloca = builder->CreateAlloca(struct_type, nullptr, "tmp_struct");
+      builder->CreateStore(object, tmp_alloca);
+      struct_ptr = tmp_alloca;
+    }
 
     llvm::Value *field_ptr = builder->CreateStructGEP(
         struct_type, struct_ptr, node->m_field_index, "field_ptr");

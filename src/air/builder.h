@@ -91,6 +91,7 @@ namespace aloha
     void visit(ast::StructDecl *node) override;
     void visit(ast::EnumDecl *node) override;
     void visit(ast::StructInstantiation *node) override;
+    void visit(ast::NewObjectExpression *node) override;
     void visit(ast::StructFieldAccess *node) override;
     void visit(ast::StructFieldAssignment *node) override;
     void visit(ast::Array *node) override;

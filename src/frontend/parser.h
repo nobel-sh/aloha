@@ -91,6 +91,7 @@ namespace aloha
     std::unique_ptr<ast::Expression> parse_struct_instantiation();
     std::unique_ptr<ast::Expression> parse_enum_variant();
     std::unique_ptr<ast::Expression> parse_match_expression();
+    std::unique_ptr<ast::Expression> parse_new_object_expression();
     std::unique_ptr<ast::Expression> parse_array();
 
     std::unique_ptr<ast::Expression>

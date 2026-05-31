@@ -276,6 +276,23 @@ namespace aloha
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
 
+    class NewObject : public Expr
+    {
+    public:
+      std::string m_struct_name;
+      StructId m_struct_id;
+      ExprPtr m_arena;
+      std::vector<ExprPtr> m_field_values;
+
+      NewObject(const Location &loc, const std::string &struct_name,
+                StructId struct_id, ExprPtr arena,
+                std::vector<ExprPtr> field_values, TyId ref_ty)
+          : Expr(loc, ref_ty), m_struct_name(struct_name), m_struct_id(struct_id),
+            m_arena(std::move(arena)), m_field_values(std::move(field_values)) {}
+
+      void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+    };
+
     class FieldAccess : public Expr
     {
     public:

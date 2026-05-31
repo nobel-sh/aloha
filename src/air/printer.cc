@@ -171,6 +171,30 @@ namespace aloha
             indent -= 2;
         }
 
+        void Printer::visit(NewObject *node)
+        {
+            write_indent();
+            os << "NewObject: " << node->m_struct_name << " (id="
+               << node->m_struct_id << ", ty=" << ty_name(node->m_ty) << ")\n";
+
+            indent += 2;
+            write_indent();
+            os << "Arena:\n";
+            indent += 2;
+            node->m_arena->accept(*this);
+            indent -= 2;
+
+            write_indent();
+            os << "Fields:\n";
+            indent += 2;
+            for (const auto &value : node->m_field_values)
+            {
+                value->accept(*this);
+            }
+            indent -= 2;
+            indent -= 2;
+        }
+
         void Printer::visit(FieldAccess *node)
         {
             write_indent();

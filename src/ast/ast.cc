@@ -33,6 +33,7 @@ namespace aloha
         void StructDecl::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void EnumDecl::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void StructInstantiation::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void NewObjectExpression::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Array::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void ArrayAccess::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Program::accept(ASTVisitor &visitor) { visitor.visit(this); }
@@ -198,6 +199,12 @@ namespace aloha
 
         StructInstantiation::FieldValue::FieldValue(std::string name, ExprPtr value)
             : m_name(std::move(name)), m_value(std::move(value)) {}
+
+        NewObjectExpression::NewObjectExpression(Location loc, std::string name,
+                                                 ExprPtr arena,
+                                                 std::vector<StructInstantiation::FieldValue> values)
+            : Expression(loc), m_struct_name(std::move(name)),
+              m_arena(std::move(arena)), m_field_values(std::move(values)) {}
 
         Array::Array(Location loc, std::vector<ExprPtr> members)
             : Expression(loc), m_members(std::move(members)), m_size(m_members.size()) {}

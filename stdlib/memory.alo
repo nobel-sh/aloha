@@ -1,0 +1,10 @@
+extern fun aloha_arena_new() -> &void;
+extern fun aloha_arena_free_all(arena: &void) -> void;
+
+fun arena_new() -> &void {
+    return aloha_arena_new();
+}
+
+fun arena_free_all(arena: &void) -> void {
+    aloha_arena_free_all(arena);
+}

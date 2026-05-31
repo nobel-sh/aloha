@@ -3,3 +3,4 @@
 import "stdlib/io.alo";
 import "stdlib/math.alo";
 import "stdlib/assert.alo";
+import "stdlib/memory.alo";

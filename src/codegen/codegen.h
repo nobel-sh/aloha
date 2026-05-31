@@ -92,6 +92,7 @@ namespace aloha
     void visit(air::UnaryOp *node) override;
     void visit(air::Call *node) override;
     void visit(air::StructInstantiation *node) override;
+    void visit(air::NewObject *node) override;
     void visit(air::FieldAccess *node) override;
     void visit(air::ArrayExpr *node) override;
     void visit(air::ArrayAccess *node) override;

@@ -20,6 +20,7 @@ namespace aloha
     class UnaryOp;
     class Call;
     class StructInstantiation;
+    class NewObject;
     class FieldAccess;
     class ArrayExpr;
     class ArrayAccess;

@@ -428,6 +428,19 @@ namespace aloha
       void accept(ASTVisitor &visitor) override;
     };
 
+    class NewObjectExpression : public Expression
+    {
+    public:
+      std::string m_struct_name;
+      ExprPtr m_arena;
+      std::vector<StructInstantiation::FieldValue> m_field_values;
+
+      NewObjectExpression(Location loc, std::string name, ExprPtr arena,
+                          std::vector<StructInstantiation::FieldValue> values);
+      void write(std::ostream &os, unsigned long indent = 0) const override;
+      void accept(ASTVisitor &visitor) override;
+    };
+
     class Array : public Expression
     {
     public:
