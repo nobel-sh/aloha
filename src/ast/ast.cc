@@ -192,9 +192,12 @@ namespace aloha
             : Statement(loc), m_name(std::move(name)), m_variants(std::move(variants)) {}
 
         StructInstantiation::StructInstantiation(Location loc, std::string name,
-                                                 std::vector<ExprPtr> values)
+                                                 std::vector<FieldValue> values)
             : Expression(loc), m_struct_name(std::move(name)),
               m_field_values(std::move(values)) {}
+
+        StructInstantiation::FieldValue::FieldValue(std::string name, ExprPtr value)
+            : m_name(std::move(name)), m_value(std::move(value)) {}
 
         Array::Array(Location loc, std::vector<ExprPtr> members)
             : Expression(loc), m_members(std::move(members)), m_size(m_members.size()) {}

@@ -1,0 +1,14 @@
+// expect-error: Duplicate initializer for field 'x'
+
+struct Point {
+  x: int,
+  y: int
+}
+
+fun main() -> void {
+  imut p: Point = Point {
+    x: 10,
+    x: 20,
+    y: 30
+  };
+}

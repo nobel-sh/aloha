@@ -19,7 +19,7 @@ struct Box {
 }
 
 fun test_basic_structs() -> void {
-    imut p: Point = Point { 10, 20 };
+    imut p: Point = Point { x: 10, y: 20 };
     assert_msg(p->x == 10, "Point x should be 10");
     assert_msg(p->y == 20, "Point y should be 20");
     
@@ -38,9 +38,9 @@ fun calculate_area(rect: Rectangle) -> int {
 }
 
 fun test_nested_structs() -> void {
-    imut top_left: Point = Point { 0, 0 };
-    imut bottom_right: Point = Point { 10, 5 };
-    imut rect: Rectangle = Rectangle { top_left, bottom_right };
+    imut top_left: Point = Point { x: 0, y: 0 };
+    imut bottom_right: Point = Point { x: 10, y: 5 };
+    imut rect: Rectangle = Rectangle { top_left: top_left, bottom_right: bottom_right };
     
     assert_msg(rect->top_left->x == 0, "Top left x should be 0");
     assert_msg(rect->top_left->y == 0, "Top left y should be 0");
@@ -54,8 +54,8 @@ fun test_nested_structs() -> void {
 }
 
 fun test_struct_composition() -> void {
-    imut center: Point = Point { 50, 50 };
-    imut circle: Circle = Circle { center, 10 };
+    imut center: Point = Point { x: 50, y: 50 };
+    imut circle: Circle = Circle { center: center, radius: 10 };
     
     assert_msg(circle->center->x == 50, "Circle center x should be 50");
     assert_msg(circle->center->y == 50, "Circle center y should be 50");
@@ -64,9 +64,9 @@ fun test_struct_composition() -> void {
     imut diameter: int = circle->radius * 2;
     assert_msg(diameter == 20, "Diameter should be 20");
     
-    imut box_pos: Point = Point { 100, 200 };
-    imut box_size: Point = Point { 50, 30 };
-    imut box: Box = Box { box_pos, box_size };
+    imut box_pos: Point = Point { x: 100, y: 200 };
+    imut box_size: Point = Point { x: 50, y: 30 };
+    imut box: Box = Box { position: box_pos, dimensions: box_size };
     
     assert_msg(box->position->x == 100, "Box position x should be 100");
     assert_msg(box->dimensions->y == 30, "Box dimensions y should be 30");
@@ -75,9 +75,9 @@ fun test_struct_composition() -> void {
 }
 
 fun create_rectangle(x1: int, y1: int, x2: int, y2: int) -> Rectangle {
-    imut p1: Point = Point { x1, y1 };
-    imut p2: Point = Point { x2, y2 };
-    return Rectangle { p1, p2 };
+    imut p1: Point = Point { x: x1, y: y1 };
+    imut p2: Point = Point { x: x2, y: y2 };
+    return Rectangle { top_left: p1, bottom_right: p2 };
 }
 
 fun test_complex_operations() -> void {
@@ -90,8 +90,8 @@ fun test_complex_operations() -> void {
     assert_msg(overlap_x == true, "Rectangles should overlap in x");
     assert_msg(overlap_y == true, "Rectangles should overlap in y");
     
-    imut origin: Point = Point { 0, 0 };
-    imut far_point: Point = Point { 100, 100 };
+    imut origin: Point = Point { x: 0, y: 0 };
+    imut far_point: Point = Point { x: 100, y: 100 };
     imut distance_x: int = far_point->x - origin->x;
     imut distance_y: int = far_point->y - origin->y;
     

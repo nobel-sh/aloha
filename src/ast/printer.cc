@@ -328,7 +328,8 @@ namespace aloha
             os << std::string(indent + 2, ' ') << "Fields:[\n";
             for (const auto &field : m_field_values)
             {
-                field->write(os, indent + 4);
+                os << std::string(indent + 4, ' ') << field.m_name << ":\n";
+                field.m_value->write(os, indent + 6);
             }
             os << std::string(indent + 2, ' ') << "]\n";
             os << std::string(indent, ' ') << "}\n";

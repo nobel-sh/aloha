@@ -251,10 +251,20 @@ namespace aloha
     auto struct_ident = expect_identifier();
     consume(TokenKind::LEFT_BRACE, "Expected '{' after struct name");
 
-    std::vector<ast::ExprPtr> field_values;
+    std::vector<ast::StructInstantiation::FieldValue> field_values;
     while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
     {
-      field_values.push_back(parse_expression(0));
+      if (match(TokenKind::IDENT) && match(TokenKind::COLON, true))
+      {
+        auto field_name = expect_identifier()->m_name;
+        consume(TokenKind::COLON, "Expected ':' after field name");
+        field_values.emplace_back(std::move(field_name), parse_expression(0));
+      }
+      else
+      {
+        report_error("Struct instantiation requires named fields");
+        parse_expression(0);
+      }
       if (!match(TokenKind::RIGHT_BRACE))
       {
         consume(TokenKind::COMMA, "Expected ',' or '}' after field value");

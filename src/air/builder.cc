@@ -746,35 +746,67 @@ namespace aloha
       return;
     }
 
-    if (node->m_field_values.size() != resolved->fields.size())
+    std::unordered_map<std::string, size_t> field_indices;
+    for (size_t i = 0; i < resolved->fields.size(); ++i)
     {
-      std::ostringstream msg;
-      msg << "Struct '" << struct_name << "' expects "
-          << resolved->fields.size() << " field(s), got "
-          << node->m_field_values.size();
-      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc, msg.str());
+      field_indices[resolved->fields[i].name] = i;
     }
 
-    std::vector<air::ExprPtr> field_values;
-    for (size_t i = 0; i < node->m_field_values.size(); ++i)
+    std::unordered_set<std::string> seen_fields;
+    std::vector<air::ExprPtr> field_values(resolved->fields.size());
+    bool has_field_error = false;
+
+    for (const auto &field_value : node->m_field_values)
     {
-      auto value = lower_expr(node->m_field_values[i].get());
+      auto value = lower_expr(field_value.m_value.get());
       if (!value)
       {
+        has_field_error = true;
         continue;
       }
 
-      if (i < resolved->fields.size())
+      const std::string &field_name = field_value.m_name;
+      auto index_it = field_indices.find(field_name);
+      if (index_it == field_indices.end())
       {
-        TyId expected_ty = resolved->fields[i].type_id;
-        TyId actual_ty = value->m_ty;
-
-        check_types_compatible(expected_ty, actual_ty,
-                               node->m_field_values[i]->m_loc,
-                               "struct field");
+        diagnostics.error(DiagnosticPhase::AIRBuilding, field_value.m_value->m_loc,
+                          "Struct '" + struct_name + "' has no field '" +
+                              field_name + "'");
+        has_field_error = true;
+        continue;
       }
 
-      field_values.emplace_back(std::move(value));
+      if (!seen_fields.insert(field_name).second)
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, field_value.m_value->m_loc,
+                          "Duplicate initializer for field '" + field_name + "'");
+        has_field_error = true;
+        continue;
+      }
+
+      size_t field_index = index_it->second;
+      TyId expected_ty = resolved->fields[field_index].type_id;
+      check_types_compatible(expected_ty, value->m_ty,
+                             field_value.m_value->m_loc,
+                             "struct field");
+      field_values[field_index] = std::move(value);
+    }
+
+    for (const auto &field : resolved->fields)
+    {
+      if (seen_fields.find(field.name) == seen_fields.end())
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                          "Missing initializer for field '" + field.name +
+                              "' in struct '" + struct_name + "'");
+        has_field_error = true;
+      }
+    }
+
+    if (has_field_error)
+    {
+      current_expr.reset();
+      return;
     }
 
     current_expr = std::make_unique<air::StructInstantiation>(node->m_loc, struct_name,

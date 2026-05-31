@@ -1,0 +1,29 @@
+struct Point {
+  x: int,
+  y: int
+}
+
+struct Rectangle {
+  top_left: Point,
+  bottom_right: Point
+}
+
+fun main() -> void {
+  imut p: Point = Point {
+    y: 20,
+    x: 10
+  };
+
+  imut rect: Rectangle = Rectangle {
+    bottom_right: Point {
+      x: 30,
+      y: 40
+    },
+    top_left: p
+  };
+
+  assert_msg(p->x == 10, "named struct initializer reorders x");
+  assert_msg(p->y == 20, "named struct initializer reorders y");
+  assert_msg(rect->top_left->x == 10, "nested named struct top_left works");
+  assert_msg(rect->bottom_right->y == 40, "nested named struct bottom_right works");
+}

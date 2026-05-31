@@ -410,11 +410,20 @@ namespace aloha
     class StructInstantiation : public Expression
     {
     public:
+      class FieldValue
+      {
+      public:
+        std::string m_name;
+        ExprPtr m_value;
+
+        FieldValue(std::string name, ExprPtr value);
+      };
+
       std::string m_struct_name;
-      std::vector<ExprPtr> m_field_values;
+      std::vector<FieldValue> m_field_values;
 
       StructInstantiation(Location loc, std::string name,
-                          std::vector<ExprPtr> values);
+                          std::vector<FieldValue> values);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };

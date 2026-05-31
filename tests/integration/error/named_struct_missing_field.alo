@@ -1,0 +1,12 @@
+// expect-error: Missing initializer for field 'y' in struct 'Point'
+
+struct Point {
+  x: int,
+  y: int
+}
+
+fun main() -> void {
+  imut p: Point = Point {
+    x: 10
+  };
+}

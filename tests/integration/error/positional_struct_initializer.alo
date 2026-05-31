@@ -1,0 +1,13 @@
+// expect-error: Struct instantiation requires named fields
+
+struct Point {
+  x: int,
+  y: int
+}
+
+fun main() -> void {
+  imut p: Point = Point {
+    10,
+    20
+  };
+}
