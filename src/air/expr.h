@@ -83,6 +83,40 @@ namespace aloha
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
 
+    struct MatchExprArm
+    {
+      bool m_is_wildcard;
+      std::string m_enum_name;
+      std::string m_variant_name;
+      uint32_t m_variant_value;
+      ExprPtr m_value;
+      Location m_loc;
+
+      MatchExprArm(const std::string &enum_name, const std::string &variant_name,
+                   uint32_t variant_value, ExprPtr value, const Location &loc)
+          : m_is_wildcard(false), m_enum_name(enum_name),
+            m_variant_name(variant_name), m_variant_value(variant_value),
+            m_value(std::move(value)), m_loc(loc) {}
+
+      MatchExprArm(ExprPtr value, const Location &loc)
+          : m_is_wildcard(true), m_variant_value(0),
+            m_value(std::move(value)), m_loc(loc) {}
+    };
+
+    class MatchExpr : public Expr
+    {
+    public:
+      ExprPtr m_scrutinee;
+      std::vector<MatchExprArm> m_arms;
+
+      MatchExpr(const Location &loc, ExprPtr scrutinee,
+                std::vector<MatchExprArm> arms, TyId result_ty)
+          : Expr(loc, result_ty), m_scrutinee(std::move(scrutinee)),
+            m_arms(std::move(arms)) {}
+
+      void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+    };
+
     enum class BinaryOpKind
     {
       // arithmetic

@@ -422,6 +422,92 @@ namespace aloha
     current_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), node->m_value);
   }
 
+  void CodeGenerator::visit(air::MatchExpr *node)
+  {
+    node->m_scrutinee->accept(*this);
+    llvm::Value *scrutinee = current_value;
+    if (!scrutinee)
+    {
+      report_error("Failed to generate match expression", node->m_loc);
+      return;
+    }
+
+    llvm::Type *result_type = get_llvm_type(node->m_ty);
+    if (!result_type)
+    {
+      report_error("Failed to resolve match expression result type", node->m_loc);
+      current_value = nullptr;
+      return;
+    }
+
+    llvm::BasicBlock *merge_block = llvm::BasicBlock::Create(*context, "match.expr.end");
+    std::vector<std::pair<llvm::Value *, llvm::BasicBlock *>> incoming;
+
+    for (size_t i = 0; i < node->m_arms.size(); ++i)
+    {
+      const auto &arm = node->m_arms[i];
+      llvm::BasicBlock *arm_block = llvm::BasicBlock::Create(*context, "match.expr.arm", current_function);
+      llvm::BasicBlock *next_block = nullptr;
+      bool is_last = i + 1 == node->m_arms.size();
+
+      if (arm.m_is_wildcard || is_last)
+      {
+        next_block = merge_block;
+      }
+      else
+      {
+        next_block = llvm::BasicBlock::Create(*context, "match.expr.next");
+      }
+
+      llvm::BasicBlock *current_block = builder->GetInsertBlock();
+      if (current_block && !current_block->getTerminator())
+      {
+        if (arm.m_is_wildcard || is_last)
+        {
+          builder->CreateBr(arm_block);
+        }
+        else
+        {
+          llvm::Value *tag = llvm::ConstantInt::get(scrutinee->getType(), arm.m_variant_value);
+          llvm::Value *cond = builder->CreateICmpEQ(scrutinee, tag, "matchexprcmp");
+          builder->CreateCondBr(cond, arm_block, next_block);
+        }
+      }
+
+      builder->SetInsertPoint(arm_block);
+      arm.m_value->accept(*this);
+      llvm::Value *arm_value = current_value;
+      if (!arm_value)
+      {
+        report_error("Failed to generate match arm value", arm.m_loc);
+        return;
+      }
+
+      llvm::BasicBlock *arm_end_block = builder->GetInsertBlock();
+      if (arm_end_block && !arm_end_block->getTerminator())
+      {
+        builder->CreateBr(merge_block);
+        incoming.emplace_back(arm_value, arm_end_block);
+      }
+
+      if (next_block != merge_block)
+      {
+        next_block->insertInto(current_function);
+        builder->SetInsertPoint(next_block);
+      }
+    }
+
+    merge_block->insertInto(current_function);
+    builder->SetInsertPoint(merge_block);
+
+    llvm::PHINode *phi = builder->CreatePHI(result_type, static_cast<unsigned>(incoming.size()), "matchexpr");
+    for (const auto &[value, block] : incoming)
+    {
+      phi->addIncoming(value, block);
+    }
+    current_value = phi;
+  }
+
   enum class NumericKind
   {
     INTEGER,

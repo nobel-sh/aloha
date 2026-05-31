@@ -1,0 +1,13 @@
+// expect-error: Type mismatch in match expression arm: expected 'int', got 'bool'
+
+enum TokenKind {
+  Ident,
+  Number
+}
+
+fun main() -> void {
+  imut value = match TokenKind::Ident {
+    TokenKind::Ident => 1,
+    TokenKind::Number => true
+  };
+}

@@ -87,6 +87,24 @@ namespace aloha
                << m_enum_name << "::" << m_variant_name << "\n";
         }
 
+        void MatchExpression::write(std::ostream &os, unsigned long indent) const
+        {
+            os << std::string(indent, ' ') << "MatchExpression:{\n";
+            os << std::string(indent + 2, ' ') << "Scrutinee:{\n";
+            m_scrutinee->write(os, indent + 4);
+            os << std::string(indent + 2, ' ') << "}\n";
+            os << std::string(indent + 2, ' ') << "Arms:[\n";
+            for (const auto &arm : m_arms)
+            {
+                os << std::string(indent + 4, ' ')
+                   << (arm.m_is_wildcard ? "_" : arm.m_enum_name + "::" + arm.m_variant_name)
+                   << " =>\n";
+                arm.m_value->write(os, indent + 6);
+            }
+            os << std::string(indent + 2, ' ') << "]\n";
+            os << std::string(indent, ' ') << "}\n";
+        }
+
         void StructFieldAccess::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "StructFieldAccess:{\n";

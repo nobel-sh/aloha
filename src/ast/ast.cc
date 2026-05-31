@@ -15,6 +15,7 @@ namespace aloha
         void BinaryExpression::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Identifier::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void EnumVariant::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void MatchExpression::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void StructFieldAccess::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void StructFieldAssignment::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Declaration::accept(ASTVisitor &visitor) { visitor.visit(this); }
@@ -70,6 +71,19 @@ namespace aloha
                                  std::string variant_name)
             : Expression(loc), m_enum_name(std::move(enum_name)),
               m_variant_name(std::move(variant_name)) {}
+
+        MatchExprArm::MatchExprArm(Location loc, std::string enum_name,
+                                   std::string variant_name, ExprPtr value)
+            : m_loc(loc), m_is_wildcard(false), m_enum_name(std::move(enum_name)),
+              m_variant_name(std::move(variant_name)), m_value(std::move(value)) {}
+
+        MatchExprArm::MatchExprArm(Location loc, ExprPtr value)
+            : m_loc(loc), m_is_wildcard(true), m_value(std::move(value)) {}
+
+        MatchExpression::MatchExpression(Location loc, ExprPtr scrutinee,
+                                         std::vector<MatchExprArm> arms)
+            : Expression(loc), m_scrutinee(std::move(scrutinee)),
+              m_arms(std::move(arms)) {}
 
         StructFieldAccess::StructFieldAccess(Location loc, ExprPtr struct_expr,
                                              std::string field_name)

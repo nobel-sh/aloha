@@ -45,6 +45,105 @@ namespace aloha
         variant.value, variant.enum_type_id);
   }
 
+  void AIRBuilder::visit(ast::MatchExpression *node)
+  {
+    auto scrutinee = lower_expr(node->m_scrutinee.get());
+    if (!scrutinee)
+    {
+      current_expr.reset();
+      return;
+    }
+
+    if (!ty_table.is_enum(scrutinee->m_ty))
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_scrutinee->m_loc,
+                        "Match expression must be an enum");
+      current_expr.reset();
+      return;
+    }
+
+    const TyInfo *enum_ty = ty_table.get_ty_info(scrutinee->m_ty);
+    std::string enum_name = enum_ty ? enum_ty->m_name : "";
+    bool has_wildcard = false;
+    std::unordered_set<std::string> covered_variants;
+    std::vector<air::MatchExprArm> arms;
+    TyId result_ty = TyIds::ERROR;
+
+    for (const auto &arm : node->m_arms)
+    {
+      if (has_wildcard)
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
+                          "Wildcard match arm must be the last arm");
+      }
+
+      auto value = lower_expr(arm.m_value.get());
+      if (!value)
+      {
+        continue;
+      }
+
+      if (result_ty == TyIds::ERROR)
+      {
+        result_ty = value->m_ty;
+      }
+      else
+      {
+        check_types_compatible(result_ty, value->m_ty, arm.m_loc,
+                               "match expression arm");
+      }
+
+      if (arm.m_is_wildcard)
+      {
+        has_wildcard = true;
+        arms.emplace_back(std::move(value), arm.m_loc);
+        continue;
+      }
+
+      auto variant_opt = symbol_table.lookup_enum_variant(arm.m_enum_name, arm.m_variant_name);
+      if (!variant_opt.has_value())
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
+                          "Unknown enum variant '" + arm.m_enum_name + "::" +
+                              arm.m_variant_name + "'");
+        continue;
+      }
+
+      const EnumVariantSymbol &variant = variant_opt.value();
+      if (variant.enum_type_id != scrutinee->m_ty)
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
+                          "Match arm variant '" + arm.m_enum_name + "::" +
+                              arm.m_variant_name + "' does not belong to enum '" +
+                              enum_name + "'");
+      }
+
+      if (!covered_variants.insert(variant.variant_name).second)
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
+                          "Duplicate match arm for variant '" + arm.m_enum_name +
+                              "::" + arm.m_variant_name + "'");
+      }
+
+      arms.emplace_back(variant.enum_name, variant.variant_name, variant.value,
+                        std::move(value), arm.m_loc);
+    }
+
+    if (!has_wildcard)
+    {
+      auto variants = symbol_table.get_enum_variants(enum_name);
+      if (covered_variants.size() != variants.size())
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                          "Match expression must cover all variants of enum '" +
+                              enum_name + "' or include '_'");
+      }
+    }
+
+    current_expr = std::make_unique<air::MatchExpr>(node->m_loc, std::move(scrutinee),
+                                                    std::move(arms), result_ty);
+  }
+
   void AIRBuilder::visit(ast::UnaryExpression *node)
   {
     auto operand = lower_expr(node->m_expr.get());

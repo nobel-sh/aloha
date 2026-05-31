@@ -15,6 +15,7 @@ namespace aloha
         class BinaryExpression;
         class Identifier;
         class EnumVariant;
+        class MatchExpression;
         class Declaration;
         class Assignment;
         class ArrayAssignment;

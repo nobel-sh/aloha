@@ -28,6 +28,7 @@ namespace aloha
             void visit(BoolLiteral *node) override;
             void visit(VarRef *node) override;
             void visit(EnumValue *node) override;
+            void visit(MatchExpr *node) override;
             void visit(BinaryOp *node) override;
             void visit(UnaryOp *node) override;
             void visit(Call *node) override;

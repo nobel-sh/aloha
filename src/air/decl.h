@@ -15,6 +15,7 @@ namespace aloha
     class BoolLiteral;
     class VarRef;
     class EnumValue;
+    class MatchExpr;
     class BinaryOp;
     class UnaryOp;
     class Call;

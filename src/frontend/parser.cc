@@ -276,6 +276,53 @@ namespace aloha
         loc, std::move(enum_ident->m_name), std::move(variant_ident->m_name));
   }
 
+  std::unique_ptr<ast::Expression> Parser::parse_match_expression()
+  {
+    Location loc = current_location();
+    consume("match", "Expected 'match' keyword");
+
+    std::unique_ptr<ast::Expression> scrutinee;
+    if (match(TokenKind::IDENT) && match(TokenKind::LEFT_BRACE, true))
+    {
+      scrutinee = expect_identifier();
+    }
+    else
+    {
+      scrutinee = parse_expression(0);
+    }
+    consume(TokenKind::LEFT_BRACE, "Expected '{' after match expression");
+
+    std::vector<ast::MatchExprArm> arms;
+    while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
+    {
+      Location arm_loc = current_location();
+      if (match(TokenKind::UNDERSCORE))
+      {
+        advance();
+        consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
+        arms.emplace_back(arm_loc, parse_expression(0));
+      }
+      else
+      {
+        auto enum_ident = expect_identifier();
+        consume(TokenKind::DOUBLE_COLON, "Expected '::' in enum match pattern");
+        auto variant_ident = expect_identifier();
+        consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
+        arms.emplace_back(arm_loc, std::move(enum_ident->m_name),
+                          std::move(variant_ident->m_name), parse_expression(0));
+      }
+
+      if (!match(TokenKind::RIGHT_BRACE))
+      {
+        consume(TokenKind::COMMA, "Expected ',' or '}' after match expression arm");
+      }
+    }
+
+    consume(TokenKind::RIGHT_BRACE, "Expected '}' after match arms");
+    return std::make_unique<ast::MatchExpression>(loc, std::move(scrutinee),
+                                                  std::move(arms));
+  }
+
   std::vector<ast::Parameter> Parser::parse_parameters()
   {
     std::vector<ast::Parameter> parameters;
@@ -744,6 +791,11 @@ namespace aloha
       auto expression = parse_expression(0);
       consume(TokenKind::RIGHT_PAREN, "Expected ')' after expression");
       return expression;
+    }
+
+    if (match("match"))
+    {
+      return parse_match_expression();
     }
 
     if (match(TokenKind::IDENT))

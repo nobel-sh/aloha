@@ -87,6 +87,7 @@ namespace aloha
     void visit(air::BoolLiteral *node) override;
     void visit(air::VarRef *node) override;
     void visit(air::EnumValue *node) override;
+    void visit(air::MatchExpr *node) override;
     void visit(air::BinaryOp *node) override;
     void visit(air::UnaryOp *node) override;
     void visit(air::Call *node) override;

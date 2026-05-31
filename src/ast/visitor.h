@@ -16,6 +16,7 @@ namespace aloha
     virtual void visit(ast::BinaryExpression *node) = 0;
     virtual void visit(ast::Identifier *node) = 0;
     virtual void visit(ast::EnumVariant *node) = 0;
+    virtual void visit(ast::MatchExpression *node) = 0;
     virtual void visit(ast::Declaration *node) = 0;
     virtual void visit(ast::Assignment *node) = 0;
     virtual void visit(ast::ArrayAssignment *node) = 0;

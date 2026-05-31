@@ -155,6 +155,31 @@ namespace aloha
       void accept(ASTVisitor &visitor) override;
     };
 
+    class MatchExprArm
+    {
+    public:
+      Location m_loc;
+      bool m_is_wildcard;
+      std::string m_enum_name;
+      std::string m_variant_name;
+      ExprPtr m_value;
+
+      MatchExprArm(Location loc, std::string enum_name, std::string variant_name,
+                   ExprPtr value);
+      MatchExprArm(Location loc, ExprPtr value);
+    };
+
+    class MatchExpression : public Expression
+    {
+    public:
+      ExprPtr m_scrutinee;
+      std::vector<MatchExprArm> m_arms;
+
+      MatchExpression(Location loc, ExprPtr scrutinee, std::vector<MatchExprArm> arms);
+      void write(std::ostream &os, unsigned long indent = 0) const override;
+      void accept(ASTVisitor &visitor) override;
+    };
+
     class StructFieldAccess : public Expression
     {
     public:
