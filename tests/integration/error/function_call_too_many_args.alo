@@ -1,0 +1,9 @@
+// expect-error: Function 'add' expects 2 argument(s), got 3
+
+fun add(left: int, right: int) -> int {
+    return left + right;
+}
+
+fun main() -> void {
+    add(1, 2, 3);
+}

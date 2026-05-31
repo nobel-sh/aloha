@@ -1,0 +1,9 @@
+// expect-error: Cannot assign to immutable variable 'value'
+
+fun update(value: int) -> void {
+    value = 2;
+}
+
+fun main() -> void {
+    update(1);
+}

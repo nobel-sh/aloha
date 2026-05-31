@@ -1,0 +1,14 @@
+fun shadow_with_mutable_local(value: int) -> int {
+    if (true) {
+        mut value: int = 1;
+        value = 2;
+        return value;
+    } else {
+        return value;
+    }
+}
+
+fun main() -> void {
+    assert_msg(shadow_with_mutable_local(5) == 2, "mutable local should shadow immutable parameter");
+    println("All parameter mutability tests passed!");
+}

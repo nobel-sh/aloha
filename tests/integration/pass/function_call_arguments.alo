@@ -1,0 +1,16 @@
+fun add(left: int, right: int) -> int {
+    return left + right;
+}
+
+fun is_positive(value: int) -> bool {
+    return value > 0;
+}
+
+fun main() -> void {
+    imut sum: int = add(add(1, 2), 3);
+    imut positive: bool = is_positive(sum);
+
+    assert_msg(sum == 6, "nested function calls should type-check");
+    assert_msg(positive == true, "function call return type should be usable");
+    println("All function call argument tests passed!");
+}
