@@ -1,0 +1,26 @@
+struct Node {
+  value: int,
+  next: &Node
+}
+
+fun main() -> void {
+  imut arena = arena_new();
+
+  imut first: &Node = new(arena) Node {
+    value: 1,
+    next: null
+  };
+
+  imut second: &Node = new(arena) Node {
+    value: 2,
+    next: null
+  };
+
+  first->next = second;
+
+  assert_msg(first->value == 1, "first value works");
+  assert_msg(first->next->value == 2, "reference field assignment works");
+
+  first->next = null;
+  arena_free_all(arena);
+}

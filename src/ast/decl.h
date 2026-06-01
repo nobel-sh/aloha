@@ -10,6 +10,7 @@ namespace aloha
         class Integer;
         class Float;
         class Boolean;
+        class Null;
         class String;
         class UnaryExpression;
         class BinaryExpression;

@@ -66,6 +66,7 @@ namespace aloha
     type_map[TyIds::BOOL] = llvm::Type::getInt1Ty(*context);
     type_map[TyIds::VOID] = llvm::Type::getVoidTy(*context);
     type_map[TyIds::STRING] = llvm::PointerType::get(*context, 0);
+    type_map[TyIds::NULL_TY] = llvm::PointerType::get(*context, 0);
     type_map[TyIds::ERROR] = llvm::Type::getVoidTy(*context); // Placeholder
 
     generate_struct_types();
@@ -405,6 +406,12 @@ namespace aloha
   void CodeGenerator::visit(air::BoolLiteral *node)
   {
     current_value = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), node->m_value ? 1 : 0);
+  }
+
+  void CodeGenerator::visit(air::NullLiteral *node)
+  {
+    (void)node;
+    current_value = llvm::ConstantPointerNull::get(llvm::PointerType::get(*context, 0));
   }
 
   void CodeGenerator::visit(air::VarRef *node)
@@ -1168,7 +1175,19 @@ namespace aloha
       return;
     }
 
-    const TyInfo *obj_ty_info = ty_table.get_ty_info(node->m_object->m_ty);
+    TyId object_ty = node->m_object->m_ty;
+    bool object_is_ref = false;
+    if (ty_table.is_ref(object_ty))
+    {
+      auto pointee_ty = ty_table.get_ref_pointee_type(object_ty);
+      if (pointee_ty.has_value())
+      {
+        object_ty = pointee_ty.value();
+        object_is_ref = true;
+      }
+    }
+
+    const TyInfo *obj_ty_info = ty_table.get_ty_info(object_ty);
     if (!obj_ty_info || !obj_ty_info->is_struct())
     {
       report_error("Field assignment on non-struct type", node->m_loc);
@@ -1182,16 +1201,29 @@ namespace aloha
       return;
     }
 
-    llvm::Type *obj_llvm_type = object->getType();
-    if (!obj_llvm_type->isStructTy())
+    llvm::Value *struct_ptr = nullptr;
+    if (object_is_ref)
     {
-      report_error("Expected struct value for field assignment", node->m_loc);
-      return;
+      if (!object->getType()->isPointerTy())
+      {
+        report_error("Expected struct reference for field assignment", node->m_loc);
+        return;
+      }
+      struct_ptr = object;
     }
+    else
+    {
+      llvm::Type *obj_llvm_type = object->getType();
+      if (!obj_llvm_type->isStructTy())
+      {
+        report_error("Expected struct value for field assignment", node->m_loc);
+        return;
+      }
 
-    llvm::AllocaInst *tmp_alloca = builder->CreateAlloca(struct_type, nullptr, "tmp_struct");
-    builder->CreateStore(object, tmp_alloca);
-    llvm::Value *struct_ptr = tmp_alloca;
+      llvm::AllocaInst *tmp_alloca = builder->CreateAlloca(struct_type, nullptr, "tmp_struct");
+      builder->CreateStore(object, tmp_alloca);
+      struct_ptr = tmp_alloca;
+    }
 
     llvm::Value *field_ptr = builder->CreateStructGEP(
         struct_type, struct_ptr, node->m_field_index, "field_ptr");

@@ -21,6 +21,7 @@ namespace aloha
     constexpr TyId STRING = 3;
     constexpr TyId BOOL = 4;
     constexpr TyId VOID = 5;
+    constexpr TyId NULL_TY = 6;
     constexpr TyId USER_DEFINED_START = 1000;
   }
 
@@ -37,6 +38,7 @@ namespace aloha
     STRING,
     BOOL,
     VOID,
+    NULL_TY,
     STRUCT,
     ENUM,
     ARRAY,

@@ -101,6 +101,14 @@ namespace aloha
       void accept(ASTVisitor &visitor) override;
     };
 
+    class Null : public Expression
+    {
+    public:
+      explicit Null(Location loc);
+      void write(std::ostream &os, unsigned long indent = 0) const override;
+      void accept(ASTVisitor &visitor) override;
+    };
+
     class String : public Expression
     {
     public:

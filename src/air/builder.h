@@ -70,6 +70,7 @@ namespace aloha
     void visit(ast::Integer *node) override;
     void visit(ast::Float *node) override;
     void visit(ast::Boolean *node) override;
+    void visit(ast::Null *node) override;
     void visit(ast::String *node) override;
     void visit(ast::EnumVariant *node) override;
     void visit(ast::MatchExpression *node) override;

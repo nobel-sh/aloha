@@ -11,6 +11,7 @@ namespace aloha
     virtual void visit(ast::Integer *node) = 0;
     virtual void visit(ast::Float *node) = 0;
     virtual void visit(ast::Boolean *node) = 0;
+    virtual void visit(ast::Null *node) = 0;
     virtual void visit(ast::String *node) = 0;
     virtual void visit(ast::UnaryExpression *node) = 0;
     virtual void visit(ast::BinaryExpression *node) = 0;

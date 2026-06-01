@@ -10,6 +10,7 @@ namespace aloha
         void Integer::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Float::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Boolean::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void Null::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void String::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void UnaryExpression::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void BinaryExpression::accept(ASTVisitor &visitor) { visitor.visit(this); }
@@ -53,6 +54,8 @@ namespace aloha
             : Expression(loc), m_value(val) {}
 
         Boolean::Boolean(Location loc, bool val) : Expression(loc), m_value(val) {}
+
+        Null::Null(Location loc) : Expression(loc) {}
 
         String::String(Location loc, std::string val)
             : Expression(loc), m_value(std::move(val)) {}

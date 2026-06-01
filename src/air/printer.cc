@@ -53,6 +53,13 @@ namespace aloha
             os << "BoolLiteral: " << (node->m_value ? "true" : "false") << "\n";
         }
 
+        void Printer::visit(NullLiteral *node)
+        {
+            (void)node;
+            write_indent();
+            os << "NullLiteral\n";
+        }
+
         void Printer::visit(VarRef *node)
         {
             write_indent();

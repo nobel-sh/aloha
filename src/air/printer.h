@@ -26,6 +26,7 @@ namespace aloha
             void visit(FloatLiteral *node) override;
             void visit(StringLiteral *node) override;
             void visit(BoolLiteral *node) override;
+            void visit(NullLiteral *node) override;
             void visit(VarRef *node) override;
             void visit(EnumValue *node) override;
             void visit(MatchExpr *node) override;

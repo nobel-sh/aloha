@@ -12,6 +12,7 @@ namespace aloha
     register_builtin("string", TyKind::STRING, TyIds::STRING);
     register_builtin("bool", TyKind::BOOL, TyIds::BOOL);
     register_builtin("void", TyKind::VOID, TyIds::VOID);
+    register_builtin("null", TyKind::NULL_TY, TyIds::NULL_TY);
     register_builtin("error", TyKind::ERROR, TyIds::ERROR);
   }
 

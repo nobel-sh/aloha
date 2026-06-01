@@ -1,0 +1,5 @@
+// expect-error: Cannot infer type from null
+
+fun main() -> void {
+  imut value = null;
+}

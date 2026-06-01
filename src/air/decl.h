@@ -13,6 +13,7 @@ namespace aloha
     class FloatLiteral;
     class StringLiteral;
     class BoolLiteral;
+    class NullLiteral;
     class VarRef;
     class EnumValue;
     class MatchExpr;

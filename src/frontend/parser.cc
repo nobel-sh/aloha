@@ -875,9 +875,7 @@ namespace aloha
           auto value = token->lexeme == "true" ? true : false;
           return std::make_unique<ast::Boolean>(loc, value);
         }
-
-        // TODO: represent null in better structure
-        return std::make_unique<ast::String>(loc, "null");
+        return std::make_unique<ast::Null>(loc);
       }
 
       return std::make_unique<ast::Identifier>(loc, token->get_lexeme());

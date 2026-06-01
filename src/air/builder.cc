@@ -22,6 +22,11 @@ namespace aloha
     current_expr = std::make_unique<air::BoolLiteral>(node->m_loc, node->m_value);
   }
 
+  void AIRBuilder::visit(ast::Null *node)
+  {
+    current_expr = std::make_unique<air::NullLiteral>(node->m_loc);
+  }
+
   void AIRBuilder::visit(ast::String *node)
   {
     current_expr = std::make_unique<air::StringLiteral>(node->m_loc, node->m_value);
@@ -335,7 +340,16 @@ namespace aloha
         // infer from initializer
         if (!node->m_type.has_value())
         {
-          var_ty = init_expr->m_ty;
+          if (init_expr->m_ty == TyIds::NULL_TY)
+          {
+            diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                              "Cannot infer type from null");
+            var_ty = TyIds::ERROR;
+          }
+          else
+          {
+            var_ty = init_expr->m_ty;
+          }
         }
         // else check from initializer
         else if (var_ty != TyIds::ERROR)
@@ -1059,6 +1073,15 @@ namespace aloha
     }
 
     TyId struct_ty = struct_expr->m_ty;
+    if (ty_table.is_ref(struct_ty))
+    {
+      auto pointee_ty = ty_table.get_ref_pointee_type(struct_ty);
+      if (pointee_ty.has_value())
+      {
+        struct_ty = pointee_ty.value();
+      }
+    }
+
     if (!ty_table.is_struct(struct_ty))
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
@@ -1379,6 +1402,11 @@ namespace aloha
                                           Location loc, const std::string &context)
   {
     if (expected == actual)
+    {
+      return true;
+    }
+
+    if (actual == TyIds::NULL_TY && ty_table.is_ref(expected))
     {
       return true;
     }

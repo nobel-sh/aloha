@@ -1,0 +1,5 @@
+// expect-error: Type mismatch in variable initialization: expected 'int', got 'null'
+
+fun main() -> void {
+  imut value: int = null;
+}

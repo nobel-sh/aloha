@@ -48,6 +48,11 @@ namespace aloha
                << "\n";
         }
 
+        void Null::write(std::ostream &os, unsigned long indent) const
+        {
+            os << std::string(indent, ' ') << "Null\n";
+        }
+
         void String::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "String: \"" << m_value << "\"\n";

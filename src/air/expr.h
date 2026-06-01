@@ -54,6 +54,15 @@ namespace aloha
       void accept(AIRVisitor &visitor) override { visitor.visit(this); }
     };
 
+    class NullLiteral : public Expr
+    {
+    public:
+      explicit NullLiteral(const Location &loc)
+          : Expr(loc, TyIds::NULL_TY) {}
+
+      void accept(AIRVisitor &visitor) override { visitor.visit(this); }
+    };
+
     using VarId = uint32_t;
 
     class VarRef : public Expr
