@@ -1,0 +1,16 @@
+fun main() -> void {
+    imut arena = arena_new();
+
+    imut token_kind = string_concat(arena, "Token", "Kind");
+    assert_msg(token_kind == "TokenKind", "string concat literals works");
+
+    imut stdlib = string_clone(arena, "stdlib/");
+    imut path = string_concat(arena, stdlib, "io.alo");
+    assert_msg(path == "stdlib/io.alo", "string concat cloned left works");
+
+    imut prefix = string_concat(arena, "parse_", "expr");
+    imut generated = string_concat(arena, prefix, "_node");
+    assert_msg(generated == "parse_expr_node", "string concat chaining works");
+
+    arena_free_all(arena);
+}

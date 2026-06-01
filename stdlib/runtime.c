@@ -140,6 +140,29 @@ char *aloha_string_clone(void *arena_ptr, const char *str)
     return copy;
 }
 
+char *aloha_string_concat(void *arena_ptr, const char *left, const char *right)
+{
+    if (!arena_ptr)
+        return NULL;
+
+    if (!left)
+        left = "";
+    if (!right)
+        right = "";
+
+    size_t left_len = strlen(left);
+    size_t right_len = strlen(right);
+    size_t total_len = left_len + right_len;
+    char *result = aloha_arena_alloc(arena_ptr, (aloha_int)(total_len + 1));
+    if (!result)
+        return NULL;
+
+    memcpy(result, left, left_len);
+    memcpy(result + left_len, right, right_len);
+    result[total_len] = '\0';
+    return result;
+}
+
 char *aloha_sys_int_to_string(aloha_int value)
 {
     // 24 bytes for int64_t
