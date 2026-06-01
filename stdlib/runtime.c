@@ -249,3 +249,11 @@ aloha_int aloha_vec_int_get(void *vec_ptr, aloha_int index)
 
     return vec->data[index];
 }
+
+void aloha_vec_int_set(void *vec_ptr, aloha_int index, aloha_int value)
+{
+    aloha_vec_int *vec = (aloha_vec_int *)vec_ptr;
+    if (!vec || index < 0 || index >= vec->len)
+        aloha_sys_abort();
+    vec->data[index] = value;
+}
