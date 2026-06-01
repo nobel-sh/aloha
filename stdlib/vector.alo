@@ -1,0 +1,20 @@
+extern fun aloha_vec_int_new(arena: &void) -> &void;
+extern fun aloha_vec_int_push(vec_ptr: &void, value: int) -> void;
+extern fun aloha_vec_int_len(vec_ptr: &void) -> int;
+extern fun aloha_vec_int_get(vec_ptr: &void, index: int) -> int;
+
+fun vec_int_new(arena: &void) -> &void {
+    return aloha_vec_int_new(arena);
+}
+
+fun vec_int_push(vec: &void, value: int) -> void {
+    aloha_vec_int_push(vec, value);
+}
+
+fun vec_int_len(vec: &void) -> int {
+    return aloha_vec_int_len(vec);
+}
+
+fun vec_int_get(vec: &void, index: int) -> int {
+    return aloha_vec_int_get(vec, index);
+}

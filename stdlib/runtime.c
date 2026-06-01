@@ -181,3 +181,71 @@ char *aloha_sys_input(void)
 
     return line;
 }
+
+typedef struct
+{
+    aloha_int *data;
+    aloha_int len;
+    aloha_int cap;
+    aloha_arena *arena;
+} aloha_vec_int;
+
+void *aloha_vec_int_new(void *arena_ptr)
+{
+    if (!arena_ptr)
+        return NULL;
+
+    aloha_vec_int *vec = aloha_arena_alloc(arena_ptr, sizeof(aloha_vec_int));
+    if (!vec)
+        return NULL;
+
+    vec->data = NULL;
+    vec->arena = (aloha_arena *)arena_ptr;
+    vec->cap = 0;
+    vec->len = 0;
+    return vec;
+}
+
+static int aloha_vec_int_grow(aloha_vec_int *vec_ptr)
+{
+    aloha_int new_cap = vec_ptr->cap == 0 ? 8 : vec_ptr->cap * 2;
+    aloha_int *new_data = aloha_arena_alloc(vec_ptr->arena, new_cap * (aloha_int)sizeof(aloha_int));
+
+    if (!new_data)
+        return 0;
+
+    for (aloha_int i = 0; i < vec_ptr->len; ++i)
+        new_data[i] = vec_ptr->data[i];
+
+    vec_ptr->data = new_data;
+    vec_ptr->cap = new_cap;
+    return 1;
+}
+
+void aloha_vec_int_push(void *vec_ptr, aloha_int value)
+{
+    aloha_vec_int *vec = (aloha_vec_int *)vec_ptr;
+    if (!vec)
+        return;
+
+    if (vec->len == vec->cap && !aloha_vec_int_grow(vec))
+        return;
+
+    vec->data[vec->len] = value;
+    ++vec->len;
+}
+
+aloha_int aloha_vec_int_len(void *vec_ptr)
+{
+    aloha_vec_int *vec = (aloha_vec_int *)vec_ptr;
+    return vec ? vec->len : 0;
+}
+
+aloha_int aloha_vec_int_get(void *vec_ptr, aloha_int index)
+{
+    aloha_vec_int *vec = (aloha_vec_int *)vec_ptr;
+    if (!vec || index < 0 || index >= vec->len)
+        aloha_sys_abort();
+
+    return vec->data[index];
+}

@@ -1,0 +1,22 @@
+fun main() -> void {
+    imut arena = arena_new();
+    imut vec = vec_int_new(arena);
+    
+    vec_int_push(vec, 1);  
+    vec_int_push(vec, 3);  
+    vec_int_push(vec, 3);  
+    vec_int_push(vec, 7);  
+    vec_int_push(vec, 3);  
+    vec_int_push(vec, 3);  
+    vec_int_push(vec, 1);  
+    vec_int_push(vec, 3);  
+    vec_int_push(vec, 3);  
+    vec_int_push(vec, 7);  
+ 
+
+    assert_msg(vec_int_len(vec)==10, "vec len works");
+    assert_msg(vec_int_get(vec, 1)==3, "vec get works");
+    assert_msg(vec_int_get(vec, 9) == 7, "vec get works after growing");
+
+    arena_free_all(arena);
+}
