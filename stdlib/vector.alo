@@ -3,6 +3,11 @@ extern fun aloha_vec_int_push(vec_ptr: &void, value: int) -> void;
 extern fun aloha_vec_int_len(vec_ptr: &void) -> int;
 extern fun aloha_vec_int_get(vec_ptr: &void, index: int) -> int;
 extern fun aloha_vec_int_set(vec_ptr: &void, index: int, value: int) -> void;
+extern fun aloha_vec_string_new(arena: &void) -> &void;
+extern fun aloha_vec_string_push(vec_ptr: &void, value: string) -> void;
+extern fun aloha_vec_string_len(vec_ptr: &void) -> int;
+extern fun aloha_vec_string_get(vec_ptr: &void, index: int) -> string;
+extern fun aloha_vec_string_set(vec_ptr: &void, index: int, value: string) -> void;
 
 fun vec_int_new(arena: &void) -> &void {
     return aloha_vec_int_new(arena);
@@ -20,6 +25,26 @@ fun vec_int_get(vec: &void, index: int) -> int {
     return aloha_vec_int_get(vec, index);
 }
 
-fun vec_int_set(vec_ptr: &void, index: int, value: int) -> void{
+fun vec_int_set(vec_ptr: &void, index: int, value: int) -> void {
     aloha_vec_int_set(vec_ptr, index, value);
+}
+
+fun vec_string_new(arena: &void) -> &void {
+    return aloha_vec_string_new(arena);
+}
+
+fun vec_string_push(vec: &void, value: string) -> void {
+    aloha_vec_string_push(vec, value);
+}
+
+fun vec_string_len(vec: &void) -> int {
+    return aloha_vec_string_len(vec);
+}
+
+fun vec_string_get(vec: &void, index: int) -> string {
+    return aloha_vec_string_get(vec, index);
+}
+
+fun vec_string_set(vec_ptr: &void, index: int, value: string) -> void {
+    aloha_vec_string_set(vec_ptr, index, value);
 }
