@@ -1,0 +1,18 @@
+fun main() -> void {
+    imut arena = arena_new();
+    imut names = vec_string_new(arena);
+
+    imut token = string_clone(arena, "TokenKind");
+    imut expr = string_clone(arena, "Expr");
+
+    assert_msg(token == "TokenKind", "string clone preserves value");
+    assert_msg(expr != token, "string clone inequality works");
+
+    vec_string_push(names, token);
+    vec_string_push(names, expr);
+
+    assert_msg(vec_string_get(names, 0) == "TokenKind", "vec string stores cloned string");
+    assert_msg(vec_string_get(names, 1) == "Expr", "vec string stores second cloned string");
+
+    arena_free_all(arena);
+}

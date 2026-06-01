@@ -126,6 +126,20 @@ bool aloha_sys_str_eq(const char *left, const char *right)
     return strcmp(left, right) == 0;
 }
 
+char *aloha_string_clone(void *arena_ptr, const char *str)
+{
+    if (!arena_ptr || !str)
+        return NULL;
+
+    size_t len = strlen(str);
+    char *copy = aloha_arena_alloc(arena_ptr, (aloha_int)(len + 1));
+    if (!copy)
+        return NULL;
+
+    memcpy(copy, str, len + 1);
+    return copy;
+}
+
 char *aloha_sys_int_to_string(aloha_int value)
 {
     // 24 bytes for int64_t
