@@ -19,7 +19,7 @@ typedef struct aloha_arena_block
     struct aloha_arena_block *next;
     size_t capacity;
     size_t used;
-    unsigned char data[];
+    uint8_t data[];
 } aloha_arena_block;
 
 typedef struct aloha_arena
@@ -184,16 +184,16 @@ char *aloha_sys_input(void)
 
 typedef struct
 {
-    unsigned char *data;
+    uint8_t *data;
     aloha_int len;
     aloha_int cap;
-    aloha_int elem_size;
+    size_t elem_size;
     aloha_arena *arena;
 } aloha_vec;
 
-static void *aloha_vec_new(void *arena_ptr, aloha_int elem_size)
+static void *aloha_vec_new(void *arena_ptr, size_t elem_size)
 {
-    if (!arena_ptr || elem_size <= 0)
+    if (!arena_ptr || elem_size == 0)
         return NULL;
 
     aloha_vec *vec = aloha_arena_alloc(arena_ptr, sizeof(aloha_vec));
@@ -211,13 +211,13 @@ static void *aloha_vec_new(void *arena_ptr, aloha_int elem_size)
 static int aloha_vec_grow(aloha_vec *vec)
 {
     aloha_int new_cap = vec->cap == 0 ? 8 : vec->cap * 2;
-    aloha_int byte_count = new_cap * vec->elem_size;
-    unsigned char *new_data = aloha_arena_alloc(vec->arena, byte_count);
+    size_t byte_count = (size_t)new_cap * vec->elem_size;
+    uint8_t *new_data = aloha_arena_alloc(vec->arena, (aloha_int)byte_count);
     if (!new_data)
         return 0;
 
     if (vec->data)
-        memcpy(new_data, vec->data, (size_t)(vec->len * vec->elem_size));
+        memcpy(new_data, vec->data, (size_t)vec->len * vec->elem_size);
 
     vec->data = new_data;
     vec->cap = new_cap;
@@ -229,7 +229,7 @@ static void *aloha_vec_slot(aloha_vec *vec, aloha_int index)
     if (!vec || index < 0 || index >= vec->len)
         aloha_sys_abort();
 
-    return vec->data + (index * vec->elem_size);
+    return vec->data + ((size_t)index * vec->elem_size);
 }
 
 static void aloha_vec_push_raw(void *vec_ptr, const void *value)
@@ -241,7 +241,7 @@ static void aloha_vec_push_raw(void *vec_ptr, const void *value)
     if (vec->len == vec->cap && !aloha_vec_grow(vec))
         return;
 
-    memcpy(vec->data + (vec->len * vec->elem_size), value, (size_t)vec->elem_size);
+    memcpy(vec->data + ((size_t)vec->len * vec->elem_size), value, vec->elem_size);
     ++vec->len;
 }
 
@@ -251,7 +251,7 @@ static void aloha_vec_get_raw(void *vec_ptr, aloha_int index, void *out)
         aloha_sys_abort();
 
     aloha_vec *vec = (aloha_vec *)vec_ptr;
-    memcpy(out, aloha_vec_slot(vec, index), (size_t)vec->elem_size);
+    memcpy(out, aloha_vec_slot(vec, index), vec->elem_size);
 }
 
 static void aloha_vec_set_raw(void *vec_ptr, aloha_int index, const void *value)
@@ -260,7 +260,7 @@ static void aloha_vec_set_raw(void *vec_ptr, aloha_int index, const void *value)
         aloha_sys_abort();
 
     aloha_vec *vec = (aloha_vec *)vec_ptr;
-    memcpy(aloha_vec_slot(vec, index), value, (size_t)vec->elem_size);
+    memcpy(aloha_vec_slot(vec, index), value, vec->elem_size);
 }
 
 static aloha_int aloha_vec_len(void *vec_ptr)
@@ -271,7 +271,7 @@ static aloha_int aloha_vec_len(void *vec_ptr)
 
 void *aloha_vec_int_new(void *arena_ptr)
 {
-    return aloha_vec_new(arena_ptr, (aloha_int)sizeof(aloha_int));
+    return aloha_vec_new(arena_ptr, sizeof(aloha_int));
 }
 
 void aloha_vec_int_push(void *vec_ptr, aloha_int value)
@@ -298,7 +298,7 @@ void aloha_vec_int_set(void *vec_ptr, aloha_int index, aloha_int value)
 
 void *aloha_vec_string_new(void *arena_ptr)
 {
-    return aloha_vec_new(arena_ptr, (aloha_int)sizeof(char *));
+    return aloha_vec_new(arena_ptr, sizeof(char *));
 }
 
 void aloha_vec_string_push(void *vec_ptr, char *value)
