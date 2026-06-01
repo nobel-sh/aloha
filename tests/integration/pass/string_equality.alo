@@ -1,0 +1,10 @@
+fun main() -> void {
+    imut left = "hello";
+    imut same = "hello";
+    imut different = "world";
+
+    assert_msg("token" == "token", "string literal equality works");
+    assert_msg("token" != "kind", "string literal inequality works");
+    assert_msg(left == same, "string variable equality works");
+    assert_msg(left != different, "string variable inequality works");
+}

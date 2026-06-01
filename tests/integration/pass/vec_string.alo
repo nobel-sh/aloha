@@ -14,11 +14,11 @@ fun main() -> void {
     vec_string_push(names, "jjjjjjjjjj");
 
     assert_msg(vec_string_len(names) == 10, "vec string len works");
-    assert_msg(aloha_sys_strlen(vec_string_get(names, 1)) == 2, "vec string get works");
-    assert_msg(aloha_sys_strlen(vec_string_get(names, 9)) == 10, "vec string growth preserves values");
+    assert_msg(vec_string_get(names, 1) == "bb", "vec string get works");
+    assert_msg(vec_string_get(names, 9) == "jjjjjjjjjj", "vec string growth preserves values");
 
     vec_string_set(names, 5, "updated");
-    assert_msg(aloha_sys_strlen(vec_string_get(names, 5)) == 7, "vec string set works");
+    assert_msg(vec_string_get(names, 5) == "updated", "vec string set works");
 
     arena_free_all(arena);
 }

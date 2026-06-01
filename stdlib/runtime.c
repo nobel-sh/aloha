@@ -5,6 +5,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -115,6 +116,14 @@ aloha_int aloha_sys_strlen(const char *str)
     if (!str)
         return 0;
     return (aloha_int)strlen(str);
+}
+
+bool aloha_sys_str_eq(const char *left, const char *right)
+{
+    if (!left || !right)
+        return left == right;
+
+    return strcmp(left, right) == 0;
 }
 
 char *aloha_sys_int_to_string(aloha_int value)

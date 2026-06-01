@@ -660,23 +660,56 @@ namespace aloha
       break;
 
     case air::BinaryOpKind::EQ:
-      if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL ||
+      if (node->m_left->m_ty == TyIds::STRING)
+      {
+        llvm::FunctionCallee str_eq_func = module->getOrInsertFunction(
+            "aloha_sys_str_eq",
+            llvm::FunctionType::get(llvm::Type::getInt1Ty(*context),
+                                    {llvm::PointerType::get(*context, 0),
+                                     llvm::PointerType::get(*context, 0)},
+                                    false));
+        current_value = builder->CreateCall(str_eq_func, {left, right}, "streqtmp");
+      }
+      else if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL ||
           left->getType()->isIntegerTy())
+      {
         current_value = builder->CreateICmpEQ(left, right, "eqtmp");
+      }
       else if (kind == NumericKind::FLOAT)
+      {
         current_value = builder->CreateFCmpOEQ(left, right, "eqtmp");
+      }
       else
+      {
         report_error("Unsupported type for equality comparison", node->m_loc);
+      }
       break;
 
     case air::BinaryOpKind::NE:
-      if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL ||
+      if (node->m_left->m_ty == TyIds::STRING)
+      {
+        llvm::FunctionCallee str_eq_func = module->getOrInsertFunction(
+            "aloha_sys_str_eq",
+            llvm::FunctionType::get(llvm::Type::getInt1Ty(*context),
+                                    {llvm::PointerType::get(*context, 0),
+                                     llvm::PointerType::get(*context, 0)},
+                                    false));
+        llvm::Value *eq = builder->CreateCall(str_eq_func, {left, right}, "streqtmp");
+        current_value = builder->CreateNot(eq, "strnetmp");
+      }
+      else if (kind == NumericKind::INTEGER || kind == NumericKind::BOOL ||
           left->getType()->isIntegerTy())
+      {
         current_value = builder->CreateICmpNE(left, right, "netmp");
+      }
       else if (kind == NumericKind::FLOAT)
+      {
         current_value = builder->CreateFCmpONE(left, right, "netmp");
+      }
       else
+      {
         report_error("Unsupported type for inequality comparison", node->m_loc);
+      }
       break;
 
     case air::BinaryOpKind::LT:

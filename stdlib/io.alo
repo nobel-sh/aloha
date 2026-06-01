@@ -1,6 +1,7 @@
 extern fun aloha_sys_write(fd: int, buf: string, count: int) -> int;
 extern fun aloha_sys_read(fd: int, buf: string, count: int) -> int;
 extern fun aloha_sys_strlen(s: string) -> int;
+extern fun aloha_sys_str_eq(left: string, right: string) -> bool;
 extern fun aloha_sys_int_to_string(value: int) -> string;
 extern fun aloha_sys_float_to_string(value: float) -> string;
 extern fun aloha_sys_input() -> string;
