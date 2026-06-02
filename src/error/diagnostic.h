@@ -11,6 +11,7 @@ namespace aloha
 
     enum class DiagnosticSeverity
     {
+        Note,
         Warning,
         Error,
     };

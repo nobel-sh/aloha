@@ -2,9 +2,14 @@
 #define ALOHA_DIAGNOSTIC_ENGINE_H_
 
 #include "diagnostic.h"
-#include <vector>
 #include <functional>
+#include <fstream>
 #include <iostream>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace aloha
 {
@@ -17,6 +22,7 @@ namespace aloha
         size_t warning_count_ = 0;
         size_t max_errors_ = 20;
         bool treat_warnings_as_errors_ = false;
+        mutable std::unordered_map<std::string, std::vector<std::string>> source_cache_;
 
     public:
         DiagnosticEngine() = default;
@@ -39,6 +45,9 @@ namespace aloha
                     ++error_count_;
                 }
             }
+            else if (diag.severity == DiagnosticSeverity::Note)
+            {
+            }
 
             diagnostics_.push_back(std::move(diag));
         }
@@ -51,6 +60,11 @@ namespace aloha
         void warning(DiagnosticPhase phase, Location loc, std::string msg)
         {
             report(Diagnostic(DiagnosticSeverity::Warning, phase, loc, std::move(msg)));
+        }
+
+        void note(DiagnosticPhase phase, Location loc, std::string msg)
+        {
+            report(Diagnostic(DiagnosticSeverity::Note, phase, loc, std::move(msg)));
         }
 
         bool has_errors() const { return error_count_ > 0; }
@@ -99,6 +113,10 @@ namespace aloha
             const char *label = "";
             switch (diag.severity)
             {
+            case DiagnosticSeverity::Note:
+                color = "\033[1;36m";
+                label = "note";
+                break;
             case DiagnosticSeverity::Warning:
                 color = "\033[1;35m";
                 label = "warning";
@@ -121,6 +139,75 @@ namespace aloha
             os << color << label << reset;
 
             os << ": " << diag.message << "\n";
+            print_source_excerpt(os, diag, prefix);
+        }
+
+        std::optional<std::string> get_source_line(const Location &location) const
+        {
+            if (!location.file_path || location.line == 0)
+            {
+                return std::nullopt;
+            }
+
+            const std::string &path = *location.file_path;
+            auto cache_it = source_cache_.find(path);
+            if (cache_it == source_cache_.end())
+            {
+                std::ifstream file(path);
+                if (!file.is_open())
+                {
+                    return std::nullopt;
+                }
+
+                std::vector<std::string> lines;
+                std::string line;
+                while (std::getline(file, line))
+                {
+                    lines.push_back(line);
+                }
+
+                cache_it = source_cache_.emplace(path, std::move(lines)).first;
+            }
+
+            const auto &lines = cache_it->second;
+            size_t index = static_cast<size_t>(location.line - 1);
+            if (index >= lines.size())
+            {
+                return std::nullopt;
+            }
+
+            return lines[index];
+        }
+
+        static size_t decimal_width(uint32_t value)
+        {
+            size_t width = 1;
+            while (value >= 10)
+            {
+                value /= 10;
+                ++width;
+            }
+            return width;
+        }
+
+        void print_source_excerpt(std::ostream &os, const Diagnostic &diag,
+                                  const std::string &prefix) const
+        {
+            auto source_line = get_source_line(diag.location);
+            if (!source_line.has_value())
+            {
+                return;
+            }
+
+            size_t line_width = decimal_width(diag.location.line);
+            os << prefix << std::string(line_width, ' ') << " |\n";
+            os << prefix << diag.location.line << " | " << *source_line << "\n";
+
+            size_t caret_column = diag.location.col > 0
+                                      ? static_cast<size_t>(diag.location.col - 1)
+                                      : 0;
+            os << prefix << std::string(line_width, ' ') << " | "
+               << std::string(caret_column, ' ') << "^\n";
         }
     };
 
