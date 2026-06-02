@@ -325,6 +325,12 @@ namespace aloha
       if (ty_opt.has_value())
       {
         var_ty = ty_opt.value();
+        if (ty_table.is_opaque(var_ty))
+        {
+          diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                            "Opaque type '" + ty_table.ty_name(var_ty) +
+                                "' must be used by reference");
+        }
       }
       else
       {

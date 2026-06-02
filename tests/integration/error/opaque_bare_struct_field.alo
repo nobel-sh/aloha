@@ -1,0 +1,8 @@
+// expect-error: Opaque type 'Arena' must be used by reference
+
+struct Bad {
+    arena: Arena
+}
+
+fun main() -> void {
+}

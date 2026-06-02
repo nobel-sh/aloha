@@ -1,0 +1,5 @@
+// expect-error: Opaque type 'Arena' must be used by reference
+
+fun main() -> void {
+    imut arena: Arena = arena_new();
+}

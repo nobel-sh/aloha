@@ -1,0 +1,8 @@
+// expect-error: Opaque type 'Foreign' must be used by reference
+
+extern type Foreign;
+
+extern fun bad() -> Foreign;
+
+fun main() -> void {
+}

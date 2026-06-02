@@ -133,7 +133,14 @@ namespace aloha
       }
       else
       {
-        param_types.push_back(param_ty_opt.value());
+        TyId param_ty = param_ty_opt.value();
+        if (ty_table.is_opaque(param_ty))
+        {
+          diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
+                            "Opaque type '" + ty_table.ty_name(param_ty) +
+                                "' must be used by reference");
+        }
+        param_types.push_back(param_ty);
       }
     }
 
@@ -147,6 +154,12 @@ namespace aloha
     else
     {
       return_ty = return_ty_opt.value();
+      if (ty_table.is_opaque(return_ty))
+      {
+        diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
+                          "Opaque type '" + ty_table.ty_name(return_ty) +
+                              "' must be used by reference");
+      }
     }
 
     symbol_table_ptr->register_function(func_id, name, return_ty, param_types,

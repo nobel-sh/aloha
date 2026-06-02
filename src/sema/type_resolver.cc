@@ -156,7 +156,15 @@ namespace aloha
         continue;
       }
 
-      resolved.fields.emplace_back(field.m_name, ty_id_opt.value(), struct_decl->loc());
+      TyId field_ty = ty_id_opt.value();
+      if (ty_table.is_opaque(field_ty))
+      {
+        diagnostics.error(DiagnosticPhase::TypeResolution, struct_decl->loc(),
+                          "Opaque type '" + ty_table.ty_name(field_ty) +
+                              "' must be used by reference");
+      }
+
+      resolved.fields.emplace_back(field.m_name, field_ty, struct_decl->loc());
     }
 
     if (!diagnostics.has_errors())
