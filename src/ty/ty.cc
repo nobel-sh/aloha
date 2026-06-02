@@ -236,14 +236,4 @@ namespace aloha
     return std::nullopt;
   }
 
-  bool TyTable::are_compatible(TyId lhs, TyId rhs) const
-  {
-    // for now, types must be exactly the same
-    // todo: handle implicit conversions, subtyping, ...
-
-    // Arrays are structurally typed and canonicalized,
-    // so pointer equality suffices
-    return lhs == rhs;
-  }
-
 } // namespace aloha

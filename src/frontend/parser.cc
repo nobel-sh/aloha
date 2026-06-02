@@ -29,13 +29,6 @@ namespace aloha
     return current_token.kind == TokenKind::EOF_TOKEN;
   }
 
-  void Parser::panic_parser(const std::string &message)
-  {
-    std::cout << message << std::endl;
-    peek()->dump();
-    exit(1);
-  }
-
   Location Parser::current_location() const { return peek()->loc; }
 
   void Parser::advance()

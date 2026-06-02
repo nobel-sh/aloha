@@ -135,7 +135,6 @@ namespace aloha
     std::optional<TyId> get_array_element_type(TyId array_ty) const;
     std::optional<TyId> get_ref_pointee_type(TyId ref_ty) const;
 
-    bool are_compatible(TyId lhs, TyId rhs) const;
   };
 
 } // namespace air

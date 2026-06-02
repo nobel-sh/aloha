@@ -861,15 +861,13 @@ namespace aloha
       return;
     }
 
-    TyId void_arena_ty = ty_table.register_ref(TyIds::VOID);
     std::optional<TyId> arena_handle_ty;
     if (auto arena_ty = ty_table.lookup_by_name("Arena"))
     {
       arena_handle_ty = ty_table.register_ref(arena_ty.value());
     }
 
-    bool arena_ok = arena->m_ty == void_arena_ty ||
-                    (arena_handle_ty.has_value() && arena->m_ty == arena_handle_ty.value());
+    bool arena_ok = arena_handle_ty.has_value() && arena->m_ty == arena_handle_ty.value();
     if (!arena_ok)
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_arena->m_loc,

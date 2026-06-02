@@ -62,8 +62,6 @@ namespace aloha
     ParseTy parse_type();
     Location current_location() const;
 
-    void panic_parser(const std::string &message);
-
     std::unique_ptr<ast::Identifier> expect_identifier();
     bool is_reserved_ident() const;
     bool is_reserved_ident(Token t) const;
