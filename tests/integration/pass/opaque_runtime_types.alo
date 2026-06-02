@@ -1,0 +1,13 @@
+fun main() -> void {
+    imut arena: &Arena = arena_new();
+    imut nums: &VecInt = vec_int_new(arena);
+    imut names: &VecString = vec_string_new(arena);
+
+    vec_int_push(nums, 42);
+    vec_string_push(names, "Token");
+
+    assert_msg(vec_int_get(nums, 0) == 42, "typed VecInt handle works");
+    assert_msg(vec_string_get(names, 0) == "Token", "typed VecString handle works");
+
+    arena_free_all(arena);
+}

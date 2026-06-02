@@ -31,6 +31,7 @@ namespace aloha
         class Function;
         class StructDecl;
         class EnumDecl;
+        class ExternTypeDecl;
         class StructInstantiation;
         class NewObjectExpression;
         class StructFieldAccess;

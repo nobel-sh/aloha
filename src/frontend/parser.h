@@ -68,6 +68,7 @@ namespace aloha
 
     std::unique_ptr<ast::Function> parse_function();
     std::unique_ptr<ast::Function> parse_extern_function();
+    std::unique_ptr<ast::Statement> parse_extern_type_decl();
     std::unique_ptr<ast::Import> parse_import();
 
     std::vector<ast::Parameter> parse_parameters();

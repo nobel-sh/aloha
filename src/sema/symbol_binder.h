@@ -44,6 +44,7 @@ namespace aloha
     void bind_declarations(ast::Program *program, const TySpecArena &type_arena);
     void bind_struct_declaration(ast::StructDecl *struct_decl);
     void bind_enum_declaration(ast::EnumDecl *enum_decl);
+    void bind_extern_type_declaration(ast::ExternTypeDecl *extern_type_decl);
     void bind_function_declaration(ast::Function *func, const TySpecArena &type_arena);
     std::optional<TyId> resolve_signature_type(TySpecId ty_spec_id,
                                                const TySpecArena &type_arena,
@@ -59,6 +60,7 @@ namespace aloha
     bool check_duplicate_function(const std::string &name, Location loc);
     bool check_duplicate_struct(const std::string &name, Location loc);
     bool check_duplicate_enum(const std::string &name, Location loc);
+    bool check_duplicate_type(const std::string &name, Location loc, const std::string &kind);
     bool check_duplicate_parameter(const std::string &name, Location loc,
                                    Scope *scope);
     bool check_duplicate_variable(const std::string &name, Location loc,

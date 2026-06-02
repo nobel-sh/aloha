@@ -157,6 +157,10 @@ namespace aloha
     {
       return llvm::PointerType::get(*context, 0);
     }
+    else if (ty_info->is_opaque())
+    {
+      return llvm::PointerType::get(*context, 0);
+    }
 
     return nullptr;
   }

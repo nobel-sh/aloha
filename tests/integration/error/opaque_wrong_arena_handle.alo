@@ -1,0 +1,7 @@
+// expect-error: Type mismatch in function argument: expected '&Arena', got '&VecInt'
+
+fun main() -> void {
+    imut arena = arena_new();
+    imut nums = vec_int_new(arena);
+    arena_free_all(nums);
+}

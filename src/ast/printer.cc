@@ -326,6 +326,13 @@ namespace aloha
             os << std::string(indent, ' ') << "}\n";
         }
 
+        void ExternTypeDecl::write(std::ostream &os, unsigned long indent) const
+        {
+            os << std::string(indent, ' ') << "ExternTypeDecl:{\n";
+            os << std::string(indent + 2, ' ') << "Name: " << m_name << "\n";
+            os << std::string(indent, ' ') << "}\n";
+        }
+
         void StructInstantiation::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "StructInstantiation:{\n";

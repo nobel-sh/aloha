@@ -39,6 +39,10 @@ namespace aloha
       {
         bind_enum_declaration(enum_decl);
       }
+      else if (auto extern_type_decl = dynamic_cast<ast::ExternTypeDecl *>(node.get()))
+      {
+        bind_extern_type_declaration(extern_type_decl);
+      }
       else if (auto func = dynamic_cast<ast::Function *>(node.get()))
       {
         bind_function_declaration(func, type_arena);
@@ -89,6 +93,20 @@ namespace aloha
       symbol_table_ptr->register_enum_variant(name, variant, enum_id, type_id,
                                               static_cast<uint32_t>(i), loc);
     }
+  }
+
+  void SymbolBinder::bind_extern_type_declaration(ast::ExternTypeDecl *extern_type_decl)
+  {
+    const std::string &name = extern_type_decl->m_name;
+    Location loc = extern_type_decl->loc();
+
+    if (check_duplicate_type(name, loc, "extern type"))
+    {
+      return;
+    }
+
+    TyId type_id = ty_table.register_opaque(name);
+    symbol_table_ptr->register_opaque_type(name, type_id, loc);
   }
 
   void SymbolBinder::bind_function_declaration(ast::Function *func, const TySpecArena &type_arena)
@@ -173,6 +191,10 @@ namespace aloha
       if (auto enum_opt = symbol_table_ptr->lookup_enum(spec.name))
       {
         return enum_opt->type_id;
+      }
+      if (auto opaque_opt = symbol_table_ptr->lookup_opaque_type(spec.name))
+      {
+        return opaque_opt->type_id;
       }
       (void)loc;
       (void)context;
@@ -327,7 +349,8 @@ namespace aloha
                                             Location loc)
   {
     if (symbol_table_ptr->lookup_struct(name).has_value() ||
-        symbol_table_ptr->lookup_enum(name).has_value())
+        symbol_table_ptr->lookup_enum(name).has_value() ||
+        symbol_table_ptr->lookup_opaque_type(name).has_value())
     {
       diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate struct declaration: '" + name + "'");
       return true;
@@ -339,9 +362,24 @@ namespace aloha
                                           Location loc)
   {
     if (symbol_table_ptr->lookup_enum(name).has_value() ||
-        symbol_table_ptr->lookup_struct(name).has_value())
+        symbol_table_ptr->lookup_struct(name).has_value() ||
+        symbol_table_ptr->lookup_opaque_type(name).has_value())
     {
       diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate enum declaration: '" + name + "'");
+      return true;
+    }
+    return false;
+  }
+
+  bool SymbolBinder::check_duplicate_type(const std::string &name, Location loc,
+                                          const std::string &kind)
+  {
+    if (symbol_table_ptr->lookup_struct(name).has_value() ||
+        symbol_table_ptr->lookup_enum(name).has_value() ||
+        symbol_table_ptr->lookup_opaque_type(name).has_value())
+    {
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
+                        "Duplicate " + kind + " declaration: '" + name + "'");
       return true;
     }
     return false;

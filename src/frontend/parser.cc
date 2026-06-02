@@ -115,7 +115,19 @@ namespace aloha
       }
       else if (match("extern"))
       {
-        program->m_nodes.push_back(parse_extern_function());
+        if (match("fun", true))
+        {
+          program->m_nodes.push_back(parse_extern_function());
+        }
+        else if (match("type", true))
+        {
+          program->m_nodes.push_back(parse_extern_type_decl());
+        }
+        else
+        {
+          report_error("Expected 'fun' or 'type' after 'extern'");
+          break;
+        }
       }
       else
         program->m_nodes.push_back(parse_function());
@@ -157,6 +169,16 @@ namespace aloha
     return std::make_unique<ast::Function>(
         loc, std::move(identifier), std::move(parameters), return_type,
         std::move(return_type_name), nullptr, true);
+  }
+
+  std::unique_ptr<ast::Statement> Parser::parse_extern_type_decl()
+  {
+    Location loc = current_location();
+    consume("extern", "Expected 'extern' keyword");
+    consume("type", "Expected 'type' keyword after 'extern'");
+    auto identifier = expect_identifier();
+    consume(TokenKind::SEMICOLON, "Expected ';' after extern type declaration");
+    return std::make_unique<ast::ExternTypeDecl>(loc, std::move(identifier->m_name));
   }
 
   std::unique_ptr<ast::Import> Parser::parse_import()

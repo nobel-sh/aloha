@@ -1,0 +1,6 @@
+// expect-error: Type mismatch in function argument: expected '&VecInt', got '&Arena'
+
+fun main() -> void {
+    imut arena = arena_new();
+    vec_int_push(arena, 1);
+}

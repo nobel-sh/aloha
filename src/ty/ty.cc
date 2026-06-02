@@ -53,6 +53,20 @@ namespace aloha
     return ty_id;
   }
 
+  TyId TyTable::register_opaque(const std::string &name)
+  {
+    if (auto existing = lookup_by_name(name))
+    {
+      return *existing;
+    }
+
+    TyId ty_id = next_ty_id++;
+    auto ty_info = std::make_unique<TyInfo>(ty_id, TyKind::OPAQUE, name);
+    types[ty_id] = std::move(ty_info);
+    name_to_ty[name] = ty_id;
+    return ty_id;
+  }
+
   TyId TyTable::register_array(TyId element_type)
   {
     auto it = array_type_cache.find(element_type);
@@ -182,6 +196,12 @@ namespace aloha
   {
     auto ty_info = get_ty_info(id);
     return ty_info && ty_info->m_kind == TyKind::ENUM;
+  }
+
+  bool TyTable::is_opaque(TyId id) const
+  {
+    auto ty_info = get_ty_info(id);
+    return ty_info && ty_info->m_kind == TyKind::OPAQUE;
   }
 
   bool TyTable::is_array(TyId id) const

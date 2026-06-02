@@ -86,6 +86,11 @@ namespace aloha
       {
         return enum_opt->type_id;
       }
+      auto opaque_opt = symbol_table.lookup_opaque_type(spec.name);
+      if (opaque_opt.has_value())
+      {
+        return opaque_opt->type_id;
+      }
 
       std::string suggestion = suggest_type_name(spec.name);
       if (!suggestion.empty())

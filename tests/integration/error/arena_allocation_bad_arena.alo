@@ -1,4 +1,4 @@
-// expect-error: Type mismatch in arena allocation: expected '&void', got 'int'
+// expect-error: Type mismatch in arena allocation: expected '&Arena', got 'int'
 
 struct Point {
   x: int,

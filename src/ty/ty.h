@@ -41,6 +41,7 @@ namespace aloha
     NULL_TY,
     STRUCT,
     ENUM,
+    OPAQUE,
     ARRAY,
     REF,
     // add more
@@ -73,6 +74,8 @@ namespace aloha
 
     bool is_enum() const { return m_kind == TyKind::ENUM; }
 
+    bool is_opaque() const { return m_kind == TyKind::OPAQUE; }
+
     bool is_array() const { return m_kind == TyKind::ARRAY; }
 
     bool is_ref() const { return m_kind == TyKind::REF; }
@@ -100,6 +103,8 @@ namespace aloha
 
     TyId register_enum(const std::string &name, EnumId enum_id);
 
+    TyId register_opaque(const std::string &name);
+
     TyId register_array(TyId element_type);
 
     TyId register_ref(TyId pointee_type);
@@ -123,6 +128,7 @@ namespace aloha
     bool is_void(TyId id) const;
     bool is_struct(TyId id) const;
     bool is_enum(TyId id) const;
+    bool is_opaque(TyId id) const;
     bool is_array(TyId id) const;
     bool is_ref(TyId id) const;
 

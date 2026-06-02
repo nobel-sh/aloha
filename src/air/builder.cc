@@ -747,6 +747,11 @@ namespace aloha
     (void)node;
   }
 
+  void AIRBuilder::visit(ast::ExternTypeDecl *node)
+  {
+    (void)node;
+  }
+
   void AIRBuilder::visit(ast::StructInstantiation *node)
   {
     const std::string &struct_name = node->m_struct_name;
@@ -848,9 +853,21 @@ namespace aloha
       return;
     }
 
-    TyId arena_ty = ty_table.register_ref(TyIds::VOID);
-    check_types_compatible(arena_ty, arena->m_ty, node->m_arena->m_loc,
-                           "arena allocation");
+    TyId void_arena_ty = ty_table.register_ref(TyIds::VOID);
+    std::optional<TyId> arena_handle_ty;
+    if (auto arena_ty = ty_table.lookup_by_name("Arena"))
+    {
+      arena_handle_ty = ty_table.register_ref(arena_ty.value());
+    }
+
+    bool arena_ok = arena->m_ty == void_arena_ty ||
+                    (arena_handle_ty.has_value() && arena->m_ty == arena_handle_ty.value());
+    if (!arena_ok)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_arena->m_loc,
+                        "Type mismatch in arena allocation: expected '&Arena', got '" +
+                            ty_table.ty_name(arena->m_ty) + "'");
+    }
 
     std::unordered_map<std::string, size_t> field_indices;
     for (size_t i = 0; i < resolved->fields.size(); ++i)

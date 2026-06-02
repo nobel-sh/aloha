@@ -33,6 +33,7 @@ namespace aloha
         void Function::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void StructDecl::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void EnumDecl::accept(ASTVisitor &visitor) { visitor.visit(this); }
+        void ExternTypeDecl::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void StructInstantiation::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void NewObjectExpression::accept(ASTVisitor &visitor) { visitor.visit(this); }
         void Array::accept(ASTVisitor &visitor) { visitor.visit(this); }
@@ -194,6 +195,9 @@ namespace aloha
         EnumDecl::EnumDecl(Location loc, std::string name,
                            std::vector<std::string> variants)
             : Statement(loc), m_name(std::move(name)), m_variants(std::move(variants)) {}
+
+        ExternTypeDecl::ExternTypeDecl(Location loc, std::string name)
+            : Statement(loc), m_name(std::move(name)) {}
 
         StructInstantiation::StructInstantiation(Location loc, std::string name,
                                                  std::vector<FieldValue> values)

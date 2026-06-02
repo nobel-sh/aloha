@@ -66,6 +66,16 @@ namespace aloha
         : enum_id(eid), type_id(tid), name(name), location(loc) {}
   };
 
+  struct OpaqueTypeSymbol
+  {
+    TyId type_id;
+    std::string name;
+    Location location;
+
+    OpaqueTypeSymbol(TyId tid, const std::string &name, Location loc)
+        : type_id(tid), name(name), location(loc) {}
+  };
+
   struct EnumVariantSymbol
   {
     EnumId enum_id;
@@ -123,6 +133,7 @@ namespace aloha
 
     std::unordered_map<std::string, StructSymbol> structs;
     std::unordered_map<std::string, EnumSymbol> enums;
+    std::unordered_map<std::string, OpaqueTypeSymbol> opaque_types;
     std::unordered_map<std::string, EnumVariantSymbol> enum_variants;
 
     std::unordered_map<VarId, VarSymbol> variables;
@@ -161,6 +172,11 @@ namespace aloha
       enums.emplace(name, EnumSymbol(enum_id, type_id, name, loc));
     }
 
+    void register_opaque_type(const std::string &name, TyId type_id, Location loc)
+    {
+      opaque_types.emplace(name, OpaqueTypeSymbol(type_id, name, loc));
+    }
+
     void register_enum_variant(const std::string &enum_name,
                                const std::string &variant_name,
                                EnumId enum_id, TyId type_id, uint32_t value,
@@ -195,6 +211,16 @@ namespace aloha
     {
       auto it = enums.find(name);
       if (it != enums.end())
+      {
+        return it->second;
+      }
+      return std::nullopt;
+    }
+
+    std::optional<OpaqueTypeSymbol> lookup_opaque_type(const std::string &name) const
+    {
+      auto it = opaque_types.find(name);
+      if (it != opaque_types.end())
       {
         return it->second;
       }
@@ -249,6 +275,11 @@ namespace aloha
     const std::unordered_map<std::string, EnumSymbol> &get_all_enums() const
     {
       return enums;
+    }
+
+    const std::unordered_map<std::string, OpaqueTypeSymbol> &get_all_opaque_types() const
+    {
+      return opaque_types;
     }
   };
 

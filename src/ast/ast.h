@@ -415,6 +415,16 @@ namespace aloha
       void accept(ASTVisitor &visitor) override;
     };
 
+    class ExternTypeDecl : public Statement
+    {
+    public:
+      std::string m_name;
+
+      ExternTypeDecl(Location loc, std::string name);
+      void write(std::ostream &os, unsigned long indent = 0) const override;
+      void accept(ASTVisitor &visitor) override;
+    };
+
     class StructInstantiation : public Expression
     {
     public:
