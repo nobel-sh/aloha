@@ -56,6 +56,8 @@ namespace aloha
     template <typename T>
     void consume(const T &value, std::string message);
     [[nodiscard]] std::optional<Token> get_token(bool use_next) const;
+    [[nodiscard]] bool is_synchronization_boundary();
+    void synchronize();
     [[nodiscard]] std::optional<ParseTy> optional_type();
     ParseTy parse_type();
     Location current_location() const;

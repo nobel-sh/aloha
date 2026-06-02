@@ -1,0 +1,7 @@
+// expect-error: Expected ';' after statement, found 'return'
+
+fun main() -> void {
+    imut first: int = 1
+    imut second: int = 2
+    return;
+}

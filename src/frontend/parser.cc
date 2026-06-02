@@ -79,6 +79,45 @@ namespace aloha
     return use_next ? next_token : current_token;
   }
 
+  bool Parser::is_synchronization_boundary()
+  {
+    if (is_eof() || match(TokenKind::SEMICOLON) || match(TokenKind::RIGHT_BRACE))
+    {
+      return true;
+    }
+
+    if (!match(TokenKind::IDENT))
+    {
+      return false;
+    }
+
+    std::string lexeme = peek()->get_lexeme();
+    return lexeme == "fun" || lexeme == "struct" || lexeme == "enum" ||
+           lexeme == "extern" || lexeme == "import" || lexeme == "mut" ||
+           lexeme == "imut" || lexeme == "return" || lexeme == "if" ||
+           lexeme == "while" || lexeme == "match" || lexeme == "break" ||
+           lexeme == "continue";
+  }
+
+  void Parser::synchronize()
+  {
+    if (match(TokenKind::SEMICOLON))
+    {
+      advance();
+      return;
+    }
+
+    while (!is_synchronization_boundary())
+    {
+      advance();
+    }
+
+    if (match(TokenKind::SEMICOLON))
+    {
+      advance();
+    }
+  }
+
   bool Parser::match(std::string value, bool use_next)
   {
     std::optional<Token> token = get_token(use_next);
@@ -131,11 +170,19 @@ namespace aloha
         else
         {
           report_error("Expected 'fun' or 'type' after 'extern'");
-          break;
+          synchronize();
         }
       }
       else
+      {
+        if (!match("fun"))
+        {
+          report_error("Expected top-level declaration");
+          synchronize();
+          continue;
+        }
         program->m_nodes.push_back(parse_function());
+      }
     }
     return program;
   }
@@ -483,14 +530,18 @@ namespace aloha
     auto statements = std::make_unique<ast::StatementBlock>(loc);
     while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
     {
+      size_t errors_before_stmt = diagnostics.error_count();
       auto stmt = parse_statement();
       if (!stmt)
       {
         report_error("Unknown or unimplemented statement kind");
-        if (!is_eof())
-        {
-          advance();
-        }
+        synchronize();
+        continue;
+      }
+
+      if (diagnostics.error_count() > errors_before_stmt)
+      {
+        synchronize();
         continue;
       }
 
@@ -504,7 +555,21 @@ namespace aloha
       // Consume semicolon after statement if it's not a block statement
       if (!is_block_stmt)
       {
-        consume(TokenKind::SEMICOLON, "Expected ';' after statement");
+        if (match(TokenKind::SEMICOLON))
+        {
+          advance();
+        }
+        else
+        {
+          std::ostringstream message;
+          message << "Expected ';' after statement";
+          if (auto token = peek())
+          {
+            message << ", found '" << token->get_lexeme() << "'";
+          }
+          report_error(message.str());
+          synchronize();
+        }
       }
     }
     if (!is_eof())
@@ -576,9 +641,7 @@ namespace aloha
   std::unique_ptr<ast::Statement> Parser::parse_struct_field_assignment()
   {
     Location loc = current_location();
-    peek()->dump();
     auto struct_expr = expect_identifier();
-    peek()->dump();
     consume(TokenKind::THIN_ARROW, "Expected '->' for struct field assignment");
     auto field_name = expect_identifier()->m_name;
     consume(TokenKind::EQUAL, "Expected '=' in struct field assignment");
@@ -593,7 +656,7 @@ namespace aloha
     consume("return", "Expected 'return' keyword");
 
     std::unique_ptr<ast::Expression> expression = nullptr;
-    if (!match(TokenKind::RIGHT_BRACE))
+    if (!match(TokenKind::SEMICOLON) && !match(TokenKind::RIGHT_BRACE))
     {
       expression = parse_expression(0);
     }
