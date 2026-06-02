@@ -34,6 +34,21 @@ fun vec_int_set(vec_ptr: &VecInt, index: int, value: int) -> void {
     aloha_vec_int_set(vec_ptr, index, value);
 }
 
+fun vec_int_index_of(vec: &VecInt, value: int) -> int {
+    mut i: int = 0;
+    while (i < vec_int_len(vec)) {
+        if (vec_int_get(vec, i) == value) {
+            return i;
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+fun vec_int_contains(vec: &VecInt, value: int) -> bool {
+    return vec_int_index_of(vec, value) != -1;
+}
+
 fun vec_string_new(arena: &Arena) -> &VecString {
     return aloha_vec_string_new(arena);
 }
@@ -52,4 +67,19 @@ fun vec_string_get(vec: &VecString, index: int) -> string {
 
 fun vec_string_set(vec_ptr: &VecString, index: int, value: string) -> void {
     aloha_vec_string_set(vec_ptr, index, value);
+}
+
+fun vec_string_index_of(vec: &VecString, value: string) -> int {
+    mut i: int = 0;
+    while (i < vec_string_len(vec)) {
+        if (vec_string_get(vec, i) == value) {
+            return i;
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+fun vec_string_contains(vec: &VecString, value: string) -> bool {
+    return vec_string_index_of(vec, value) != -1;
 }

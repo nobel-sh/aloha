@@ -19,6 +19,10 @@ fun main() -> void {
 
     vec_string_set(names, 5, "updated");
     assert_msg(vec_string_get(names, 5) == "updated", "vec string set works");
+    assert_msg(vec_string_index_of(names, "updated") == 5, "vec string index_of finds updated value");
+    assert_msg(vec_string_index_of(names, "missing") == -1, "vec string index_of missing returns -1");
+    assert_msg(vec_string_contains(names, "bb"), "vec string contains finds existing value");
+    assert_msg(vec_string_contains(names, "missing") == false, "vec string contains rejects missing value");
 
     arena_free_all(arena);
 }
