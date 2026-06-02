@@ -162,10 +162,16 @@ namespace aloha
               m_body(std::move(body)) {}
 
         Parameter::Parameter(std::string name, Type type)
-            : m_name(std::move(name)), m_type(type) {}
+            : m_name(std::move(name)), m_type(type), m_loc(Location()) {}
 
         Parameter::Parameter(std::string name, Type type, std::string type_name)
-            : m_name(std::move(name)), m_type(type) {}
+            : m_name(std::move(name)), m_type(type), m_loc(Location()) {}
+
+        Parameter::Parameter(Location loc, std::string name, Type type)
+            : m_name(std::move(name)), m_type(type), m_loc(loc) {}
+
+        Parameter::Parameter(Location loc, std::string name, Type type, std::string type_name)
+            : m_name(std::move(name)), m_type(type), m_loc(loc) {}
 
         Function::Function(Location loc, std::unique_ptr<Identifier> func_name,
                            std::vector<Parameter> params, Type return_type,
@@ -183,10 +189,16 @@ namespace aloha
               m_body(std::move(body)), m_is_extern(is_extern) {}
 
         StructField::StructField(std::string name, Type type)
-            : m_name(std::move(name)), m_type(type) {}
+            : m_name(std::move(name)), m_type(type), m_loc(Location()) {}
 
         StructField::StructField(std::string name, Type type, std::string type_name)
-            : m_name(std::move(name)), m_type(type) {}
+            : m_name(std::move(name)), m_type(type), m_loc(Location()) {}
+
+        StructField::StructField(Location loc, std::string name, Type type)
+            : m_name(std::move(name)), m_type(type), m_loc(loc) {}
+
+        StructField::StructField(Location loc, std::string name, Type type, std::string type_name)
+            : m_name(std::move(name)), m_type(type), m_loc(loc) {}
 
         StructDecl::StructDecl(Location loc, std::string name,
                                std::vector<StructField> fields)

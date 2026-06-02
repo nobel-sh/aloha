@@ -124,6 +124,16 @@ namespace aloha
     {
       return variables.find(name) != variables.end();
     }
+
+    std::optional<VarId> lookup_variable_local(const std::string &name) const
+    {
+      auto it = variables.find(name);
+      if (it != variables.end())
+      {
+        return it->second;
+      }
+      return std::nullopt;
+    }
   };
 
   class SymbolTable

@@ -534,9 +534,11 @@ namespace aloha
         TyId expected_ty = func_symbol.param_types[i];
         TyId actual_ty = arg->m_ty;
 
+        std::ostringstream context;
+        context << "argument " << (i + 1) << " of function '" << func_name << "'";
         check_types_compatible(expected_ty, actual_ty,
                                node->m_arguments[i]->m_loc,
-                               "function argument");
+                               context.str());
       }
 
       args.emplace_back(std::move(arg));
@@ -1336,16 +1338,16 @@ namespace aloha
       const auto &param = func->m_parameters[i];
       TyId param_ty = func_symbol.param_types[i];
 
-      auto param_var_id = find_parameter_var_id(param.m_name, func->m_loc);
+      auto param_var_id = find_parameter_var_id(param.m_name, param.m_loc);
       if (!param_var_id.has_value())
       {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, func->m_loc,
+        diagnostics.error(DiagnosticPhase::AIRBuilding, param.m_loc,
                           "Internal error: parameter '" + param.m_name + "' has no VarId");
         param_var_id = 0;
       }
 
       // create air::Param with all required fields
-      params.emplace_back(param.m_name, param_var_id.value(), param_ty, false, func->m_loc);
+      params.emplace_back(param.m_name, param_var_id.value(), param_ty, false, param.m_loc);
 
       register_variable(param.m_name, param_var_id.value(), param_ty, false);
     }

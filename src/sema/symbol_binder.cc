@@ -128,7 +128,7 @@ namespace aloha
                                                  "parameter type");
       if (!param_ty_opt.has_value())
       {
-        diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Unknown parameter type: " + type_arena.to_string(param.m_type));
+        diagnostics.error(DiagnosticPhase::SymbolBinding, param.m_loc, "Unknown parameter type: " + type_arena.to_string(param.m_type));
         param_types.push_back(TyIds::ERROR);
       }
       else
@@ -136,7 +136,7 @@ namespace aloha
         TyId param_ty = param_ty_opt.value();
         if (ty_table.is_opaque(param_ty))
         {
-          diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
+          diagnostics.error(DiagnosticPhase::SymbolBinding, param.m_loc,
                             "Opaque type '" + ty_table.ty_name(param_ty) +
                                 "' must be used by reference");
         }
@@ -257,7 +257,7 @@ namespace aloha
     for (const auto &param : func->m_parameters)
     {
       VarId var_id = symbol_table_ptr->allocate_var_id();
-      Location loc = func->loc(); // parameters don't have individual locations
+      Location loc = param.m_loc;
 
       if (check_duplicate_parameter(param.m_name, loc, current_scope))
       {
@@ -350,9 +350,11 @@ namespace aloha
   bool SymbolBinder::check_duplicate_function(const std::string &name,
                                               Location loc)
   {
-    if (symbol_table_ptr->lookup_function(name).has_value())
+    if (auto existing = symbol_table_ptr->lookup_function(name))
     {
       diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate function declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
       return true;
     }
     return false;
@@ -361,11 +363,25 @@ namespace aloha
   bool SymbolBinder::check_duplicate_struct(const std::string &name,
                                             Location loc)
   {
-    if (symbol_table_ptr->lookup_struct(name).has_value() ||
-        symbol_table_ptr->lookup_enum(name).has_value() ||
-        symbol_table_ptr->lookup_opaque_type(name).has_value())
+    if (auto existing = symbol_table_ptr->lookup_struct(name))
     {
       diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate struct declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
+      return true;
+    }
+    if (auto existing = symbol_table_ptr->lookup_enum(name))
+    {
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate struct declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
+      return true;
+    }
+    if (auto existing = symbol_table_ptr->lookup_opaque_type(name))
+    {
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate struct declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
       return true;
     }
     return false;
@@ -374,11 +390,25 @@ namespace aloha
   bool SymbolBinder::check_duplicate_enum(const std::string &name,
                                           Location loc)
   {
-    if (symbol_table_ptr->lookup_enum(name).has_value() ||
-        symbol_table_ptr->lookup_struct(name).has_value() ||
-        symbol_table_ptr->lookup_opaque_type(name).has_value())
+    if (auto existing = symbol_table_ptr->lookup_enum(name))
     {
       diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate enum declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
+      return true;
+    }
+    if (auto existing = symbol_table_ptr->lookup_struct(name))
+    {
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate enum declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
+      return true;
+    }
+    if (auto existing = symbol_table_ptr->lookup_opaque_type(name))
+    {
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate enum declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
       return true;
     }
     return false;
@@ -387,12 +417,28 @@ namespace aloha
   bool SymbolBinder::check_duplicate_type(const std::string &name, Location loc,
                                           const std::string &kind)
   {
-    if (symbol_table_ptr->lookup_struct(name).has_value() ||
-        symbol_table_ptr->lookup_enum(name).has_value() ||
-        symbol_table_ptr->lookup_opaque_type(name).has_value())
+    if (auto existing = symbol_table_ptr->lookup_struct(name))
     {
       diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
                         "Duplicate " + kind + " declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
+      return true;
+    }
+    if (auto existing = symbol_table_ptr->lookup_enum(name))
+    {
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
+                        "Duplicate " + kind + " declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
+      return true;
+    }
+    if (auto existing = symbol_table_ptr->lookup_opaque_type(name))
+    {
+      diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
+                        "Duplicate " + kind + " declaration: '" + name + "'");
+      diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                       "previous declaration is here");
       return true;
     }
     return false;
@@ -401,11 +447,20 @@ namespace aloha
   bool SymbolBinder::check_duplicate_parameter(const std::string &name,
                                                Location loc, Scope *scope)
   {
-    if (scope && scope->has_variable_local(name))
+    if (scope)
     {
-      diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
-                        "Duplicate parameter declaration: '" + name + "'");
-      return true;
+      auto existing_id = scope->lookup_variable_local(name);
+      if (existing_id.has_value())
+      {
+        diagnostics.error(DiagnosticPhase::SymbolBinding, loc,
+                          "Duplicate parameter declaration: '" + name + "'");
+        if (auto existing = symbol_table_ptr->lookup_variable(existing_id.value()))
+        {
+          diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                           "previous declaration is here");
+        }
+        return true;
+      }
     }
     return false;
   }
@@ -415,10 +470,19 @@ namespace aloha
   {
     // check only in the current scope (not parent scopes)
     // shadowing is allowed in nested scopes
-    if (scope && scope->has_variable_local(name))
+    if (scope)
     {
-      diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate variable declaration in same scope: '" + name + "'");
-      return true;
+      auto existing_id = scope->lookup_variable_local(name);
+      if (existing_id.has_value())
+      {
+        diagnostics.error(DiagnosticPhase::SymbolBinding, loc, "Duplicate variable declaration in same scope: '" + name + "'");
+        if (auto existing = symbol_table_ptr->lookup_variable(existing_id.value()))
+        {
+          diagnostics.note(DiagnosticPhase::SymbolBinding, existing->location,
+                           "previous declaration is here");
+        }
+        return true;
+      }
     }
     return false;
   }

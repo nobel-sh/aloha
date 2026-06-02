@@ -1,4 +1,4 @@
-// expect-error: Type mismatch in function argument: expected '&Arena', got '&VecInt'
+// expect-error: Type mismatch in argument 1 of function 'arena_free_all': expected '&Arena', got '&VecInt'
 
 fun main() -> void {
     imut arena = arena_new();

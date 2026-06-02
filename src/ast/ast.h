@@ -359,9 +359,12 @@ namespace aloha
     public:
       std::string m_name;
       Type m_type;
+      Location m_loc;
 
       Parameter(std::string name, Type type);
       Parameter(std::string name, Type type, std::string type_name);
+      Parameter(Location loc, std::string name, Type type);
+      Parameter(Location loc, std::string name, Type type, std::string type_name);
     };
 
     class Function : public Statement
@@ -388,9 +391,12 @@ namespace aloha
     public:
       std::string m_name;
       Type m_type;
+      Location m_loc;
 
       StructField(std::string name, Type type);
       StructField(std::string name, Type type, std::string type_name);
+      StructField(Location loc, std::string name, Type type);
+      StructField(Location loc, std::string name, Type type, std::string type_name);
     };
 
     class StructDecl : public Statement
