@@ -40,11 +40,8 @@ file(GLOB_RECURSE SRC_FILES src/*.cc)
 # exclude main.cc from the list of source files
 list(FILTER SRC_FILES EXCLUDE REGEX ".*main.cc$")
 
-# Standard library files
-file(GLOB_RECURSE STDLIB_FILES stdlib/*.c stdlib/*.cc)
-
 add_library(aloha_core STATIC ${SRC_FILES})
-add_library(aloha_stdlib STATIC ${STDLIB_FILES})
+add_subdirectory(stdlib)
 
 # Map LLVM components to library names
 llvm_map_components_to_libnames(LLVM_COMPONENT_LIBS
@@ -101,7 +98,7 @@ install(TARGETS aloha
 # Install standard library to ~/.aloha/stdlib/
 install(DIRECTORY stdlib/
     DESTINATION $ENV{HOME}/.aloha/stdlib
-    FILES_MATCHING PATTERN "*.alo" PATTERN "*.c"
+    FILES_MATCHING PATTERN "*.alo" PATTERN "*.c" PATTERN "*.h"
 )
 
 # # For Testing
