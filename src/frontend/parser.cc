@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -55,12 +56,16 @@ namespace aloha
     }
     else
     {
-      peek()->dump();
-      report_error(message);
-      if (diagnostics.has_errors())
+      std::ostringstream full_message;
+      full_message << message;
+      if (auto token = peek())
       {
-        diagnostics.print_all();
-        exit(1);
+        full_message << ", found '" << token->get_lexeme() << "'";
+      }
+      report_error(full_message.str());
+      if (!is_eof())
+      {
+        advance();
       }
     }
   }
@@ -208,7 +213,7 @@ namespace aloha
       consume(TokenKind::COLON, "Expected ':' after field name");
       ParseTy type_id = parse_type();
       std::string type_name = type_arena->to_string(type_id);
-      ast::StructField field(identifier->m_name, type_id, type_name);
+      ast::StructField field(identifier->loc(), identifier->m_name, type_id, type_name);
       fields.push_back(field);
       if (!match(TokenKind::RIGHT_BRACE))
       {
@@ -400,7 +405,7 @@ namespace aloha
       consume(TokenKind::COLON, "Expected ':' after parameter name");
       ParseTy type_id = parse_type();
       std::string type_name = type_arena->to_string(type_id);
-      ast::Parameter param(identifier->m_name, type_id, type_name);
+      ast::Parameter param(identifier->loc(), identifier->m_name, type_id, type_name);
       parameters.push_back(param);
       if (!match(TokenKind::RIGHT_PAREN))
       {
@@ -481,7 +486,12 @@ namespace aloha
       auto stmt = parse_statement();
       if (!stmt)
       {
-        panic_parser("Unknown or unimplemented statement kind");
+        report_error("Unknown or unimplemented statement kind");
+        if (!is_eof())
+        {
+          advance();
+        }
+        continue;
       }
 
       // Check if it's a block statement before moving the pointer
@@ -971,7 +981,11 @@ namespace aloha
       return std::make_unique<ast::Identifier>(loc, token->get_lexeme());
     }
     report_error("Expected identifier");
-    return nullptr;
+    if (!is_eof())
+    {
+      advance();
+    }
+    return std::make_unique<ast::Identifier>(loc, "<error>");
   }
 
   ParseTy Parser::parse_type()
