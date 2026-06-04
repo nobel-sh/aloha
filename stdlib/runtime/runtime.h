@@ -37,6 +37,8 @@ char *aloha_sys_input(void);
 
 char *aloha_string_clone(void *arena_ptr, const char *str);
 char *aloha_string_concat(void *arena_ptr, const char *left, const char *right);
+aloha_int aloha_string_char_at(const char *str, aloha_int index);
+char *aloha_string_slice(void *arena_ptr, const char *str, aloha_int start, aloha_int len);
 
 void *aloha_vec_int_new(void *arena_ptr);
 void aloha_vec_int_push(void *vec_ptr, aloha_int value);

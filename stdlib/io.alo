@@ -1,11 +1,7 @@
-import "stdlib/memory.alo";
+import "stdlib/string.alo";
 
 extern fun aloha_sys_write(fd: int, buf: string, count: int) -> int;
 extern fun aloha_sys_read(fd: int, buf: string, count: int) -> int;
-extern fun aloha_sys_strlen(s: string) -> int;
-extern fun aloha_sys_str_eq(left: string, right: string) -> bool;
-extern fun aloha_string_clone(arena: &Arena, str: string) -> string;
-extern fun aloha_string_concat(arena: &Arena, left: string, right: string) -> string;
 extern fun aloha_sys_int_to_string(value: int) -> string;
 extern fun aloha_sys_float_to_string(value: float) -> string;
 extern fun aloha_sys_input() -> string;
@@ -15,7 +11,7 @@ fun STDOUT() -> int { return 1; }
 fun STDERR() -> int { return 2; }
 
 fun print(s: string) -> void {
-    imut len: int = aloha_sys_strlen(s);
+    imut len: int = string_len(s);
     aloha_sys_write(STDOUT(), s, len);
 }
 
@@ -26,7 +22,7 @@ fun println(s: string) -> void {
 
 fun printInt(value: int) -> void {
     imut str: string = aloha_sys_int_to_string(value);
-    imut len: int = aloha_sys_strlen(str);
+    imut len: int = string_len(str);
     aloha_sys_write(STDOUT(), str, len);
 }
 
@@ -37,7 +33,7 @@ fun printlnInt(value: int) -> void {
 
 fun printFloat(value: float) -> void {
     imut str: string = aloha_sys_float_to_string(value);
-    imut len: int = aloha_sys_strlen(str);
+    imut len: int = string_len(str);
     aloha_sys_write(STDOUT(), str, len);
 }
 
@@ -47,7 +43,7 @@ fun printlnFloat(value: float) -> void {
 }
 
 fun eprint(s: string) -> void {
-    imut len: int = aloha_sys_strlen(s);
+    imut len: int = string_len(s);
     aloha_sys_write(STDERR(), s, len);
 }
 
@@ -58,7 +54,7 @@ fun eprintln(s: string) -> void {
 
 fun eprintInt(value: int) -> void {
     imut str: string = aloha_sys_int_to_string(value);
-    imut len: int = aloha_sys_strlen(str);
+    imut len: int = string_len(str);
     aloha_sys_write(STDERR(), str, len);
 }
 
@@ -69,7 +65,7 @@ fun eprintlnInt(value: int) -> void {
 
 fun eprintFloat(value: float) -> void {
     imut str: string = aloha_sys_float_to_string(value);
-    imut len: int = aloha_sys_strlen(str);
+    imut len: int = string_len(str);
     aloha_sys_write(STDERR(), str, len);
 }
 
@@ -80,12 +76,4 @@ fun eprintlnFloat(value: float) -> void {
 
 fun input() -> string {
     return aloha_sys_input();
-}
-
-fun string_clone(arena: &Arena, str: string) -> string {
-    return aloha_string_clone(arena, str);
-}
-
-fun string_concat(arena: &Arena, left: string, right: string) -> string {
-    return aloha_string_concat(arena, left, right);
 }

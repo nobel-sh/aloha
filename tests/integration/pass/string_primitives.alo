@@ -1,0 +1,18 @@
+fun main() -> void {
+    imut arena = arena_new();
+    imut source = "let answer = 42";
+
+    assert_msg(string_len(source) == 15, "string len works");
+    assert_msg(string_char_at(source, 0) == 108, "string char_at first byte works");
+    assert_msg(string_char_at(source, 4) == 97, "string char_at middle byte works");
+
+    imut keyword = string_slice(arena, source, 0, 3);
+    imut name = string_slice(arena, source, 4, 6);
+    imut empty = string_slice(arena, source, 3, 0);
+
+    assert_msg(keyword == "let", "string slice keyword works");
+    assert_msg(name == "answer", "string slice name works");
+    assert_msg(string_len(empty) == 0, "string slice empty works");
+
+    arena_free_all(arena);
+}

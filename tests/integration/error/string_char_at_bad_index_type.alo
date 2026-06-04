@@ -1,0 +1,5 @@
+// expect-error: Type mismatch in argument 2 of function 'string_char_at': expected 'int', got 'string'
+
+fun main() -> void {
+    string_char_at("abc", "0");
+}

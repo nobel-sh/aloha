@@ -1,0 +1,28 @@
+import "stdlib/memory.alo";
+
+extern fun aloha_sys_strlen(s: string) -> int;
+extern fun aloha_sys_str_eq(left: string, right: string) -> bool;
+extern fun aloha_string_clone(arena: &Arena, str: string) -> string;
+extern fun aloha_string_concat(arena: &Arena, left: string, right: string) -> string;
+extern fun aloha_string_char_at(str: string, index: int) -> int;
+extern fun aloha_string_slice(arena: &Arena, str: string, start: int, len: int) -> string;
+
+fun string_clone(arena: &Arena, str: string) -> string {
+    return aloha_string_clone(arena, str);
+}
+
+fun string_concat(arena: &Arena, left: string, right: string) -> string {
+    return aloha_string_concat(arena, left, right);
+}
+
+fun string_len(str: string) -> int {
+    return aloha_sys_strlen(str);
+}
+
+fun string_char_at(str: string, index: int) -> int {
+    return aloha_string_char_at(str, index);
+}
+
+fun string_slice(arena: &Arena, str: string, start: int, len: int) -> string {
+    return aloha_string_slice(arena, str, start, len);
+}
