@@ -50,9 +50,9 @@ namespace aloha
     llvm::raw_string_ostream error_stream(verify_error);
     if (llvm::verifyModule(*module, &error_stream))
     {
-      std::cerr << "LLVM Module verification failed:\n"
-                << verify_error << std::endl;
-      // return module so we can inspect IR
+      report_error("LLVM module verification failed:\n" + verify_error,
+                   Location(1, 1, air_module->m_name));
+      return nullptr;
     }
 
     return std::move(module);
@@ -363,7 +363,20 @@ namespace aloha
     }
     else
     {
-      builder->CreateRet(ret_value);
+      llvm::Type *main_return_type = ret_value->getType();
+      llvm::Type *c_main_return_type = llvm::Type::getInt32Ty(*context);
+
+      if (!main_return_type->isIntegerTy())
+      {
+        report_error("Function 'main' must return void or an integer-compatible type",
+                     main_func->m_loc);
+        builder->CreateRet(llvm::ConstantInt::get(c_main_return_type, 1));
+        return;
+      }
+
+      llvm::Value *exit_code = builder->CreateIntCast(
+          ret_value, c_main_return_type, true, "main_exit_code");
+      builder->CreateRet(exit_code);
     }
   }
 
