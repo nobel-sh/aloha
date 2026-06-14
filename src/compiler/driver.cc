@@ -2,6 +2,7 @@
 #include "../air/printer.h"
 #include "../codegen/objgen.h"
 #include "../utils/paths.h"
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -478,46 +479,45 @@ namespace aloha
       std::string exe_file = get_output_name(".out");
       std::string stdlib_path = get_stdlib_archive_path();
 
-      const char *linker_candidates[] = {"ld.lld", "ld", "lld"};
-      std::string linker;
+      std::string link_driver;
 
-      for (const char *candidate : linker_candidates)
+      if (const char *env_cc = std::getenv("ALOHA_CC"))
       {
-        if (auto linker_path = llvm::sys::findProgramByName(candidate))
+        link_driver = env_cc;
+      }
+      else
+      {
+        const char *link_driver_candidates[] = {"cc", "clang", "gcc"};
+
+        for (const char *candidate : link_driver_candidates)
         {
-          linker = linker_path.get();
-          break;
+          if (auto driver_path = llvm::sys::findProgramByName(candidate))
+          {
+            link_driver = driver_path.get();
+            break;
+          }
         }
       }
 
-      if (linker.empty())
+      if (link_driver.empty())
       {
         return fail_with_diagnostic(DiagnosticPhase::Linking,
-                                    "No linker found (tried: ld.lld, ld, lld)",
+                                    "No C compiler found for linking (tried: ALOHA_CC, cc, clang, gcc)",
                                     false);
       }
 
-      log("Using linker: " + linker);
+      log("Using C compiler for linking: " + link_driver);
 
       std::vector<llvm::StringRef> args = {
-          linker,
-          "-o",
-          exe_file,
-          "/usr/lib/x86_64-linux-gnu/crt1.o",
-          "/usr/lib/x86_64-linux-gnu/crti.o",
+          link_driver,
           obj_file,
           stdlib_path,
-          "/usr/lib/x86_64-linux-gnu/crtn.o",
-          "-L/usr/lib/x86_64-linux-gnu",
-          "-L/usr/lib",
-          "-L/lib/x86_64-linux-gnu",
-          "-L/lib",
-          "-lc",
-          "-dynamic-linker",
-          "/lib64/ld-linux-x86-64.so.2"};
+          "-no-pie",
+          "-o",
+          exe_file};
 
       std::string error_msg;
-      int result = llvm::sys::ExecuteAndWait(linker, args, std::nullopt, {}, 0, 0,
+      int result = llvm::sys::ExecuteAndWait(link_driver, args, std::nullopt, {}, 0, 0,
                                              &error_msg);
 
       if (result == 0)
