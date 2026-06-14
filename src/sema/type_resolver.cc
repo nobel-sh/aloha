@@ -76,17 +76,17 @@ namespace aloha
 
     case TySpec::Kind::Named:
     {
-      auto struct_opt = symbol_table.lookup_struct(spec.name);
+      auto struct_opt = symbol_table.lookup_struct_accessible(spec.name, loc);
       if (struct_opt.has_value())
       {
         return struct_opt->type_id;
       }
-      auto enum_opt = symbol_table.lookup_enum(spec.name);
+      auto enum_opt = symbol_table.lookup_enum_accessible(spec.name, loc);
       if (enum_opt.has_value())
       {
         return enum_opt->type_id;
       }
-      auto opaque_opt = symbol_table.lookup_opaque_type(spec.name);
+      auto opaque_opt = symbol_table.lookup_opaque_type_accessible(spec.name, loc);
       if (opaque_opt.has_value())
       {
         return opaque_opt->type_id;
@@ -135,7 +135,7 @@ namespace aloha
   {
     const std::string &struct_name = struct_decl->m_name;
 
-    auto struct_opt = symbol_table.lookup_struct(struct_name);
+    auto struct_opt = symbol_table.lookup_struct_accessible(struct_name, struct_decl->loc());
     if (!struct_opt.has_value())
     {
       diagnostics.error(DiagnosticPhase::TypeResolution, struct_decl->loc(),
@@ -179,7 +179,7 @@ namespace aloha
   {
     const std::string &func_name = func->m_name->m_name;
 
-    auto func_opt = symbol_table.lookup_function(func_name);
+    auto func_opt = symbol_table.lookup_function_accessible(func_name, func->loc());
     if (!func_opt.has_value())
     {
       diagnostics.error(DiagnosticPhase::TypeResolution, func->loc(),

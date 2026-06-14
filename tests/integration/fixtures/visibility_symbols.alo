@@ -1,0 +1,48 @@
+pub extern type PublicHandle;
+extern type PrivateHandle;
+
+pub struct PublicPair {
+    left: int,
+    right: int,
+}
+
+struct PrivatePair {
+    value: int,
+}
+
+pub enum PublicStatus {
+    Ready,
+    Done,
+}
+
+enum PrivateStatus {
+    Hidden,
+}
+
+fun private_value() -> int {
+    return 40;
+}
+
+pub fun public_value() -> int {
+    return private_value() + 2;
+}
+
+pub fun public_pair_sum(pair: PublicPair) -> int {
+    return pair->left + pair->right;
+}
+
+pub fun public_status_code(status: PublicStatus) -> int {
+    match status {
+        PublicStatus::Ready => {
+            return 1;
+        }
+        PublicStatus::Done => {
+            return 2;
+        }
+    }
+    return 0;
+}
+
+fun private_pair_value(pair: PrivatePair) -> int {
+    return pair->value;
+}

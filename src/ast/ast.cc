@@ -175,18 +175,22 @@ namespace aloha
 
         Function::Function(Location loc, std::unique_ptr<Identifier> func_name,
                            std::vector<Parameter> params, Type return_type,
-                           std::unique_ptr<StatementBlock> body, bool is_extern)
+                           std::unique_ptr<StatementBlock> body, bool is_extern,
+                           bool is_public)
             : Statement(loc), m_name(std::move(func_name)),
               m_parameters(std::move(params)), m_return_type(return_type),
-              m_body(std::move(body)), m_is_extern(is_extern) {}
+              m_body(std::move(body)), m_is_extern(is_extern),
+              m_is_public(is_public) {}
 
         Function::Function(Location loc, std::unique_ptr<Identifier> func_name,
                            std::vector<Parameter> params, Type return_type,
                            std::string return_type_name,
-                           std::unique_ptr<StatementBlock> body, bool is_extern)
+                           std::unique_ptr<StatementBlock> body, bool is_extern,
+                           bool is_public)
             : Statement(loc), m_name(std::move(func_name)),
               m_parameters(std::move(params)), m_return_type(return_type),
-              m_body(std::move(body)), m_is_extern(is_extern) {}
+              m_body(std::move(body)), m_is_extern(is_extern),
+              m_is_public(is_public) {}
 
         StructField::StructField(std::string name, Type type)
             : m_name(std::move(name)), m_type(type), m_loc(Location()) {}
@@ -201,15 +205,17 @@ namespace aloha
             : m_name(std::move(name)), m_type(type), m_loc(loc) {}
 
         StructDecl::StructDecl(Location loc, std::string name,
-                               std::vector<StructField> fields)
-            : Statement(loc), m_name(std::move(name)), m_fields(std::move(fields)) {}
+                               std::vector<StructField> fields, bool is_public)
+            : Statement(loc), m_name(std::move(name)), m_fields(std::move(fields)),
+              m_is_public(is_public) {}
 
         EnumDecl::EnumDecl(Location loc, std::string name,
-                           std::vector<std::string> variants)
-            : Statement(loc), m_name(std::move(name)), m_variants(std::move(variants)) {}
+                           std::vector<std::string> variants, bool is_public)
+            : Statement(loc), m_name(std::move(name)), m_variants(std::move(variants)),
+              m_is_public(is_public) {}
 
-        ExternTypeDecl::ExternTypeDecl(Location loc, std::string name)
-            : Statement(loc), m_name(std::move(name)) {}
+        ExternTypeDecl::ExternTypeDecl(Location loc, std::string name, bool is_public)
+            : Statement(loc), m_name(std::move(name)), m_is_public(is_public) {}
 
         StructInstantiation::StructInstantiation(Location loc, std::string name,
                                                  std::vector<FieldValue> values)

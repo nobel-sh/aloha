@@ -63,7 +63,8 @@ namespace aloha
     StructId struct_id = ty_table.allocate_struct_id();
     TyId type_id = ty_table.register_struct(name, struct_id);
 
-    symbol_table_ptr->register_struct(name, struct_id, type_id, loc);
+    symbol_table_ptr->register_struct(name, struct_id, type_id,
+                                      struct_decl->m_is_public, loc);
   }
 
   void SymbolBinder::bind_enum_declaration(ast::EnumDecl *enum_decl)
@@ -78,7 +79,8 @@ namespace aloha
 
     EnumId enum_id = ty_table.allocate_enum_id();
     TyId type_id = ty_table.register_enum(name, enum_id);
-    symbol_table_ptr->register_enum(name, enum_id, type_id, loc);
+    symbol_table_ptr->register_enum(name, enum_id, type_id,
+                                    enum_decl->m_is_public, loc);
 
     std::unordered_set<std::string> seen_variants;
     for (size_t i = 0; i < enum_decl->m_variants.size(); ++i)
@@ -91,7 +93,8 @@ namespace aloha
         continue;
       }
       symbol_table_ptr->register_enum_variant(name, variant, enum_id, type_id,
-                                              static_cast<uint32_t>(i), loc);
+                                              static_cast<uint32_t>(i),
+                                              enum_decl->m_is_public, loc);
     }
   }
 
@@ -106,7 +109,8 @@ namespace aloha
     }
 
     TyId type_id = ty_table.register_opaque(name);
-    symbol_table_ptr->register_opaque_type(name, type_id, loc);
+    symbol_table_ptr->register_opaque_type(name, type_id,
+                                           extern_type_decl->m_is_public, loc);
   }
 
   void SymbolBinder::bind_function_declaration(ast::Function *func, const TySpecArena &type_arena)
@@ -163,7 +167,7 @@ namespace aloha
     }
 
     symbol_table_ptr->register_function(func_id, name, return_ty, param_types,
-                                        func->m_is_extern, loc);
+                                        func->m_is_extern, func->m_is_public, loc);
   }
 
   std::optional<TyId> SymbolBinder::resolve_signature_type(TySpecId ty_spec_id,
@@ -197,15 +201,15 @@ namespace aloha
 
     case TySpec::Kind::Named:
     {
-      if (auto struct_opt = symbol_table_ptr->lookup_struct(spec.name))
+      if (auto struct_opt = symbol_table_ptr->lookup_struct_accessible(spec.name, loc))
       {
         return struct_opt->type_id;
       }
-      if (auto enum_opt = symbol_table_ptr->lookup_enum(spec.name))
+      if (auto enum_opt = symbol_table_ptr->lookup_enum_accessible(spec.name, loc))
       {
         return enum_opt->type_id;
       }
-      if (auto opaque_opt = symbol_table_ptr->lookup_opaque_type(spec.name))
+      if (auto opaque_opt = symbol_table_ptr->lookup_opaque_type_accessible(spec.name, loc))
       {
         return opaque_opt->type_id;
       }

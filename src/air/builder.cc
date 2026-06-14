@@ -34,7 +34,8 @@ namespace aloha
 
   void AIRBuilder::visit(ast::EnumVariant *node)
   {
-    auto variant_opt = symbol_table.lookup_enum_variant(node->m_enum_name, node->m_variant_name);
+    auto variant_opt = symbol_table.lookup_enum_variant_accessible(
+        node->m_enum_name, node->m_variant_name, node->m_loc);
     if (!variant_opt.has_value())
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
@@ -105,7 +106,8 @@ namespace aloha
         continue;
       }
 
-      auto variant_opt = symbol_table.lookup_enum_variant(arm.m_enum_name, arm.m_variant_name);
+      auto variant_opt = symbol_table.lookup_enum_variant_accessible(
+          arm.m_enum_name, arm.m_variant_name, arm.m_loc);
       if (!variant_opt.has_value())
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
@@ -500,7 +502,7 @@ namespace aloha
   {
     const std::string &func_name = node->m_func_name->m_name;
 
-    auto func_opt = symbol_table.lookup_function(func_name);
+    auto func_opt = symbol_table.lookup_function_accessible(func_name, node->m_loc);
     if (!func_opt.has_value())
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
@@ -640,7 +642,8 @@ namespace aloha
         continue;
       }
 
-      auto variant_opt = symbol_table.lookup_enum_variant(arm.m_enum_name, arm.m_variant_name);
+      auto variant_opt = symbol_table.lookup_enum_variant_accessible(
+          arm.m_enum_name, arm.m_variant_name, arm.m_loc);
       if (!variant_opt.has_value())
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
@@ -764,7 +767,7 @@ namespace aloha
   {
     const std::string &struct_name = node->m_struct_name;
 
-    const ResolvedStruct *resolved = lookup_resolved_struct(struct_name);
+    const ResolvedStruct *resolved = lookup_resolved_struct(struct_name, node->m_loc);
     if (!resolved)
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
@@ -845,7 +848,7 @@ namespace aloha
   {
     const std::string &struct_name = node->m_struct_name;
 
-    const ResolvedStruct *resolved = lookup_resolved_struct(struct_name);
+    const ResolvedStruct *resolved = lookup_resolved_struct(struct_name, node->m_loc);
     if (!resolved)
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
@@ -1288,7 +1291,7 @@ namespace aloha
     const std::string &name = struct_decl->m_name;
 
     // look up resolved struct info
-    const ResolvedStruct *resolved = lookup_resolved_struct(name);
+    const ResolvedStruct *resolved = lookup_resolved_struct(name, struct_decl->m_loc);
     if (!resolved)
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, struct_decl->m_loc,
@@ -1313,7 +1316,7 @@ namespace aloha
     const std::string &name = func->m_name->m_name;
 
     // look up resolved function info
-    auto func_opt = symbol_table.lookup_function(name);
+    auto func_opt = symbol_table.lookup_function_accessible(name, func->m_loc);
     if (!func_opt.has_value())
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, func->m_loc,
@@ -1671,10 +1674,11 @@ namespace aloha
     return std::nullopt;
   }
 
-  const ResolvedStruct *AIRBuilder::lookup_resolved_struct(const std::string &name)
+  const ResolvedStruct *AIRBuilder::lookup_resolved_struct(const std::string &name,
+                                                           const Location &use_loc)
   {
     // look up struct in symbol table first
-    auto struct_opt = symbol_table.lookup_struct(name);
+    auto struct_opt = symbol_table.lookup_struct_accessible(name, use_loc);
     if (!struct_opt.has_value())
     {
       return nullptr;

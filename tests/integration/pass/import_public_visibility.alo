@@ -1,0 +1,11 @@
+import "fixtures/visibility_symbols.alo";
+
+fun main() -> int {
+    imut pair = PublicPair { left: 20, right: 22 };
+
+    assert_msg(public_value() == 42, "public imported function should be visible");
+    assert_msg(public_pair_sum(pair) == 42, "public imported struct should be visible");
+    assert_msg(public_status_code(PublicStatus::Ready) == 1, "public imported enum should be visible");
+
+    return 0;
+}

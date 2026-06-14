@@ -66,17 +66,17 @@ namespace aloha
     bool is_reserved_ident() const;
     bool is_reserved_ident(Token t) const;
 
-    std::unique_ptr<ast::Function> parse_function();
-    std::unique_ptr<ast::Function> parse_extern_function();
-    std::unique_ptr<ast::Statement> parse_extern_type_decl();
+    std::unique_ptr<ast::Function> parse_function(bool is_public = false);
+    std::unique_ptr<ast::Function> parse_extern_function(bool is_public = false);
+    std::unique_ptr<ast::Statement> parse_extern_type_decl(bool is_public = false);
     std::unique_ptr<ast::Import> parse_import();
 
     std::vector<ast::Parameter> parse_parameters();
     std::vector<ast::StructField> parse_struct_field();
     std::vector<std::string> parse_enum_variants();
 
-    std::unique_ptr<ast::Statement> parse_struct_decl();
-    std::unique_ptr<ast::Statement> parse_enum_decl();
+    std::unique_ptr<ast::Statement> parse_struct_decl(bool is_public = false);
+    std::unique_ptr<ast::Statement> parse_enum_decl(bool is_public = false);
     std::unique_ptr<ast::Statement> parse_struct_field_assignment();
     std::unique_ptr<ast::Statement> parse_variable_declaration();
     std::unique_ptr<ast::Statement> parse_variable_assignment();

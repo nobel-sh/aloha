@@ -375,13 +375,16 @@ namespace aloha
       Type m_return_type;
       std::unique_ptr<StatementBlock> m_body;
       bool m_is_extern;
+      bool m_is_public;
 
       Function(Location loc, std::unique_ptr<Identifier> func_name,
                std::vector<Parameter> params, Type return_type,
-               std::unique_ptr<StatementBlock> body, bool is_extern = false);
+               std::unique_ptr<StatementBlock> body, bool is_extern = false,
+               bool is_public = false);
       Function(Location loc, std::unique_ptr<Identifier> func_name,
                std::vector<Parameter> params, Type return_type, std::string return_type_name,
-               std::unique_ptr<StatementBlock> body, bool is_extern = false);
+               std::unique_ptr<StatementBlock> body, bool is_extern = false,
+               bool is_public = false);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };
@@ -404,8 +407,10 @@ namespace aloha
     public:
       std::string m_name;
       std::vector<StructField> m_fields;
+      bool m_is_public;
 
-      StructDecl(Location loc, std::string name, std::vector<StructField> fields);
+      StructDecl(Location loc, std::string name, std::vector<StructField> fields,
+                 bool is_public = false);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };
@@ -415,8 +420,10 @@ namespace aloha
     public:
       std::string m_name;
       std::vector<std::string> m_variants;
+      bool m_is_public;
 
-      EnumDecl(Location loc, std::string name, std::vector<std::string> variants);
+      EnumDecl(Location loc, std::string name, std::vector<std::string> variants,
+               bool is_public = false);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };
@@ -425,8 +432,9 @@ namespace aloha
     {
     public:
       std::string m_name;
+      bool m_is_public;
 
-      ExternTypeDecl(Location loc, std::string name);
+      ExternTypeDecl(Location loc, std::string name, bool is_public = false);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };

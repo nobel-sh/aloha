@@ -34,6 +34,7 @@ ERROR_DIR="$INTEGRATION_DIR/error"
 TEMP_DIR=$(mktemp -d)
 # Set ALOHA_DEV so compiler can find stdlib when running test from /tmp
 export ALOHA_DEV="$PROJECT_DIR"
+FIXTURES_DIR="$INTEGRATION_DIR/fixtures"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -75,6 +76,10 @@ fi
 
 if [ -f "$SCRIPT_DIR/stdlib.o" ]; then
     cp "$SCRIPT_DIR/stdlib.o" "$TEMP_DIR/"
+fi
+
+if [ -d "$FIXTURES_DIR" ]; then
+    cp -R "$FIXTURES_DIR" "$TEMP_DIR/"
 fi
 
 total=0

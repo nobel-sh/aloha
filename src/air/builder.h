@@ -130,7 +130,8 @@ namespace aloha
     std::optional<TyId> lookup_variable_type(const std::string &name);
     std::optional<VarId> lookup_variable_id(const std::string &name);
 
-    const ResolvedStruct *lookup_resolved_struct(const std::string &name);
+    const ResolvedStruct *lookup_resolved_struct(const std::string &name,
+                                                const Location &use_loc);
     const ResolvedStruct *lookup_resolved_struct_by_id(StructId struct_id);
   };
 

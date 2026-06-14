@@ -89,7 +89,7 @@ namespace aloha
            lexeme == "extern" || lexeme == "import" || lexeme == "mut" ||
            lexeme == "imut" || lexeme == "return" || lexeme == "if" ||
            lexeme == "while" || lexeme == "match" || lexeme == "break" ||
-           lexeme == "continue";
+           lexeme == "continue" || lexeme == "pub";
   }
 
   void Parser::synchronize()
@@ -138,27 +138,40 @@ namespace aloha
 
     while (!is_eof())
     {
+      bool is_public = false;
+      if (match("pub"))
+      {
+        is_public = true;
+        advance();
+      }
+
       if (match("import"))
       {
+        if (is_public)
+        {
+          report_error("'pub' cannot be applied to imports");
+          synchronize();
+          continue;
+        }
         program->m_nodes.push_back(parse_import());
       }
       else if (match("struct"))
       {
-        program->m_nodes.push_back(parse_struct_decl());
+        program->m_nodes.push_back(parse_struct_decl(is_public));
       }
       else if (match("enum"))
       {
-        program->m_nodes.push_back(parse_enum_decl());
+        program->m_nodes.push_back(parse_enum_decl(is_public));
       }
       else if (match("extern"))
       {
         if (match("fun", true))
         {
-          program->m_nodes.push_back(parse_extern_function());
+          program->m_nodes.push_back(parse_extern_function(is_public));
         }
         else if (match("type", true))
         {
-          program->m_nodes.push_back(parse_extern_type_decl());
+          program->m_nodes.push_back(parse_extern_type_decl(is_public));
         }
         else
         {
@@ -174,13 +187,13 @@ namespace aloha
           synchronize();
           continue;
         }
-        program->m_nodes.push_back(parse_function());
+        program->m_nodes.push_back(parse_function(is_public));
       }
     }
     return program;
   }
 
-  std::unique_ptr<ast::Function> Parser::parse_function()
+  std::unique_ptr<ast::Function> Parser::parse_function(bool is_public)
   {
     Location loc = current_location();
     consume("fun", "Expected 'fun' keyword");
@@ -195,10 +208,10 @@ namespace aloha
     auto statements = parse_statements();
     return std::make_unique<ast::Function>(
         loc, std::move(identifier), std::move(parameters), return_type,
-        std::move(return_type_name), std::move(statements), false);
+        std::move(return_type_name), std::move(statements), false, is_public);
   }
 
-  std::unique_ptr<ast::Function> Parser::parse_extern_function()
+  std::unique_ptr<ast::Function> Parser::parse_extern_function(bool is_public)
   {
     Location loc = current_location();
     consume("extern", "Expected 'extern' keyword");
@@ -213,17 +226,18 @@ namespace aloha
     consume(TokenKind::SEMICOLON, "Expected ';' after extern function declaration");
     return std::make_unique<ast::Function>(
         loc, std::move(identifier), std::move(parameters), return_type,
-        std::move(return_type_name), nullptr, true);
+        std::move(return_type_name), nullptr, true, is_public);
   }
 
-  std::unique_ptr<ast::Statement> Parser::parse_extern_type_decl()
+  std::unique_ptr<ast::Statement> Parser::parse_extern_type_decl(bool is_public)
   {
     Location loc = current_location();
     consume("extern", "Expected 'extern' keyword");
     consume("type", "Expected 'type' keyword after 'extern'");
     auto identifier = expect_identifier();
     consume(TokenKind::SEMICOLON, "Expected ';' after extern type declaration");
-    return std::make_unique<ast::ExternTypeDecl>(loc, std::move(identifier->m_name));
+    return std::make_unique<ast::ExternTypeDecl>(loc, std::move(identifier->m_name),
+                                                 is_public);
   }
 
   std::unique_ptr<ast::Import> Parser::parse_import()
@@ -288,7 +302,7 @@ namespace aloha
                                                     std::move(field_name));
   }
 
-  std::unique_ptr<ast::Statement> Parser::parse_struct_decl()
+  std::unique_ptr<ast::Statement> Parser::parse_struct_decl(bool is_public)
   {
     Location loc = current_location();
     consume("struct", "Expected 'struct' keyword");
@@ -297,10 +311,10 @@ namespace aloha
     auto fields = parse_struct_field();
     consume(TokenKind::RIGHT_BRACE, "Expected '}' after parameters");
     return std::make_unique<ast::StructDecl>(loc, std::move(identifier->m_name),
-                                             std::move(fields));
+                                             std::move(fields), is_public);
   }
 
-  std::unique_ptr<ast::Statement> Parser::parse_enum_decl()
+  std::unique_ptr<ast::Statement> Parser::parse_enum_decl(bool is_public)
   {
     Location loc = current_location();
     consume("enum", "Expected 'enum' keyword");
@@ -309,7 +323,7 @@ namespace aloha
     auto variants = parse_enum_variants();
     consume(TokenKind::RIGHT_BRACE, "Expected '}' after enum variants");
     return std::make_unique<ast::EnumDecl>(loc, std::move(identifier->m_name),
-                                           std::move(variants));
+                                           std::move(variants), is_public);
   }
 
   std::unique_ptr<ast::Expression> Parser::parse_struct_instantiation()

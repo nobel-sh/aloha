@@ -1,0 +1,7 @@
+// expect-error: Undefined function 'private_value'
+
+import "../fixtures/visibility_symbols.alo";
+
+fun main() -> void {
+    private_value();
+}

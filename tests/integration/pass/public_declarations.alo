@@ -1,0 +1,36 @@
+pub extern type ForeignHandle;
+
+pub extern fun foreign_noop(handle: &ForeignHandle) -> void;
+
+pub struct Pair {
+    left: int,
+    right: int,
+}
+
+pub enum Status {
+    Ready,
+    Done,
+}
+
+pub fun pair_sum(pair: Pair) -> int {
+    return pair->left + pair->right;
+}
+
+pub fun status_code(status: Status) -> int {
+    match status {
+        Status::Ready => {
+            return 1;
+        }
+        Status::Done => {
+            return 2;
+        }
+    }
+    return 0;
+}
+
+fun main() -> int {
+    imut pair = Pair { left: 20, right: 22 };
+    assert_msg(pair_sum(pair) == 42, "pub function should compile");
+    assert_msg(status_code(Status::Ready) == 1, "pub enum should compile");
+    return 0;
+}

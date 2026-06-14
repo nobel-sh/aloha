@@ -1,12 +1,12 @@
-extern type Arena;
+pub extern type Arena;
 
 extern fun aloha_arena_new() -> &Arena;
 extern fun aloha_arena_free_all(arena: &Arena) -> void;
 
-fun arena_new() -> &Arena {
+pub fun arena_new() -> &Arena {
     return aloha_arena_new();
 }
 
-fun arena_free_all(arena: &Arena) -> void {
+pub fun arena_free_all(arena: &Arena) -> void {
     aloha_arena_free_all(arena);
 }

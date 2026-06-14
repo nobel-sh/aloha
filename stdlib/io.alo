@@ -6,74 +6,74 @@ extern fun aloha_sys_int_to_string(value: int) -> string;
 extern fun aloha_sys_float_to_string(value: float) -> string;
 extern fun aloha_sys_input() -> string;
 
-fun STDIN() -> int { return 0; }
-fun STDOUT() -> int { return 1; }
-fun STDERR() -> int { return 2; }
+pub fun STDIN() -> int { return 0; }
+pub fun STDOUT() -> int { return 1; }
+pub fun STDERR() -> int { return 2; }
 
-fun print(s: string) -> void {
+pub fun print(s: string) -> void {
     imut len: int = string_len(s);
     aloha_sys_write(STDOUT(), s, len);
 }
 
-fun println(s: string) -> void {
+pub fun println(s: string) -> void {
     print(s);
     aloha_sys_write(STDOUT(), "\n", 1);
 }
 
-fun printInt(value: int) -> void {
+pub fun printInt(value: int) -> void {
     imut str: string = aloha_sys_int_to_string(value);
     imut len: int = string_len(str);
     aloha_sys_write(STDOUT(), str, len);
 }
 
-fun printlnInt(value: int) -> void {
+pub fun printlnInt(value: int) -> void {
     printInt(value);
     aloha_sys_write(STDOUT(), "\n", 1);
 }
 
-fun printFloat(value: float) -> void {
+pub fun printFloat(value: float) -> void {
     imut str: string = aloha_sys_float_to_string(value);
     imut len: int = string_len(str);
     aloha_sys_write(STDOUT(), str, len);
 }
 
-fun printlnFloat(value: float) -> void {
+pub fun printlnFloat(value: float) -> void {
     printFloat(value);
     aloha_sys_write(STDOUT(), "\n", 1);
 }
 
-fun eprint(s: string) -> void {
+pub fun eprint(s: string) -> void {
     imut len: int = string_len(s);
     aloha_sys_write(STDERR(), s, len);
 }
 
-fun eprintln(s: string) -> void {
+pub fun eprintln(s: string) -> void {
     eprint(s);
     aloha_sys_write(STDERR(), "\n", 1);
 }
 
-fun eprintInt(value: int) -> void {
+pub fun eprintInt(value: int) -> void {
     imut str: string = aloha_sys_int_to_string(value);
     imut len: int = string_len(str);
     aloha_sys_write(STDERR(), str, len);
 }
 
-fun eprintlnInt(value: int) -> void {
+pub fun eprintlnInt(value: int) -> void {
     eprintInt(value);
     aloha_sys_write(STDERR(), "\n", 1);
 }
 
-fun eprintFloat(value: float) -> void {
+pub fun eprintFloat(value: float) -> void {
     imut str: string = aloha_sys_float_to_string(value);
     imut len: int = string_len(str);
     aloha_sys_write(STDERR(), str, len);
 }
 
-fun eprintlnFloat(value: float) -> void {
+pub fun eprintlnFloat(value: float) -> void {
     eprintFloat(value);
     aloha_sys_write(STDERR(), "\n", 1);
 }
 
-fun input() -> string {
+pub fun input() -> string {
     return aloha_sys_input();
 }

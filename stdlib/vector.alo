@@ -1,7 +1,7 @@
 import "stdlib/memory.alo";
 
-extern type VecInt;
-extern type VecString;
+pub extern type VecInt;
+pub extern type VecString;
 
 extern fun aloha_vec_int_new(arena: &Arena) -> &VecInt;
 extern fun aloha_vec_int_push(vec_ptr: &VecInt, value: int) -> void;
@@ -14,27 +14,27 @@ extern fun aloha_vec_string_len(vec_ptr: &VecString) -> int;
 extern fun aloha_vec_string_get(vec_ptr: &VecString, index: int) -> string;
 extern fun aloha_vec_string_set(vec_ptr: &VecString, index: int, value: string) -> void;
 
-fun vec_int_new(arena: &Arena) -> &VecInt {
+pub fun vec_int_new(arena: &Arena) -> &VecInt {
     return aloha_vec_int_new(arena);
 }
 
-fun vec_int_push(vec: &VecInt, value: int) -> void {
+pub fun vec_int_push(vec: &VecInt, value: int) -> void {
     aloha_vec_int_push(vec, value);
 }
 
-fun vec_int_len(vec: &VecInt) -> int {
+pub fun vec_int_len(vec: &VecInt) -> int {
     return aloha_vec_int_len(vec);
 }
 
-fun vec_int_get(vec: &VecInt, index: int) -> int {
+pub fun vec_int_get(vec: &VecInt, index: int) -> int {
     return aloha_vec_int_get(vec, index);
 }
 
-fun vec_int_set(vec_ptr: &VecInt, index: int, value: int) -> void {
+pub fun vec_int_set(vec_ptr: &VecInt, index: int, value: int) -> void {
     aloha_vec_int_set(vec_ptr, index, value);
 }
 
-fun vec_int_index_of(vec: &VecInt, value: int) -> int {
+pub fun vec_int_index_of(vec: &VecInt, value: int) -> int {
     mut i: int = 0;
     while (i < vec_int_len(vec)) {
         if (vec_int_get(vec, i) == value) {
@@ -45,31 +45,31 @@ fun vec_int_index_of(vec: &VecInt, value: int) -> int {
     return -1;
 }
 
-fun vec_int_contains(vec: &VecInt, value: int) -> bool {
+pub fun vec_int_contains(vec: &VecInt, value: int) -> bool {
     return vec_int_index_of(vec, value) != -1;
 }
 
-fun vec_string_new(arena: &Arena) -> &VecString {
+pub fun vec_string_new(arena: &Arena) -> &VecString {
     return aloha_vec_string_new(arena);
 }
 
-fun vec_string_push(vec: &VecString, value: string) -> void {
+pub fun vec_string_push(vec: &VecString, value: string) -> void {
     aloha_vec_string_push(vec, value);
 }
 
-fun vec_string_len(vec: &VecString) -> int {
+pub fun vec_string_len(vec: &VecString) -> int {
     return aloha_vec_string_len(vec);
 }
 
-fun vec_string_get(vec: &VecString, index: int) -> string {
+pub fun vec_string_get(vec: &VecString, index: int) -> string {
     return aloha_vec_string_get(vec, index);
 }
 
-fun vec_string_set(vec_ptr: &VecString, index: int, value: string) -> void {
+pub fun vec_string_set(vec_ptr: &VecString, index: int, value: string) -> void {
     aloha_vec_string_set(vec_ptr, index, value);
 }
 
-fun vec_string_index_of(vec: &VecString, value: string) -> int {
+pub fun vec_string_index_of(vec: &VecString, value: string) -> int {
     mut i: int = 0;
     while (i < vec_string_len(vec)) {
         if (vec_string_get(vec, i) == value) {
@@ -80,6 +80,6 @@ fun vec_string_index_of(vec: &VecString, value: string) -> int {
     return -1;
 }
 
-fun vec_string_contains(vec: &VecString, value: string) -> bool {
+pub fun vec_string_contains(vec: &VecString, value: string) -> bool {
     return vec_string_index_of(vec, value) != -1;
 }

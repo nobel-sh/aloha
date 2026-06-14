@@ -282,6 +282,8 @@ namespace aloha
         void Function::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "Function:{\n";
+            os << std::string(indent + 2, ' ') << "Public: "
+               << (m_is_public ? "true" : "false") << "\n";
             os << std::string(indent + 2, ' ') << "Name: ";
             m_name->write(os, 0);
             os << std::string(indent + 2, ' ') << "Parameters:[\n";
@@ -302,6 +304,8 @@ namespace aloha
         void StructDecl::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "StructDecl:{\n";
+            os << std::string(indent + 2, ' ') << "Public: "
+               << (m_is_public ? "true" : "false") << "\n";
             os << std::string(indent + 2, ' ') << "Name: " << m_name << "\n";
             os << std::string(indent + 2, ' ') << "Fields:[\n";
             for (const auto &field : m_fields)
@@ -316,6 +320,8 @@ namespace aloha
         void EnumDecl::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "EnumDecl:{\n";
+            os << std::string(indent + 2, ' ') << "Public: "
+               << (m_is_public ? "true" : "false") << "\n";
             os << std::string(indent + 2, ' ') << "Name: " << m_name << "\n";
             os << std::string(indent + 2, ' ') << "Variants:[\n";
             for (const auto &variant : m_variants)
@@ -329,6 +335,8 @@ namespace aloha
         void ExternTypeDecl::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "ExternTypeDecl:{\n";
+            os << std::string(indent + 2, ' ') << "Public: "
+               << (m_is_public ? "true" : "false") << "\n";
             os << std::string(indent + 2, ' ') << "Name: " << m_name << "\n";
             os << std::string(indent, ' ') << "}\n";
         }
