@@ -2,11 +2,14 @@
 #include "../ast/ast.h"
 #include "../ast/operator.h"
 #include "token.h"
+#include <algorithm>
+#include <array>
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <ostream>
 #include <sstream>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -84,12 +87,14 @@ namespace aloha
       return false;
     }
 
+    static constexpr std::array boundary_keywords = {
+        "fun",   "struct", "enum",  "extern", "import",
+        "mut",   "imut",   "return", "if",     "while",
+        "match", "break",  "continue", "pub",  "as"};
+
     std::string lexeme = peek()->get_lexeme();
-    return lexeme == "fun" || lexeme == "struct" || lexeme == "enum" ||
-           lexeme == "extern" || lexeme == "import" || lexeme == "mut" ||
-           lexeme == "imut" || lexeme == "return" || lexeme == "if" ||
-           lexeme == "while" || lexeme == "match" || lexeme == "break" ||
-           lexeme == "continue" || lexeme == "pub" || lexeme == "as";
+    return std::find(boundary_keywords.begin(), boundary_keywords.end(),
+                     lexeme) != boundary_keywords.end();
   }
 
   void Parser::synchronize()
@@ -111,7 +116,7 @@ namespace aloha
     }
   }
 
-  bool Parser::match(std::string value, bool use_next)
+  bool Parser::match(std::string_view value, bool use_next)
   {
     std::optional<Token> token = get_token(use_next);
     return token && token->lexeme == value;
@@ -138,65 +143,69 @@ namespace aloha
 
     while (!is_eof())
     {
-      bool is_public = false;
-      if (match("pub"))
+      auto node = parse_top_level_declaration();
+      if (node)
       {
-        is_public = true;
-        advance();
-      }
-
-      if (match("import"))
-      {
-        if (is_public)
-        {
-          report_error("'pub' cannot be applied to imports");
-          synchronize();
-          continue;
-        }
-        program->m_nodes.push_back(parse_import());
-      }
-      else if (match("struct"))
-      {
-        program->m_nodes.push_back(parse_struct_decl(is_public));
-      }
-      else if (match("enum"))
-      {
-        program->m_nodes.push_back(parse_enum_decl(is_public));
-      }
-      else if (match("extern"))
-      {
-        if (match("fun", true))
-        {
-          program->m_nodes.push_back(parse_extern_function(is_public));
-        }
-        else if (match("type", true))
-        {
-          program->m_nodes.push_back(parse_extern_type_decl(is_public));
-        }
-        else
-        {
-          report_error("Expected 'fun' or 'type' after 'extern'");
-          synchronize();
-        }
-      }
-      else
-      {
-        if (!match("fun"))
-        {
-          report_error("Expected top-level declaration");
-          synchronize();
-          continue;
-        }
-        program->m_nodes.push_back(parse_function(is_public));
+        program->m_nodes.push_back(std::move(node));
       }
     }
     return program;
   }
 
-  std::unique_ptr<ast::Function> Parser::parse_function(bool is_public)
+  ast::NodePtr Parser::parse_top_level_declaration()
   {
-    Location loc = current_location();
-    consume("fun", "Expected 'fun' keyword");
+    bool is_public = false;
+    if (match("pub"))
+    {
+      is_public = true;
+      advance();
+    }
+
+    if (match("import"))
+    {
+      if (is_public)
+      {
+        report_error("'pub' cannot be applied to imports");
+        synchronize();
+        return nullptr;
+      }
+      return parse_import();
+    }
+    if (match("struct"))
+    {
+      return parse_struct_decl(is_public);
+    }
+    if (match("enum"))
+    {
+      return parse_enum_decl(is_public);
+    }
+    if (match("extern"))
+    {
+      if (match("fun", true))
+      {
+        return parse_extern_function(is_public);
+      }
+      if (match("type", true))
+      {
+        return parse_extern_type_decl(is_public);
+      }
+
+      report_error("Expected 'fun' or 'type' after 'extern'");
+      synchronize();
+      return nullptr;
+    }
+    if (match("fun"))
+    {
+      return parse_function(is_public);
+    }
+
+    report_error("Expected top-level declaration");
+    synchronize();
+    return nullptr;
+  }
+
+  Parser::FunctionSignature Parser::parse_function_signature()
+  {
     auto identifier = expect_identifier();
     consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
     auto parameters = parse_parameters();
@@ -204,11 +213,21 @@ namespace aloha
     consume(TokenKind::THIN_ARROW, "Expected '->' before return type");
     ParseTy return_type = parse_type();
     std::string return_type_name = type_arena->to_string(return_type);
+    return FunctionSignature{std::move(identifier), std::move(parameters),
+                             return_type, std::move(return_type_name)};
+  }
+
+  std::unique_ptr<ast::Function> Parser::parse_function(bool is_public)
+  {
+    Location loc = current_location();
+    consume("fun", "Expected 'fun' keyword");
+    auto signature = parse_function_signature();
     consume(TokenKind::LEFT_BRACE, "Expected '{' keyword before function body");
     auto statements = parse_statements();
     return std::make_unique<ast::Function>(
-        loc, std::move(identifier), std::move(parameters), return_type,
-        std::move(return_type_name), std::move(statements), false, is_public);
+        loc, std::move(signature.identifier), std::move(signature.parameters),
+        signature.return_type, std::move(signature.return_type_name),
+        std::move(statements), false, is_public);
   }
 
   std::unique_ptr<ast::Function> Parser::parse_extern_function(bool is_public)
@@ -216,17 +235,12 @@ namespace aloha
     Location loc = current_location();
     consume("extern", "Expected 'extern' keyword");
     consume("fun", "Expected 'fun' keyword after 'extern'");
-    auto identifier = expect_identifier();
-    consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
-    auto parameters = parse_parameters();
-    consume(TokenKind::RIGHT_PAREN, "Expected ')' after parameters");
-    consume(TokenKind::THIN_ARROW, "Expected '->' before return type");
-    ParseTy return_type = parse_type();
-    std::string return_type_name = type_arena->to_string(return_type);
+    auto signature = parse_function_signature();
     consume(TokenKind::SEMICOLON, "Expected ';' after extern function declaration");
     return std::make_unique<ast::Function>(
-        loc, std::move(identifier), std::move(parameters), return_type,
-        std::move(return_type_name), nullptr, true, is_public);
+        loc, std::move(signature.identifier), std::move(signature.parameters),
+        signature.return_type, std::move(signature.return_type_name), nullptr,
+        true, is_public);
   }
 
   std::unique_ptr<ast::Statement> Parser::parse_extern_type_decl(bool is_public)
@@ -298,6 +312,32 @@ namespace aloha
     return variants;
   }
 
+  std::vector<ast::StructInstantiation::FieldValue>
+  Parser::parse_named_field_values(const std::string &unnamed_field_message)
+  {
+    std::vector<ast::StructInstantiation::FieldValue> field_values;
+    while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
+    {
+      if (match(TokenKind::IDENT) && match(TokenKind::COLON, true))
+      {
+        auto field_name = expect_identifier()->m_name;
+        consume(TokenKind::COLON, "Expected ':' after field name");
+        field_values.emplace_back(std::move(field_name), parse_expression(0));
+      }
+      else
+      {
+        report_error(unnamed_field_message);
+        parse_expression(0);
+      }
+
+      if (!match(TokenKind::RIGHT_BRACE))
+      {
+        consume(TokenKind::COMMA, "Expected ',' or '}' after field value");
+      }
+    }
+    return field_values;
+  }
+
   std::unique_ptr<ast::Expression> Parser::parse_struct_field_access()
   {
     Location loc = current_location();
@@ -337,27 +377,8 @@ namespace aloha
     Location loc = current_location();
     auto struct_ident = expect_identifier();
     consume(TokenKind::LEFT_BRACE, "Expected '{' after struct name");
-
-    std::vector<ast::StructInstantiation::FieldValue> field_values;
-    while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
-    {
-      if (match(TokenKind::IDENT) && match(TokenKind::COLON, true))
-      {
-        auto field_name = expect_identifier()->m_name;
-        consume(TokenKind::COLON, "Expected ':' after field name");
-        field_values.emplace_back(std::move(field_name), parse_expression(0));
-      }
-      else
-      {
-        report_error("Struct instantiation requires named fields");
-        parse_expression(0);
-      }
-      if (!match(TokenKind::RIGHT_BRACE))
-      {
-        consume(TokenKind::COMMA, "Expected ',' or '}' after field value");
-      }
-    }
-
+    auto field_values =
+        parse_named_field_values("Struct instantiation requires named fields");
     consume(TokenKind::RIGHT_BRACE, "Expected '}' after struct instantiation");
     return std::make_unique<ast::StructInstantiation>(
         loc, std::move(struct_ident->m_name), std::move(field_values));
@@ -372,42 +393,12 @@ namespace aloha
     consume(TokenKind::RIGHT_PAREN, "Expected ')' after arena expression");
     auto struct_ident = expect_identifier();
     consume(TokenKind::LEFT_BRACE, "Expected '{' after struct name");
-
-    std::vector<ast::StructInstantiation::FieldValue> field_values;
-    while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
-    {
-      if (match(TokenKind::IDENT) && match(TokenKind::COLON, true))
-      {
-        auto field_name = expect_identifier()->m_name;
-        consume(TokenKind::COLON, "Expected ':' after field name");
-        field_values.emplace_back(std::move(field_name), parse_expression(0));
-      }
-      else
-      {
-        report_error("Object allocation requires named fields");
-        parse_expression(0);
-      }
-      if (!match(TokenKind::RIGHT_BRACE))
-      {
-        consume(TokenKind::COMMA, "Expected ',' or '}' after field value");
-      }
-    }
-
+    auto field_values =
+        parse_named_field_values("Object allocation requires named fields");
     consume(TokenKind::RIGHT_BRACE, "Expected '}' after object allocation");
     return std::make_unique<ast::NewObjectExpression>(
         loc, std::move(struct_ident->m_name), std::move(arena),
         std::move(field_values));
-  }
-
-  std::unique_ptr<ast::Expression> Parser::parse_enum_variant()
-  {
-    Location loc = current_location();
-    auto enum_ident = expect_identifier();
-    consume(TokenKind::DOUBLE_COLON, "Expected '::' after enum name");
-    auto variant_ident = expect_identifier();
-    return std::make_unique<ast::EnumVariant>(
-        loc, ast::QualifiedPath(loc, {std::move(enum_ident->m_name),
-                                      std::move(variant_ident->m_name)}));
   }
 
   std::unique_ptr<ast::Expression> Parser::parse_match_expression()
@@ -415,36 +406,27 @@ namespace aloha
     Location loc = current_location();
     consume("match", "Expected 'match' keyword");
 
-    std::unique_ptr<ast::Expression> scrutinee;
-    if (match(TokenKind::IDENT) && match(TokenKind::LEFT_BRACE, true))
-    {
-      scrutinee = expect_identifier();
-    }
-    else
-    {
-      scrutinee = parse_expression(0);
-    }
+    auto scrutinee = parse_match_scrutinee();
     consume(TokenKind::LEFT_BRACE, "Expected '{' after match expression");
 
     std::vector<ast::MatchExprArm> arms;
     while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
     {
-      Location arm_loc = current_location();
-      if (match(TokenKind::UNDERSCORE))
+      auto pattern = parse_match_pattern();
+      if (!pattern.has_value())
       {
-        advance();
-        consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
-        arms.emplace_back(arm_loc, parse_expression(0));
+        return nullptr;
+      }
+
+      consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
+      if (pattern->m_is_wildcard)
+      {
+        arms.emplace_back(pattern->m_loc, parse_expression(0));
       }
       else
       {
-        auto pattern = parse_qualified_path();
-        if (!pattern.has_value())
-        {
-          return nullptr;
-        }
-        consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
-        arms.emplace_back(arm_loc, std::move(pattern.value()), parse_expression(0));
+        arms.emplace_back(pattern->m_loc, std::move(pattern->m_path.value()),
+                          parse_expression(0));
       }
 
       if (!match(TokenKind::RIGHT_BRACE))
@@ -456,6 +438,32 @@ namespace aloha
     consume(TokenKind::RIGHT_BRACE, "Expected '}' after match arms");
     return std::make_unique<ast::MatchExpression>(loc, std::move(scrutinee),
                                                   std::move(arms));
+  }
+
+  std::unique_ptr<ast::Expression> Parser::parse_match_scrutinee()
+  {
+    if (match(TokenKind::IDENT) && match(TokenKind::LEFT_BRACE, true))
+    {
+      return expect_identifier();
+    }
+    return parse_expression(0);
+  }
+
+  std::optional<ast::MatchPattern> Parser::parse_match_pattern()
+  {
+    Location loc = current_location();
+    if (match(TokenKind::UNDERSCORE))
+    {
+      advance();
+      return ast::MatchPattern{loc, true, std::nullopt};
+    }
+
+    auto path = parse_qualified_path();
+    if (!path.has_value())
+    {
+      return std::nullopt;
+    }
+    return ast::MatchPattern{loc, false, std::move(path)};
   }
 
   std::vector<ast::Parameter> Parser::parse_parameters()
@@ -509,25 +517,30 @@ namespace aloha
     {
       return parse_while_loop();
     }
-
     if (match(TokenKind::IDENT))
     {
-      if (match(TokenKind::LEFT_BRACKET, true))
-      {
-        return parse_array_assignment();
-      }
-      if (match(TokenKind::EQUAL, true))
-      {
-        return parse_variable_assignment();
-      }
-      if (match(TokenKind::LEFT_PAREN, true) || match(TokenKind::DOUBLE_COLON, true))
-      {
-        return parse_expression_statement();
-      }
-      if (match(TokenKind::THIN_ARROW, true))
-      {
-        return parse_struct_field_assignment();
-      }
+      return parse_identifier_statement();
+    }
+    return nullptr;
+  }
+
+  std::unique_ptr<ast::Statement> Parser::parse_identifier_statement()
+  {
+    if (match(TokenKind::LEFT_BRACKET, true))
+    {
+      return parse_array_assignment();
+    }
+    if (match(TokenKind::EQUAL, true))
+    {
+      return parse_variable_assignment();
+    }
+    if (match(TokenKind::LEFT_PAREN, true) || match(TokenKind::DOUBLE_COLON, true))
+    {
+      return parse_expression_statement();
+    }
+    if (match(TokenKind::THIN_ARROW, true))
+    {
+      return parse_struct_field_assignment();
     }
     return nullptr;
   }
@@ -560,31 +573,13 @@ namespace aloha
         continue;
       }
 
-      // Check if it's a block statement before moving the pointer
-      bool is_block_stmt = dynamic_cast<ast::IfStatement *>(stmt.get()) != nullptr ||
-                           dynamic_cast<ast::MatchStatement *>(stmt.get()) != nullptr ||
-                           dynamic_cast<ast::WhileLoop *>(stmt.get()) != nullptr;
+      bool needs_semicolon = statement_requires_semicolon(stmt.get());
 
       statements->m_statements.push_back(std::move(stmt));
 
-      // Consume semicolon after statement if it's not a block statement
-      if (!is_block_stmt)
+      if (needs_semicolon)
       {
-        if (match(TokenKind::SEMICOLON))
-        {
-          advance();
-        }
-        else
-        {
-          std::ostringstream message;
-          message << "Expected ';' after statement";
-          if (auto token = peek())
-          {
-            message << ", found '" << token->get_lexeme() << "'";
-          }
-          report_error(message.str());
-          synchronize();
-        }
+        consume_statement_semicolon();
       }
     }
     if (!is_eof())
@@ -593,6 +588,31 @@ namespace aloha
               "expected '}' at the end of block statement");
     }
     return statements;
+  }
+
+  bool Parser::statement_requires_semicolon(const ast::Statement *stmt) const
+  {
+    return dynamic_cast<const ast::IfStatement *>(stmt) == nullptr &&
+           dynamic_cast<const ast::MatchStatement *>(stmt) == nullptr &&
+           dynamic_cast<const ast::WhileLoop *>(stmt) == nullptr;
+  }
+
+  void Parser::consume_statement_semicolon()
+  {
+    if (match(TokenKind::SEMICOLON))
+    {
+      advance();
+      return;
+    }
+
+    std::ostringstream message;
+    message << "Expected ';' after statement";
+    if (auto token = peek())
+    {
+      message << ", found '" << token->get_lexeme() << "'";
+    }
+    report_error(message.str());
+    synchronize();
   }
 
   std::unique_ptr<ast::Statement> Parser::parse_variable_declaration()
@@ -730,38 +750,28 @@ namespace aloha
   {
     Location loc = current_location();
     consume("match", "Expected 'match' keyword");
-    std::unique_ptr<ast::Expression> scrutinee;
-    if (match(TokenKind::IDENT) && match(TokenKind::LEFT_BRACE, true))
-    {
-      scrutinee = expect_identifier();
-    }
-    else
-    {
-      scrutinee = parse_expression(0);
-    }
+    auto scrutinee = parse_match_scrutinee();
     consume(TokenKind::LEFT_BRACE, "Expected '{' after match expression");
 
     std::vector<ast::MatchArm> arms;
     while (!match(TokenKind::RIGHT_BRACE) && !is_eof())
     {
-      Location arm_loc = current_location();
-      if (match(TokenKind::UNDERSCORE))
+      auto pattern = parse_match_pattern();
+      if (!pattern.has_value())
       {
-        advance();
-        consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
-        consume(TokenKind::LEFT_BRACE, "Expected '{' before match arm body");
-        arms.emplace_back(arm_loc, parse_statements());
+        return nullptr;
+      }
+
+      consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
+      consume(TokenKind::LEFT_BRACE, "Expected '{' before match arm body");
+      if (pattern->m_is_wildcard)
+      {
+        arms.emplace_back(pattern->m_loc, parse_statements());
       }
       else
       {
-        auto pattern = parse_qualified_path();
-        if (!pattern.has_value())
-        {
-          return nullptr;
-        }
-        consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
-        consume(TokenKind::LEFT_BRACE, "Expected '{' before match arm body");
-        arms.emplace_back(arm_loc, std::move(pattern.value()), parse_statements());
+        arms.emplace_back(pattern->m_loc, std::move(pattern->m_path.value()),
+                          parse_statements());
       }
 
       if (match(TokenKind::COMMA))
@@ -962,51 +972,56 @@ namespace aloha
 
     if (match(TokenKind::IDENT))
     {
-      if (match(TokenKind::DOUBLE_COLON, true))
-      {
-        auto path = parse_qualified_path();
-        if (!path.has_value())
-        {
-          return nullptr;
-        }
-        if (match(TokenKind::LEFT_PAREN))
-        {
-          return parse_function_call(std::move(path.value()));
-        }
-        if (path->size() != 2)
-        {
-          report_error("Qualified enum variants currently require exactly two path segments");
-          return nullptr;
-        }
-        return std::make_unique<ast::EnumVariant>(path->m_loc, std::move(path.value()));
-      }
-      if (match(TokenKind::LEFT_PAREN, true))
-      {
-        return parse_function_call();
-      }
-      if (match(TokenKind::LEFT_BRACE, true))
-      {
-        return parse_struct_instantiation();
-      }
-      if (match(TokenKind::LEFT_BRACKET, true))
-      {
-        return parse_array_access();
-      }
-      advance();
-      if (is_reserved_ident(*token))
-      {
-        if (token->lexeme == "true" || token->lexeme == "false")
-        {
-          auto value = token->lexeme == "true" ? true : false;
-          return std::make_unique<ast::Boolean>(loc, value);
-        }
-        return std::make_unique<ast::Null>(loc);
-      }
-
-      return std::make_unique<ast::Identifier>(loc, token->get_lexeme());
+      return parse_identifier_primary(loc, *token);
     }
     report_error("Unexpected token in primary expression");
     return nullptr;
+  }
+
+  std::unique_ptr<ast::Expression> Parser::parse_identifier_primary(
+      Location loc, const Token &token)
+  {
+    if (match(TokenKind::DOUBLE_COLON, true))
+    {
+      auto path = parse_qualified_path();
+      if (!path.has_value())
+      {
+        return nullptr;
+      }
+      if (match(TokenKind::LEFT_PAREN))
+      {
+        return parse_function_call(std::move(path.value()));
+      }
+      if (path->size() != 2)
+      {
+        report_error("Qualified enum variants currently require exactly two path segments");
+        return nullptr;
+      }
+      return std::make_unique<ast::EnumVariant>(path->m_loc, std::move(path.value()));
+    }
+    if (match(TokenKind::LEFT_PAREN, true))
+    {
+      return parse_function_call();
+    }
+    if (match(TokenKind::LEFT_BRACE, true))
+    {
+      return parse_struct_instantiation();
+    }
+    if (match(TokenKind::LEFT_BRACKET, true))
+    {
+      return parse_array_access();
+    }
+
+    advance();
+    if (is_reserved_ident(token))
+    {
+      if (token.lexeme == "true" || token.lexeme == "false")
+      {
+        return std::make_unique<ast::Boolean>(loc, token.lexeme == "true");
+      }
+      return std::make_unique<ast::Null>(loc);
+    }
+    return std::make_unique<ast::Identifier>(loc, token.get_lexeme());
   }
 
   std::unique_ptr<ast::Expression> Parser::parse_array_access()

@@ -66,6 +66,13 @@ namespace aloha
       std::string to_string() const;
     };
 
+    struct MatchPattern
+    {
+      Location m_loc;
+      bool m_is_wildcard;
+      std::optional<QualifiedPath> m_path;
+    };
+
     class StatementBlock : public Statement
     {
     public:
