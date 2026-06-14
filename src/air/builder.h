@@ -120,6 +120,14 @@ namespace aloha
     bool is_logical_op(air::BinaryOpKind op);
     bool block_definitely_returns(const ast::StatementBlock *block) const;
     bool stmt_definitely_returns(const ast::Statement *stmt) const;
+    std::optional<EnumVariantSymbol> resolve_match_arm_variant(
+        const std::optional<ast::QualifiedPath> &pattern, Location loc,
+        TyId scrutinee_ty, const std::string &enum_name,
+        std::unordered_set<std::string> &covered_variants);
+    void check_match_exhaustive(bool has_wildcard,
+                                const std::unordered_set<std::string> &covered_variants,
+                                const std::string &enum_name, Location loc,
+                                const std::string &match_kind);
 
     void push_scope();
     void pop_scope();

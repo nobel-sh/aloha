@@ -60,6 +60,64 @@ namespace aloha
         variant.value, variant.enum_type_id);
   }
 
+  std::optional<EnumVariantSymbol> AIRBuilder::resolve_match_arm_variant(
+      const std::optional<ast::QualifiedPath> &pattern, Location loc,
+      TyId scrutinee_ty, const std::string &enum_name,
+      std::unordered_set<std::string> &covered_variants)
+  {
+    if (!pattern.has_value() || pattern->size() != 2)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, loc,
+                        "Match arm patterns currently require exactly two path segments");
+      return std::nullopt;
+    }
+
+    const std::string &arm_enum_name = pattern->m_segments[0];
+    const std::string &arm_variant_name = pattern->m_segments[1];
+    auto variant_opt = symbol_table.lookup_enum_variant_accessible(
+        arm_enum_name, arm_variant_name, loc);
+    if (!variant_opt.has_value())
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, loc,
+                        "Unknown enum variant '" + pattern->to_string() + "'");
+      return std::nullopt;
+    }
+
+    const EnumVariantSymbol &variant = variant_opt.value();
+    if (variant.enum_type_id != scrutinee_ty)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, loc,
+                        "Match arm variant '" + pattern->to_string() +
+                            "' does not belong to enum '" + enum_name + "'");
+    }
+
+    if (!covered_variants.insert(variant.variant_name).second)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, loc,
+                        "Duplicate match arm for variant '" + pattern->to_string() + "'");
+    }
+
+    return variant;
+  }
+
+  void AIRBuilder::check_match_exhaustive(
+      bool has_wildcard, const std::unordered_set<std::string> &covered_variants,
+      const std::string &enum_name, Location loc, const std::string &match_kind)
+  {
+    if (has_wildcard)
+    {
+      return;
+    }
+
+    auto variants = symbol_table.get_enum_variants(enum_name);
+    if (covered_variants.size() != variants.size())
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, loc,
+                        match_kind + " must cover all variants of enum '" +
+                            enum_name + "' or include '_'");
+    }
+  }
+
   void AIRBuilder::visit(ast::MatchExpression *node)
   {
     auto scrutinee = lower_expr(node->m_scrutinee.get());
@@ -115,54 +173,20 @@ namespace aloha
         continue;
       }
 
-      if (!arm.m_pattern.has_value() || arm.m_pattern->size() != 2)
-      {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Match arm patterns currently require exactly two path segments");
-        continue;
-      }
-
-      const auto &pattern = arm.m_pattern.value();
-      const std::string &arm_enum_name = pattern.m_segments[0];
-      const std::string &arm_variant_name = pattern.m_segments[1];
-      auto variant_opt = symbol_table.lookup_enum_variant_accessible(
-          arm_enum_name, arm_variant_name, arm.m_loc);
+      auto variant_opt = resolve_match_arm_variant(
+          arm.m_pattern, arm.m_loc, scrutinee->m_ty, enum_name, covered_variants);
       if (!variant_opt.has_value())
       {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Unknown enum variant '" + pattern.to_string() + "'");
         continue;
       }
 
       const EnumVariantSymbol &variant = variant_opt.value();
-      if (variant.enum_type_id != scrutinee->m_ty)
-      {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Match arm variant '" + pattern.to_string() +
-                              "' does not belong to enum '" +
-                              enum_name + "'");
-      }
-
-      if (!covered_variants.insert(variant.variant_name).second)
-      {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Duplicate match arm for variant '" + pattern.to_string() + "'");
-      }
-
       arms.emplace_back(variant.enum_name, variant.variant_name, variant.value,
                         std::move(value), arm.m_loc);
     }
 
-    if (!has_wildcard)
-    {
-      auto variants = symbol_table.get_enum_variants(enum_name);
-      if (covered_variants.size() != variants.size())
-      {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
-                          "Match expression must cover all variants of enum '" +
-                              enum_name + "' or include '_'");
-      }
-    }
+    check_match_exhaustive(has_wildcard, covered_variants, enum_name, node->m_loc,
+                           "Match expression");
 
     current_expr = std::make_unique<air::MatchExpr>(node->m_loc, std::move(scrutinee),
                                                     std::move(arms), result_ty);
@@ -665,9 +689,8 @@ namespace aloha
     std::unordered_set<std::string> covered_variants;
     std::vector<air::MatchArm> arms;
 
-    for (size_t i = 0; i < node->m_arms.size(); ++i)
+    for (const auto &arm : node->m_arms)
     {
-      const auto &arm = node->m_arms[i];
       if (has_wildcard)
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
@@ -683,54 +706,20 @@ namespace aloha
         continue;
       }
 
-      if (!arm.m_pattern.has_value() || arm.m_pattern->size() != 2)
-      {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Match arm patterns currently require exactly two path segments");
-        continue;
-      }
-
-      const auto &pattern = arm.m_pattern.value();
-      const std::string &arm_enum_name = pattern.m_segments[0];
-      const std::string &arm_variant_name = pattern.m_segments[1];
-      auto variant_opt = symbol_table.lookup_enum_variant_accessible(
-          arm_enum_name, arm_variant_name, arm.m_loc);
+      auto variant_opt = resolve_match_arm_variant(
+          arm.m_pattern, arm.m_loc, scrutinee->m_ty, enum_name, covered_variants);
       if (!variant_opt.has_value())
       {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Unknown enum variant '" + pattern.to_string() + "'");
         continue;
       }
 
       const EnumVariantSymbol &variant = variant_opt.value();
-      if (variant.enum_type_id != scrutinee->m_ty)
-      {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Match arm variant '" + pattern.to_string() +
-                              "' does not belong to enum '" +
-                              enum_name + "'");
-      }
-
-      if (!covered_variants.insert(variant.variant_name).second)
-      {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Duplicate match arm for variant '" + pattern.to_string() + "'");
-      }
-
       arms.emplace_back(variant.enum_name, variant.variant_name, variant.value,
                         std::move(body), arm.m_loc);
     }
 
-    if (!has_wildcard)
-    {
-      auto variants = symbol_table.get_enum_variants(enum_name);
-      if (covered_variants.size() != variants.size())
-      {
-        diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
-                          "Match statement must cover all variants of enum '" +
-                              enum_name + "' or include '_'");
-      }
-    }
+    check_match_exhaustive(has_wildcard, covered_variants, enum_name, node->m_loc,
+                           "Match statement");
 
     current_stmt = std::make_unique<air::Match>(node->m_loc, std::move(scrutinee),
                                                 std::move(arms));
