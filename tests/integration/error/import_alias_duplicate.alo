@@ -1,0 +1,6 @@
+// expect-error: Duplicate import alias: 'vis'
+
+import "../fixtures/visibility_symbols.alo" as vis;
+import "../fixtures/visibility_symbols.alo" as vis;
+
+fun main() -> void {}

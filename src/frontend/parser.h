@@ -63,6 +63,7 @@ namespace aloha
     Location current_location() const;
 
     std::unique_ptr<ast::Identifier> expect_identifier();
+    std::optional<ast::QualifiedPath> parse_qualified_path();
     bool is_reserved_ident() const;
     bool is_reserved_ident(Token t) const;
 
@@ -100,6 +101,7 @@ namespace aloha
                             int min_precedence);
     std::unique_ptr<ast::Expression> parse_primary();
     std::unique_ptr<ast::Expression> parse_function_call();
+    std::unique_ptr<ast::Expression> parse_function_call(ast::QualifiedPath path);
     std::unique_ptr<ast::Statement> parse_expression_statement();
 
     std::unique_ptr<ast::Expression> parse_array_access();

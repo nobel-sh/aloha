@@ -89,7 +89,7 @@ namespace aloha
         void EnumVariant::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "EnumVariant: "
-               << m_enum_name << "::" << m_variant_name << "\n";
+               << m_path.to_string() << "\n";
         }
 
         void MatchExpression::write(std::ostream &os, unsigned long indent) const
@@ -102,7 +102,7 @@ namespace aloha
             for (const auto &arm : m_arms)
             {
                 os << std::string(indent + 4, ' ')
-                   << (arm.m_is_wildcard ? "_" : arm.m_enum_name + "::" + arm.m_variant_name)
+                   << (arm.m_is_wildcard ? "_" : arm.m_pattern->to_string())
                    << " =>\n";
                 arm.m_value->write(os, indent + 6);
             }
@@ -178,8 +178,8 @@ namespace aloha
         void FunctionCall::write(std::ostream &os, unsigned long indent) const
         {
             os << std::string(indent, ' ') << "FunctionCall:{\n";
-            os << std::string(indent + 2, ' ') << "Name: ";
-            m_func_name->write(os, 0);
+            os << std::string(indent + 2, ' ') << "Path: "
+               << m_path.to_string() << "\n";
             os << std::string(indent + 2, ' ') << "Arguments:[\n";
             for (const auto &arg : m_arguments)
             {
@@ -237,7 +237,7 @@ namespace aloha
             for (const auto &arm : m_arms)
             {
                 os << std::string(indent + 4, ' ')
-                   << (arm.m_is_wildcard ? "_" : arm.m_enum_name + "::" + arm.m_variant_name)
+                   << (arm.m_is_wildcard ? "_" : arm.m_pattern->to_string())
                    << " => {\n";
                 arm.m_body->write(os, indent + 6);
                 os << std::string(indent + 4, ' ') << "}\n";
@@ -424,7 +424,12 @@ namespace aloha
 
         void Import::write(std::ostream &os, unsigned long indent) const
         {
-            os << std::string(indent, ' ') << "Import: \"" << m_path << "\"\n";
+            os << std::string(indent, ' ') << "Import: \"" << m_path << "\"";
+            if (m_alias.has_value())
+            {
+                os << " as " << m_alias.value();
+            }
+            os << "\n";
         }
     } // namespace ast
 } // namespace aloha

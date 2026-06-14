@@ -1,0 +1,6 @@
+import "fixtures/visibility_symbols.alo" as vis;
+
+fun main() -> int {
+    assert_msg(vis::public_value() == 42, "qualified public function should be visible");
+    return 0;
+}

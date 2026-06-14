@@ -42,6 +42,33 @@ namespace aloha
         void Import::accept(ASTVisitor &visitor) { visitor.visit(this); }
 
         // Constructors
+        QualifiedPath::QualifiedPath(Location loc, std::vector<std::string> segments)
+            : m_loc(std::move(loc)), m_segments(std::move(segments)) {}
+
+        size_t QualifiedPath::size() const { return m_segments.size(); }
+
+        bool QualifiedPath::empty() const { return m_segments.empty(); }
+
+        bool QualifiedPath::is_unqualified() const { return m_segments.size() == 1; }
+
+        const std::string &QualifiedPath::front() const { return m_segments.front(); }
+
+        const std::string &QualifiedPath::back() const { return m_segments.back(); }
+
+        std::string QualifiedPath::to_string() const
+        {
+            std::string result;
+            for (size_t i = 0; i < m_segments.size(); ++i)
+            {
+                if (i > 0)
+                {
+                    result += "::";
+                }
+                result += m_segments[i];
+            }
+            return result;
+        }
+
         StatementBlock::StatementBlock(Location loc, std::vector<StmtPtr> stmts)
             : Statement(loc), m_statements(std::move(stmts)) {}
 
@@ -72,15 +99,12 @@ namespace aloha
         Identifier::Identifier(Location loc, std::string name)
             : Expression(loc), m_name(std::move(name)) {}
 
-        EnumVariant::EnumVariant(Location loc, std::string enum_name,
-                                 std::string variant_name)
-            : Expression(loc), m_enum_name(std::move(enum_name)),
-              m_variant_name(std::move(variant_name)) {}
+        EnumVariant::EnumVariant(Location loc, QualifiedPath path)
+            : Expression(loc), m_path(std::move(path)) {}
 
-        MatchExprArm::MatchExprArm(Location loc, std::string enum_name,
-                                   std::string variant_name, ExprPtr value)
-            : m_loc(loc), m_is_wildcard(false), m_enum_name(std::move(enum_name)),
-              m_variant_name(std::move(variant_name)), m_value(std::move(value)) {}
+        MatchExprArm::MatchExprArm(Location loc, QualifiedPath pattern, ExprPtr value)
+            : m_loc(loc), m_is_wildcard(false), m_pattern(std::move(pattern)),
+              m_value(std::move(value)) {}
 
         MatchExprArm::MatchExprArm(Location loc, ExprPtr value)
             : m_loc(loc), m_is_wildcard(true), m_value(std::move(value)) {}
@@ -119,8 +143,13 @@ namespace aloha
 
         FunctionCall::FunctionCall(Location loc, std::unique_ptr<Identifier> func_name,
                                    std::vector<ExprPtr> args)
-            : Expression(loc), m_func_name(std::move(func_name)),
+            : Expression(loc),
+              m_path(loc, {func_name ? std::move(func_name->m_name) : "<error>"}),
               m_arguments(std::move(args)) {}
+
+        FunctionCall::FunctionCall(Location loc, QualifiedPath path,
+                                   std::vector<ExprPtr> args)
+            : Expression(loc), m_path(std::move(path)), m_arguments(std::move(args)) {}
 
         ReturnStatement::ReturnStatement(Location loc, ExprPtr expr)
             : Statement(loc), m_expression(std::move(expr)) {}
@@ -137,11 +166,10 @@ namespace aloha
               m_else_branch(std::move(else_branch)) {}
         bool IfStatement::has_else_branch() const { return m_else_branch != nullptr; }
 
-        MatchArm::MatchArm(Location loc, std::string enum_name,
-                           std::string variant_name,
+        MatchArm::MatchArm(Location loc, QualifiedPath pattern,
                            std::unique_ptr<StatementBlock> body)
-            : m_loc(loc), m_is_wildcard(false), m_enum_name(std::move(enum_name)),
-              m_variant_name(std::move(variant_name)), m_body(std::move(body)) {}
+            : m_loc(loc), m_is_wildcard(false), m_pattern(std::move(pattern)),
+              m_body(std::move(body)) {}
 
         MatchArm::MatchArm(Location loc, std::unique_ptr<StatementBlock> body)
             : m_loc(loc), m_is_wildcard(true), m_body(std::move(body)) {}

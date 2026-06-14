@@ -50,6 +50,22 @@ namespace aloha
     using ExprPtr = std::unique_ptr<Expression>;
     using StmtPtr = std::unique_ptr<Statement>;
 
+    class QualifiedPath
+    {
+    public:
+      Location m_loc;
+      std::vector<std::string> m_segments;
+
+      QualifiedPath(Location loc, std::vector<std::string> segments);
+
+      size_t size() const;
+      bool empty() const;
+      bool is_unqualified() const;
+      const std::string &front() const;
+      const std::string &back() const;
+      std::string to_string() const;
+    };
+
     class StatementBlock : public Statement
     {
     public:
@@ -155,10 +171,9 @@ namespace aloha
     class EnumVariant : public Expression
     {
     public:
-      std::string m_enum_name;
-      std::string m_variant_name;
+      QualifiedPath m_path;
 
-      EnumVariant(Location loc, std::string enum_name, std::string variant_name);
+      EnumVariant(Location loc, QualifiedPath path);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };
@@ -168,12 +183,10 @@ namespace aloha
     public:
       Location m_loc;
       bool m_is_wildcard;
-      std::string m_enum_name;
-      std::string m_variant_name;
+      std::optional<QualifiedPath> m_pattern;
       ExprPtr m_value;
 
-      MatchExprArm(Location loc, std::string enum_name, std::string variant_name,
-                   ExprPtr value);
+      MatchExprArm(Location loc, QualifiedPath pattern, ExprPtr value);
       MatchExprArm(Location loc, ExprPtr value);
     };
 
@@ -254,11 +267,12 @@ namespace aloha
     class FunctionCall : public Expression
     {
     public:
-      std::unique_ptr<Identifier> m_func_name;
+      QualifiedPath m_path;
       std::vector<ExprPtr> m_arguments;
 
       FunctionCall(Location loc, std::unique_ptr<Identifier> func_name,
                    std::vector<ExprPtr> args);
+      FunctionCall(Location loc, QualifiedPath path, std::vector<ExprPtr> args);
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };
@@ -309,11 +323,10 @@ namespace aloha
     public:
       Location m_loc;
       bool m_is_wildcard;
-      std::string m_enum_name;
-      std::string m_variant_name;
+      std::optional<QualifiedPath> m_pattern;
       std::unique_ptr<StatementBlock> m_body;
 
-      MatchArm(Location loc, std::string enum_name, std::string variant_name,
+      MatchArm(Location loc, QualifiedPath pattern,
                std::unique_ptr<StatementBlock> body);
       MatchArm(Location loc, std::unique_ptr<StatementBlock> body);
     };
@@ -510,9 +523,12 @@ namespace aloha
     {
     public:
       std::string m_path;
+      std::optional<std::string> m_alias;
 
       explicit Import(Location loc, std::string path)
           : Node(loc), m_path(path) {}
+      Import(Location loc, std::string path, std::optional<std::string> alias)
+          : Node(loc), m_path(path), m_alias(std::move(alias)) {}
       void write(std::ostream &os, unsigned long indent = 0) const override;
       void accept(ASTVisitor &visitor) override;
     };

@@ -1,0 +1,5 @@
+// expect-error: Qualified function calls currently require exactly two path segments
+
+fun main() -> void {
+    ast::Expr::BinOp::Mul();
+}

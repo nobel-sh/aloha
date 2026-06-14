@@ -1,0 +1,7 @@
+// expect-error: Undefined function 'vis::private_value'
+
+import "../fixtures/visibility_symbols.alo" as vis;
+
+fun main() -> void {
+    vis::private_value();
+}

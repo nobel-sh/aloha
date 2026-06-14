@@ -34,13 +34,22 @@ namespace aloha
 
   void AIRBuilder::visit(ast::EnumVariant *node)
   {
+    if (node->m_path.size() != 2)
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Qualified enum variants currently require exactly two path segments");
+      current_expr.reset();
+      return;
+    }
+
+    const std::string &enum_name = node->m_path.m_segments[0];
+    const std::string &variant_name = node->m_path.m_segments[1];
     auto variant_opt = symbol_table.lookup_enum_variant_accessible(
-        node->m_enum_name, node->m_variant_name, node->m_loc);
+        enum_name, variant_name, node->m_loc);
     if (!variant_opt.has_value())
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
-                        "Unknown enum variant '" + node->m_enum_name + "::" +
-                            node->m_variant_name + "'");
+                        "Unknown enum variant '" + node->m_path.to_string() + "'");
       current_expr.reset();
       return;
     }
@@ -106,13 +115,22 @@ namespace aloha
         continue;
       }
 
+      if (!arm.m_pattern.has_value() || arm.m_pattern->size() != 2)
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
+                          "Match arm patterns currently require exactly two path segments");
+        continue;
+      }
+
+      const auto &pattern = arm.m_pattern.value();
+      const std::string &arm_enum_name = pattern.m_segments[0];
+      const std::string &arm_variant_name = pattern.m_segments[1];
       auto variant_opt = symbol_table.lookup_enum_variant_accessible(
-          arm.m_enum_name, arm.m_variant_name, arm.m_loc);
+          arm_enum_name, arm_variant_name, arm.m_loc);
       if (!variant_opt.has_value())
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Unknown enum variant '" + arm.m_enum_name + "::" +
-                              arm.m_variant_name + "'");
+                          "Unknown enum variant '" + pattern.to_string() + "'");
         continue;
       }
 
@@ -120,16 +138,15 @@ namespace aloha
       if (variant.enum_type_id != scrutinee->m_ty)
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Match arm variant '" + arm.m_enum_name + "::" +
-                              arm.m_variant_name + "' does not belong to enum '" +
+                          "Match arm variant '" + pattern.to_string() +
+                              "' does not belong to enum '" +
                               enum_name + "'");
       }
 
       if (!covered_variants.insert(variant.variant_name).second)
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Duplicate match arm for variant '" + arm.m_enum_name +
-                              "::" + arm.m_variant_name + "'");
+                          "Duplicate match arm for variant '" + pattern.to_string() + "'");
       }
 
       arms.emplace_back(variant.enum_name, variant.variant_name, variant.value,
@@ -500,13 +517,37 @@ namespace aloha
 
   void AIRBuilder::visit(ast::FunctionCall *node)
   {
-    const std::string &func_name = node->m_func_name->m_name;
+    if (node->m_path.empty())
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Function call path cannot be empty");
+      current_expr.reset();
+      return;
+    }
 
-    auto func_opt = symbol_table.lookup_function_accessible(func_name, node->m_loc);
+    std::optional<FunctionSymbol> func_opt;
+    std::string display_name = node->m_path.to_string();
+    if (node->m_path.is_unqualified())
+    {
+      func_opt = symbol_table.lookup_function_accessible(node->m_path.back(), node->m_loc);
+    }
+    else if (node->m_path.size() == 2)
+    {
+      func_opt = symbol_table.lookup_qualified_function(
+          node->m_path.m_segments[0], node->m_path.m_segments[1]);
+    }
+    else
+    {
+      diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
+                        "Qualified function calls currently require exactly two path segments");
+      current_expr.reset();
+      return;
+    }
+
     if (!func_opt.has_value())
     {
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc,
-                        "Undefined function '" + func_name + "'");
+                        "Undefined function '" + display_name + "'");
       current_expr.reset();
       return;
     }
@@ -516,7 +557,7 @@ namespace aloha
     if (node->m_arguments.size() != func_symbol.param_types.size())
     {
       std::ostringstream msg;
-      msg << "Function '" << func_name << "' expects "
+      msg << "Function '" << display_name << "' expects "
           << func_symbol.param_types.size() << " argument(s), got "
           << node->m_arguments.size();
       diagnostics.error(DiagnosticPhase::AIRBuilding, node->m_loc, msg.str());
@@ -537,7 +578,7 @@ namespace aloha
         TyId actual_ty = arg->m_ty;
 
         std::ostringstream context;
-        context << "argument " << (i + 1) << " of function '" << func_name << "'";
+        context << "argument " << (i + 1) << " of function '" << display_name << "'";
         check_types_compatible(expected_ty, actual_ty,
                                node->m_arguments[i]->m_loc,
                                context.str());
@@ -546,7 +587,7 @@ namespace aloha
       args.emplace_back(std::move(arg));
     }
 
-    current_expr = std::make_unique<air::Call>(node->m_loc, func_name, func_symbol.id,
+    current_expr = std::make_unique<air::Call>(node->m_loc, display_name, func_symbol.id,
                                                std::move(args), func_symbol.return_type);
   }
 
@@ -642,13 +683,22 @@ namespace aloha
         continue;
       }
 
+      if (!arm.m_pattern.has_value() || arm.m_pattern->size() != 2)
+      {
+        diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
+                          "Match arm patterns currently require exactly two path segments");
+        continue;
+      }
+
+      const auto &pattern = arm.m_pattern.value();
+      const std::string &arm_enum_name = pattern.m_segments[0];
+      const std::string &arm_variant_name = pattern.m_segments[1];
       auto variant_opt = symbol_table.lookup_enum_variant_accessible(
-          arm.m_enum_name, arm.m_variant_name, arm.m_loc);
+          arm_enum_name, arm_variant_name, arm.m_loc);
       if (!variant_opt.has_value())
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Unknown enum variant '" + arm.m_enum_name + "::" +
-                              arm.m_variant_name + "'");
+                          "Unknown enum variant '" + pattern.to_string() + "'");
         continue;
       }
 
@@ -656,16 +706,15 @@ namespace aloha
       if (variant.enum_type_id != scrutinee->m_ty)
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Match arm variant '" + arm.m_enum_name + "::" +
-                              arm.m_variant_name + "' does not belong to enum '" +
+                          "Match arm variant '" + pattern.to_string() +
+                              "' does not belong to enum '" +
                               enum_name + "'");
       }
 
       if (!covered_variants.insert(variant.variant_name).second)
       {
         diagnostics.error(DiagnosticPhase::AIRBuilding, arm.m_loc,
-                          "Duplicate match arm for variant '" + arm.m_enum_name +
-                              "::" + arm.m_variant_name + "'");
+                          "Duplicate match arm for variant '" + pattern.to_string() + "'");
       }
 
       arms.emplace_back(variant.enum_name, variant.variant_name, variant.value,

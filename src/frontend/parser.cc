@@ -89,7 +89,7 @@ namespace aloha
            lexeme == "extern" || lexeme == "import" || lexeme == "mut" ||
            lexeme == "imut" || lexeme == "return" || lexeme == "if" ||
            lexeme == "while" || lexeme == "match" || lexeme == "break" ||
-           lexeme == "continue" || lexeme == "pub";
+           lexeme == "continue" || lexeme == "pub" || lexeme == "as";
   }
 
   void Parser::synchronize()
@@ -253,9 +253,15 @@ namespace aloha
 
     std::string path = peek()->get_lexeme();
     advance();
+    std::optional<std::string> alias;
+    if (match("as"))
+    {
+      advance();
+      alias = expect_identifier()->m_name;
+    }
     consume(TokenKind::SEMICOLON, "Expected ';' after import path");
 
-    return std::make_unique<ast::Import>(loc, path);
+    return std::make_unique<ast::Import>(loc, path, std::move(alias));
   }
 
   std::vector<ast::StructField> Parser::parse_struct_field()
@@ -400,7 +406,8 @@ namespace aloha
     consume(TokenKind::DOUBLE_COLON, "Expected '::' after enum name");
     auto variant_ident = expect_identifier();
     return std::make_unique<ast::EnumVariant>(
-        loc, std::move(enum_ident->m_name), std::move(variant_ident->m_name));
+        loc, ast::QualifiedPath(loc, {std::move(enum_ident->m_name),
+                                      std::move(variant_ident->m_name)}));
   }
 
   std::unique_ptr<ast::Expression> Parser::parse_match_expression()
@@ -431,12 +438,13 @@ namespace aloha
       }
       else
       {
-        auto enum_ident = expect_identifier();
-        consume(TokenKind::DOUBLE_COLON, "Expected '::' in enum match pattern");
-        auto variant_ident = expect_identifier();
+        auto pattern = parse_qualified_path();
+        if (!pattern.has_value())
+        {
+          return nullptr;
+        }
         consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
-        arms.emplace_back(arm_loc, std::move(enum_ident->m_name),
-                          std::move(variant_ident->m_name), parse_expression(0));
+        arms.emplace_back(arm_loc, std::move(pattern.value()), parse_expression(0));
       }
 
       if (!match(TokenKind::RIGHT_BRACE))
@@ -512,7 +520,7 @@ namespace aloha
       {
         return parse_variable_assignment();
       }
-      if (match(TokenKind::LEFT_PAREN, true))
+      if (match(TokenKind::LEFT_PAREN, true) || match(TokenKind::DOUBLE_COLON, true))
       {
         return parse_expression_statement();
       }
@@ -746,13 +754,14 @@ namespace aloha
       }
       else
       {
-        auto enum_ident = expect_identifier();
-        consume(TokenKind::DOUBLE_COLON, "Expected '::' in enum match pattern");
-        auto variant_ident = expect_identifier();
+        auto pattern = parse_qualified_path();
+        if (!pattern.has_value())
+        {
+          return nullptr;
+        }
         consume(TokenKind::FAT_ARROW, "Expected '=>' after match pattern");
         consume(TokenKind::LEFT_BRACE, "Expected '{' before match arm body");
-        arms.emplace_back(arm_loc, std::move(enum_ident->m_name),
-                          std::move(variant_ident->m_name), parse_statements());
+        arms.emplace_back(arm_loc, std::move(pattern.value()), parse_statements());
       }
 
       if (match(TokenKind::COMMA))
@@ -955,7 +964,21 @@ namespace aloha
     {
       if (match(TokenKind::DOUBLE_COLON, true))
       {
-        return parse_enum_variant();
+        auto path = parse_qualified_path();
+        if (!path.has_value())
+        {
+          return nullptr;
+        }
+        if (match(TokenKind::LEFT_PAREN))
+        {
+          return parse_function_call(std::move(path.value()));
+        }
+        if (path->size() != 2)
+        {
+          report_error("Qualified enum variants currently require exactly two path segments");
+          return nullptr;
+        }
+        return std::make_unique<ast::EnumVariant>(path->m_loc, std::move(path.value()));
       }
       if (match(TokenKind::LEFT_PAREN, true))
       {
@@ -1000,13 +1023,19 @@ namespace aloha
   {
     Location loc = current_location();
     auto name = expect_identifier();
+    return parse_function_call(ast::QualifiedPath(loc, {std::move(name->m_name)}));
+  }
+
+  std::unique_ptr<ast::Expression> Parser::parse_function_call(ast::QualifiedPath path)
+  {
     consume(TokenKind::LEFT_PAREN, "function call must be followed by `(`");
 
     std::vector<ast::ExprPtr> args;
     if (match(TokenKind::RIGHT_PAREN))
     {
       advance();
-      return std::make_unique<ast::FunctionCall>(loc, std::move(name),
+      Location loc = path.m_loc;
+      return std::make_unique<ast::FunctionCall>(loc, std::move(path),
                                                  std::move(args));
     }
     args.push_back(parse_expression(0));
@@ -1017,7 +1046,8 @@ namespace aloha
       args.push_back(std::move(arg));
     }
     consume(TokenKind::RIGHT_PAREN, "function call must be end with `)`");
-    return std::make_unique<ast::FunctionCall>(loc, std::move(name),
+    Location loc = path.m_loc;
+    return std::make_unique<ast::FunctionCall>(loc, std::move(path),
                                                std::move(args));
   }
 
@@ -1056,6 +1086,35 @@ namespace aloha
       advance();
     }
     return std::make_unique<ast::Identifier>(loc, "<error>");
+  }
+
+  std::optional<ast::QualifiedPath> Parser::parse_qualified_path()
+  {
+    Location loc = current_location();
+    std::vector<std::string> segments;
+
+    if (!match(TokenKind::IDENT))
+    {
+      report_error("Expected identifier in qualified path");
+      return std::nullopt;
+    }
+
+    segments.push_back(peek()->get_lexeme());
+    advance();
+
+    while (match(TokenKind::DOUBLE_COLON))
+    {
+      advance();
+      if (!match(TokenKind::IDENT))
+      {
+        report_error("Expected identifier after '::'");
+        return std::nullopt;
+      }
+      segments.push_back(peek()->get_lexeme());
+      advance();
+    }
+
+    return ast::QualifiedPath(loc, std::move(segments));
   }
 
   ParseTy Parser::parse_type()

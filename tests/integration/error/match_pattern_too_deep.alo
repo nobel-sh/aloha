@@ -1,0 +1,14 @@
+// expect-error: Match arm patterns currently require exactly two path segments
+
+enum TokenKind {
+  Ident,
+  Number
+}
+
+fun main() -> void {
+  imut kind = TokenKind::Ident;
+  imut score = match kind {
+    ast::TokenKind::Ident => 1,
+    TokenKind::Number => 2
+  };
+}

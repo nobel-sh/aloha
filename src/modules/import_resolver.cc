@@ -169,6 +169,17 @@ namespace aloha
 
     std::string normalized_path = normalize_path(file_path);
 
+    if (import_node->m_alias.has_value())
+    {
+      if (!main_symbol_table.register_import_alias(import_node->m_alias.value(),
+                                                   normalized_path))
+      {
+        diagnostics.error(DiagnosticPhase::SymbolBinding, import_loc,
+                          "Duplicate import alias: '" + import_node->m_alias.value() + "'");
+        return false;
+      }
+    }
+
     if (already_imported->count(normalized_path) > 0)
     {
       return true;

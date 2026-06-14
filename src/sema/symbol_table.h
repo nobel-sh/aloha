@@ -163,6 +163,7 @@ namespace aloha
     std::unordered_map<std::string, EnumSymbol> enums;
     std::unordered_map<std::string, OpaqueTypeSymbol> opaque_types;
     std::unordered_map<std::string, EnumVariantSymbol> enum_variants;
+    std::unordered_map<std::string, std::string> import_aliases;
 
     std::unordered_map<VarId, VarSymbol> variables;
 
@@ -172,6 +173,21 @@ namespace aloha
     VarId allocate_var_id() { return next_var_id++; }
 
     FunctionId allocate_func_id() { return next_func_id++; }
+
+    bool register_import_alias(const std::string &alias, const std::string &source_file)
+    {
+      return import_aliases.emplace(alias, source_file).second;
+    }
+
+    std::optional<std::string> lookup_import_alias(const std::string &alias) const
+    {
+      auto it = import_aliases.find(alias);
+      if (it != import_aliases.end())
+      {
+        return it->second;
+      }
+      return std::nullopt;
+    }
 
     void register_variable(VarId id, const std::string &name, bool is_mutable,
                            Location loc)
@@ -244,6 +260,24 @@ namespace aloha
       auto symbol = lookup_function(name);
       if (symbol.has_value() &&
           is_accessible(symbol->is_public, symbol->source_file, use_loc))
+      {
+        return symbol;
+      }
+      return std::nullopt;
+    }
+
+    std::optional<FunctionSymbol> lookup_qualified_function(
+        const std::string &alias, const std::string &name) const
+    {
+      auto source_file = lookup_import_alias(alias);
+      if (!source_file.has_value())
+      {
+        return std::nullopt;
+      }
+
+      auto symbol = lookup_function(name);
+      if (symbol.has_value() && symbol->is_public && symbol->source_file.has_value() &&
+          symbol->source_file.value() == source_file.value())
       {
         return symbol;
       }
